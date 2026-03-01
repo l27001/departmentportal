@@ -1,19 +1,20 @@
-from flask import Flask, redirect, url_for, jsonify, flash
+from flask import Flask, redirect, render_template, url_for, jsonify, flash
 from extensions import db, jwt
 from routes.auth import auth_bp
 from routes.tasks import tasks_bp
 from routes.documents import documents_bp
 from routes.users import users_bp
-from config import Config
 from dotenv import load_dotenv
 from flask_cors import CORS
 from flask_jwt_extended import (
     jwt_required, create_access_token,
     get_jwt_identity, set_access_cookies,
 )
+load_dotenv()
+from config import Config
+
 
 def create_app():
-    load_dotenv()
     app = Flask(__name__)
 
     app.config.from_object(Config)
@@ -33,7 +34,8 @@ def create_app():
 
     @app.route('/')
     def index():
-        return redirect(url_for("tasks.list_tasks"))
+        return render_template("index.html")
+        # return redirect(url_for("tasks.list_tasks"))
 
     @app.route('/token-refresh', methods=['GET'])
     @jwt_required()

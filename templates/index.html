@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/rating_light.css') }}">
+
+<div class="container-fluid mt-4">
+    <h2 style="color: #007BFF; font-weight: 600; margin-bottom: 30px;">Портал кафедры</h2>
+
+    <div class="row">
+        <!-- Карточка 1: Рейтинговая система -->
+        <div class="col-md-6 mb-4">
+            <div class="rating-main-card" style="text-align: center; height: 100%;">
+                <div style="font-size: 40px; margin-bottom: 15px;">📊</div>
+                <h4 style="color: #007BFF; font-weight: 600; margin-bottom: 10px;">Рейтинговая система</h4>
+                <p style="color: #666; margin-bottom: 20px;">Управление наградами, публикациями, конференциями и повышением квалификации</p>
+                <a href=" url_for('rating.awards_list') " class="btn btn-primary">Перейти</a>
+            </div>
+        </div>
+
+        <!-- Карточка 2: Информация -->
+        <div class="col-md-6 mb-4">
+            <div class="rating-main-card" style="text-align: center; height: 100%;">
+                <div style="font-size: 40px; margin-bottom: 15px;">ℹ️</div>
+                <h4 style="color: #007BFF; font-weight: 600; margin-bottom: 10px;">Информация кафедры</h4>
+                <p style="color: #666; margin-bottom: 20px;">Сотрудники, события, полезные ссылки и основные сведения</p>
+                <a href="#" class="btn btn-primary">Перейти</a>
+            </div>
+        </div>
+
+        <!-- Карточка 3: Документы -->
+        <div class="col-md-6 mb-4">
+            <div class="rating-main-card" style="text-align: center; height: 100%;">
+                <div style="font-size: 40px; margin-bottom: 15px;">📄</div>
+                <h4 style="color: #007BFF; font-weight: 600; margin-bottom: 10px;">Документы</h4>
+                <p style="color: #666; margin-bottom: 20px;">Загрузка и скачивание документов по категориям</p>
+                <a href=" url_for('documents.documents_list') " class="btn btn-primary">Перейти</a>
+            </div>
+        </div>
+
+        <!-- Карточка 4: Профиль -->
+        <div class="col-md-6 mb-4">
+            <div class="rating-main-card" style="text-align: center; height: 100%;">
+                <div style="font-size: 40px; margin-bottom: 15px;">👤</div>
+                <h4 style="color: #007BFF; font-weight: 600; margin-bottom: 10px;">Мой профиль</h4>
+                <p style="color: #666; margin-bottom: 20px;">Просмотр и редактирование профиля, выход из системы</p>
+                <a href="#" class="btn btn-primary">Перейти</a>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

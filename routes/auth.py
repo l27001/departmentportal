@@ -51,7 +51,7 @@ def login():
 
         # Создаем JWT токен
         token = create_access_token(identity=user.id, additional_claims={"role": user.role.id})
-        redir = redirect(url_for("tasks.list_tasks"))
+        redir = redirect(url_for("index"))
         set_access_cookies(redir, token)
         flash("Вы успешно вошли", "success")
         return redir
