@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <section class="profile-section">
+      <h1>Профиль пользователя</h1>
+      <div class="profile-info">
+        <p><strong>Имя:</strong> {{ user.name }}</p>
+        <p><strong>Email:</strong> {{ user.email }}</p>
+      </div>
+
+      <h2>Редактирование профиля</h2>
+      <form method="POST" action="{{ url_for('users.update_profile') }}">
+        <div class="input-group">
+          <label for="name">Имя:</label>
+          <input type="text" id="name" name="name" value="{{ user.name }}" required>
+        </div>
+        <div class="input-group">
+          <label for="email">Email:</label>
+          <input type="email" id="email" name="email" value="{{ user.email }}" required>
+        </div>
+        <div class="input-group">
+          <button type="submit" class="add-task-btn">Сохранить изменения</button>
+        </div>
+      </form>
+
+      <div class="header-btns">
+        <a href="{{ url_for('auth.logout') }}" class="view-details-btn">Выйти</a>
+      </div>
+    </section>
+{% endblock %}

@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section id="tasks" class="task-section">
+      <h2>{% block title %}Список задач{% endblock %}</h2>
+      <div class="header-btns">
+        <button class="add-task-btn" onclick="openModal('addTask')">Добавить задачу</button>
+      </div>
+      <div class="task-list">
+        {% for task in tasks %}
+        <div class="task-item">
+            <div class="task-info">
+                <h3 class="task-title">{{ task.title }}</h3>
+                <p class="task-description">{{ task.description }}</p>
+            </div>
+            {% if task.assignments |length > 0 %}
+            <div class="task-btn">
+              <select autocomplete="off" onchange="updateTaskStatus(this, {{task.id}})">
+                <option {% if task.assignments[0].status == 'не начата' %}selected{% endif %}>Не начата</option>
+                <option {% if task.assignments[0].status == 'в работе' %}selected{% endif %}>В работе</option>
+                <option {% if task.assignments[0].status == 'завершена' %}selected{% endif %}>Завершена</option>
+              </select>
+            </div>
+            {% endif %}
+            <div class="task-btn">
+                {% if task.priority == 'low' %}
+                    <span class="status low">Низкий приоритет</span>
+                {% elif task.priority == 'medium' %}
+                    <span class="status medium">Средний приоритет</span>
+                {% else %}
+                    <span class="status high">Высокий приоритет</span>
+                {% endif %}
+                {% if task.assignments |length > 0 and task.assignments[0].user_id == user_id and task.assignments[0].status != 'завершена' and task.deadline_at < today %}
+                  <span class="status high">Дедлайн просрочен</span>
+                {% endif %}
+            </div>
+            <div class="task-dates">
+                <p><strong>Дата начала:</strong> {{ task.starts_at.strftime('%d.%m.%Y') }}</p>
+                <p><strong>Дата выполнения:</strong> {{ task.deadline_at.strftime('%d.%m.%Y') }}</p>
+            </div>
+            <div class="task-btn">
+                <a class="view-details-btn" href="{{url_for('tasks.task_details', task_id=task.id)}}">Просмотр</a>
+            </div>
+        </div>
+        {% else %}
+        <p>У вас нет задач.</p>
+        {% endfor %}
+      </div>
+    </section>
+
+{% endblock %}
+{% block modals %}
+<div id="addTask" class="modal">
+
+  <!-- Modal content -->
+      <div class="modal-content">
+        <span class="close" onclick="closeModal('addTask')">&times;</span>
+        <h2>Создание задачи</h2>
+        <form method="POST" action="{{ url_for('tasks.create_task') }}">
+
+          <div class="input-group">
+            <label for="taskTitle">Название задачи:</label>
+            <input type="text" id="taskTitle" name="title" required placeholder="Введите название задачи">
+          </div>
+
+          <div class="input-group">
+            <label for="taskDescription">Описание:</label>
+            <textarea id="taskDescription" name="description" required placeholder="Введите описание задачи"></textarea>
+          </div>
+
+          <div class="input-group">
+            <label for="taskPriority">Приоритет:</label>
+            <select id="taskPriority" name="priority">
+              <option value="low">Низкий</option>
+              <option value="medium" selected>Средний</option>
+              <option value="high">Высокий</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label for="taskStartAt">Дата начала:</label>
+            <input type="date" id="taskStartAt" name="starts_at" required>
+          </div>
+
+          <div class="input-group">
+            <label for="taskDeadlineAt">Дата выполнения:</label>
+            <input type="date" id="taskDeadlineAt" name="deadline_at" required>
+          </div>
+
+          {% if role.name == 'Руководитель' %}
+            <div class="input-group">
+              <label for="assignees">Исполнители:</label>
+              <select id="assignees" name="assignees" multiple>
+              {% for user in users %}
+                  <option value="{{ user.id }}">{{ user.name }}</option>
+              {% endfor %}
+              </select>
+            </div>
+          {% endif %}
+
+          <div class="input">
+            <button type="submit" class="add-task-btn">Создать задачу</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <section class="task-section">
+    <h2>{% block title %}Детали задачи{% endblock %}: {{ task.title }}</h2>
+    <p><strong>Описание:</strong> {{ task.description }}</p>
+    {% if task.assignments |length > 0 %}
+    <p><strong>Статус:</strong>
+    {% for assign in task.assignments %}
+        {% if assign.user_id == user_id %}
+            <select autocomplete="off" onchange="updateTaskStatus(this, {{task.id}})">
+                <option {% if assign.status == 'не начата' %}selected{% endif %}>Не начата</option>
+                <option {% if assign.status == 'в работе' %}selected{% endif %}>В работе</option>
+                <option {% if assign.status == 'завершена' %}selected{% endif %}>Завершена</option>
+            </select>
+        </p>
+        {% endif %}
+    {% endfor %}
+    {% endif %}
+    <p><strong>Приоритет:</strong>
+        {% if task.assignments |length > 0 and task.assignments[0].status != 'завершена' and task.deadline_at < today %}
+            <span class="status high">Дедлайн просрочен</span>
+        {% endif %}
+        {% if task.priority == 'low' %}
+            <span class="status low">Низкий приоритет</span>
+        {% elif task.priority == 'medium' %}
+            <span class="status medium">Средний приоритет</span>
+        {% else %}
+            <span class="status high">Высокий приоритет</span>
+        {% endif %}
+    </p>
+    <p><strong>Дата начала:</strong> {{ task.starts_at.strftime('%d.%m.%Y') }}</p>
+    <p><strong>Дата выполнения:</strong> {{ task.deadline_at.strftime('%d.%m.%Y') }}</p>
+
+    {% if not task.is_personal and user_role.name == 'Руководитель' %}
+    <h3>Исполнители:</h3>
+    <ul>
+      {% for assignment in assignees %}
+        <li>{{ assignment.user.name }} | 
+          <strong>Прогресс:</strong>
+              <span>{{ assignment.status }}</span>
+        </li>
+      {% else %}
+        <p>У этой задачи нет исполнителей.</p>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+    <div class="view-details">
+      <a href="{{ url_for('tasks.list_tasks') }}" class="view-details-btn">Назад к задачам</a>
+      <a href="{{ url_for('tasks.calendar') }}" class="view-details-btn">Назад к календарю</a>
+      {% if user_role.name == 'Руководитель' %}
+        <a href="{{ url_for('tasks.generate_task_report', task_id=task.id) }}" class="view-details-btn">Сгенерировать отчёт</a>
+      {% endif %}
+    </div>
+  </section>
+{% endblock %}

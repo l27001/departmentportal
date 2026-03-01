@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Документы{% endblock %}
+
+{% block content %}
+<section class="documents-section">
+    <h2>Документы кафедры</h2>
+    {% if role.name in ['Руководитель', 'Документовед'] %}
+    <div class="header-btns">
+        <button class="add-task-btn" onclick="openModal('uploadDocumentModal')">Добавить документ</button>
+    </div>
+    {% endif %}
+
+    <div class="document-list">
+        {% if documents|length > 0 %}
+            {% for document in documents %}
+                <div class="document-item">
+                    <div class="document-info">
+                        <h3 class="document-title">{{ document.title }}</h3>
+                        <p class="document-meta">
+                            Тип: {{ document.category | capitalize }}<br>
+                            Дата загрузки: {{ document.created_at.strftime('%d.%m.%Y') }}
+                        </p>
+                    </div>
+                    <div class="document-actions">
+                        <a class="view-details-btn" href="{{url_for('documents.download_document', document_id=document.id)}}">Скачать</a>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>Документы отсутствуют.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
+
+{% block modals %}
+<div id="uploadDocumentModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('uploadDocumentModal')">&times;</span>
+
+        <h3>Загрузка документа</h3>
+
+        <form method="POST" enctype="multipart/form-data" action="{{ url_for('documents.upload_document') }}">
+            <div class="input-group">
+                <label for="title">Название документа</label>
+                <input type="text" id="title" name="title" required>
+            </div>
+
+            <div class="input-group">
+                <label for="doc_type">Тип документа</label>
+                <select id="doc_type" name="doc_type" required>
+                    <option value="">Выберите тип</option>
+                    <option value="Нормативный">Нормативный</option>
+                    <option value="Учебный">Учебный</option>
+                    <option value="Методический">Методический</option>
+                    <option value="Прочее">Прочее</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label for="file">Файл документа</label>
+                <input type="file" id="file" name="file" required>
+            </div>
+
+            <div class="modal-actions">
+                <button type="submit" class="add-task-btn">Загрузить</button>
+                <button type="button" class="view-details-btn"
+                        onclick="closeModal('uploadDocumentModal')">
+                    Отмена
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

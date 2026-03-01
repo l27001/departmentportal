@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Вход | ИС Кафедра</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      }
+
+      .login-container {
+      background-color: #fff;
+      padding: 40px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      }
+
+      h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+      color: #333;
+      }
+
+      .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      }
+
+      .input-group {
+        text-align: center;
+      }
+
+      label {
+      font-size: 14px;
+      color: #666;
+      display: block;
+      margin-bottom: 5px;
+      }
+
+      input {
+      padding: 10px;
+      font-size: 16px;
+      width: 100%;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-sizing: border-box;
+      }
+
+      input:focus {
+      border-color: #0275d8;
+      outline: none;
+      }
+
+      button {
+      padding: 10px;
+      font-size: 16px;
+      color: white;
+      background-color: #0275d8;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      }
+
+      button:hover {
+      background-color: #025aa5;
+      }
+
+      .error-message {
+      color: red;
+      font-size: 14px;
+      margin-top: 10px;
+      }
+
+      .signup-link {
+      margin-top: 20px;
+      }
+
+      .signup-link a {
+      color: #0275d8;
+      text-decoration: none;
+      }
+
+      .signup-link a:hover {
+      text-decoration: underline;
+    }
+
+    /* Стили для flash сообщений */
+.flash-messages {
+  margin-top: 20px;
+  margin: 0 auto;
+  max-width: 500px;
+  text-align: center;
+}
+
+.flash-message {
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  color: white;
+  font-size: 16px;
+}
+
+.flash-message.success {
+  background-color: #5cb85c;
+}
+
+.flash-message.warning {
+  background-color: #f0ad4e;
+}
+
+.flash-message.danger {
+  background-color: #d9534f;
+}
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h1>Вход в систему</h1>
+    <!-- Отображение flash сообщений -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for category, message in messages %}
+              <div class="flash-message {{ category }}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+    <form action="/auth/login" method="POST" class="login-form">
+      <div class="input-group">
+        <label for="email">Электронная почта</label>
+        <input type="email" id="email" name="email" required placeholder="Введите ваш email">
+      </div>
+      <div class="input-group">
+        <label for="password">Пароль</label>
+        <input type="password" id="password" name="password" required placeholder="Введите ваш пароль">
+      </div>
+      <div class="input-group">
+        <button type="submit" class="login-btn">Войти</button>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

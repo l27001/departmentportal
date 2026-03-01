@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}{% endblock %} | ИС Кафедра</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+  {% block extracss %}{% endblock %}
+</head>
+<body>
+    <header>
+      <nav class="navbar">
+        <div class="nav-left">
+          <span>Кафедра "Информационно-коммуникационные системы и программная инженерия"</span>
+        </div>
+        <div class="nav-right">
+          <ul>
+            <li><a href="{{url_for('tasks.list_tasks')}}">Задачи</a></li>
+            <li><a href="{{url_for('tasks.calendar')}}">Календарь</a></li>
+            <li><a href="{{url_for('documents.documents')}}">Документы</a></li>
+            <!-- <li><a href="#news">Новости</a></li> -->
+            <li><a href="{{url_for('users.get_profile')}}">Профиль</a></li>
+            <li><a href="{{url_for('auth.logout')}}">Выход</a></li>
+          </ul>
+        </div>
+      </nav>
+    </header>
+
+    <!-- Отображение flash сообщений -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for category, message in messages %}
+              <div class="flash-message {{ category }}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+  <div class="container">
+    {% block content %}{% endblock %}
+    </section>
+    
+  </div>
+  {% block modals %}{% endblock %}
+  <script src="/static/js/scripts.js"></script>
+  {% block extrajs %}{% endblock %}
+</body>
+</html>
