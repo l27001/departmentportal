@@ -56,6 +56,16 @@ header {
   display: inline;
 }
 
+.btn {
+  padding: 10px;
+  font-size: 16px;
+  color: white;
+  background-color: #0275d8;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
 a {
     text-decoration: none;
 }
@@ -367,4 +377,24 @@ div.view-details {
 
 .document-actions {
     margin-left: 20px;
+}
+
+.rating-cards {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px; /* аналог mb-4 */
+}
+
+@media (min-width: 768px) {
+    .rating-cards {
+        grid-template-columns: 1fr 1fr; /* 2 колонки */
+    }
+}
+
+.rating-main-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    height: 100%;
 }

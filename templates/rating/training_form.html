@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Портал кафедры{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 30px;">
+            <h3 style="color: #007BFF; margin-bottom: 30px;">{{ title }}</h3>
+            
+            <form method="POST" novalidate>
+                {{ form.hidden_tag() }}
+                
+                <div class="mb-3">
+                    {{ form.title.label(class="form-label") }}
+                    {% if form.title.errors %}
+                        {{ form.title(class="form-control is-invalid") }}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.title.errors %}{{ error }}<br>{% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.title(class="form-control") }}
+                    {% endif %}
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.organization.label(class="form-label") }}
+                        {% if form.organization.errors %}
+                            {{ form.organization(class="form-control is-invalid") }}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.organization.errors %}{{ error }}<br>{% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.organization(class="form-control") }}
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.training_type.label(class="form-label") }}
+                        {{ form.training_type(class="form-select") }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.start_date.label(class="form-label") }}
+                        {{ form.start_date(class="form-control", type="date") }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.end_date.label(class="form-label") }}
+                        {{ form.end_date(class="form-control", type="date") }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.duration_hours.label(class="form-label") }}
+                        {{ form.duration_hours(class="form-control", placeholder="Часов") }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="form-group">
+                        {{ form.city.label(class="form-label") }}
+                        {{ form.city(class="form-control") }}
+                    </div>
+                    <div class="form-group">
+                        {{ form.level.label(class="form-label") }}
+                        {{ form.level(class="form-select") }}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    {{ form.certificate_number.label(class="form-label") }}
+                    {{ form.certificate_number(class="form-control") }}
+                </div>
+
+                <div class="mb-3">
+                    {{ form.certificate_url.label(class="form-label") }}
+                    {{ form.certificate_url(class="form-control") }}
+                </div>
+
+                <div class="mb-3">
+                    {{ form.description.label(class="form-label") }}
+                    {{ form.description(class="form-control", rows=4) }}
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    {{ form.submit(class="btn btn-primary") }}
+                    <a href="{{ url_for('rating.trainings_list') }}" class="btn btn-secondary">Отмена</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

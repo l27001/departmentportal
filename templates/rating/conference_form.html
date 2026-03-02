@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Портал кафедры{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 30px;">
+            <h3 style="color: #007BFF; margin-bottom: 30px;">{{ title }}</h3>
+            
+            <form method="POST" novalidate>
+                {{ form.hidden_tag() }}
+                
+                <div class="mb-3">
+                    {{ form.name.label(class="form-label") }}
+                    {% if form.name.errors %}
+                        {{ form.name(class="form-control is-invalid") }}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.name.errors %}{{ error }}<br>{% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.name(class="form-control") }}
+                    {% endif %}
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.role.label(class="form-label") }}
+                        {{ form.role(class="form-select") }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.conference_date.label(class="form-label") }}
+                        {{ form.conference_date(class="form-control", type="date") }}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    {{ form.paper_title.label(class="form-label") }}
+                    {{ form.paper_title(class="form-control") }}
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.location.label(class="form-label") }}
+                        {{ form.location(class="form-control") }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.conference_url.label(class="form-label") }}
+                        {{ form.conference_url(class="form-control") }}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    {{ form.coauthors.label(class="form-label") }}
+                    {{ form.coauthors(class="form-control") }}
+                    <small class="form-text text-muted">
+                        Укажите ФИО соавторов через запятую
+                    </small>
+                </div>
+
+                <div class="mb-3">
+                    {{ form.description.label(class="form-label") }}
+                    {{ form.description(class="form-control", rows=4) }}
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    {{ form.submit(class="btn btn-primary") }}
+                    <a href="{{ url_for('rating.conferences_list') }}" class="btn btn-secondary">Отмена</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}Публикации - Портал кафедры{% endblock %}
+
+{% block content %}
+
+<div class="row">
+    <!-- ЛЕВОЕ МЕНЮ -->
+    <div class="col-lg-3">
+        <div class="rating-sidebar">
+            <h5>Разделы</h5>
+            <ul>
+                <li><a href="{{ url_for('rating.awards_list') }}">Награды</a></li>
+                <li><a href="{{ url_for('rating.publications_list') }}" class="active">Публикации</a></li>
+                <li><a href="{{ url_for('rating.conferences_list') }}">Конференции</a></li>
+                <li><a href="{{ url_for('rating.trainings_list') }}">Повышение квалификации</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- ОСНОВНОЙ КОНТЕНТ -->
+    <div class="col-lg-9">
+        <div class="rating-main-card">
+
+            <!-- Заголовок + кнопка -->
+            <div class="rating-header">
+                <h3>Публикации</h3>
+                <a href="{{ url_for('rating.add_publication') }}" class="btn btn-primary">Добавить публикацию</a>
+            </div>
+
+            <!-- Инфо-блок -->
+            <div class="rating-info-block publications">
+                <span class="info-label">Скачать</span>
+                <span class="info-value"><strong>{{ total_points }}</strong></span>
+                <div class="rating-export-buttons">
+                    <a href="{{ url_for('rating.export_publications_excel') }}" class="btn btn-sm btn-success">📊 Excel</a>
+                    <a href="{{ url_for('rating.export_publications_word') }}" class="btn btn-sm btn-info">📄 Word</a>
+                </div>
+            </div>
+
+            <!-- Поиск и фильтры -->
+            <form method="GET" class="rating-search-form">
+                <div class="row g-2">
+                    <div class="col-md-5">
+                        <input type="text" name="search_query" class="form-control" 
+                               placeholder="Поиск по названию/авторам..." 
+                               value="{{ request.args.get('search_query', '') }}">
+                    </div>
+                    <div class="col-md-3">
+                        <select name="pub_type" class="form-select">
+                            <option value="">Все типы</option>
+                            <option value="book" {% if request.args.get('pub_type') == 'book' %}selected{% endif %}>Книга</option>
+                            <option value="journal_article" {% if request.args.get('pub_type') == 'journal_article' %}selected{% endif %}>Журнал</option>
+                            <option value="collection_article" {% if request.args.get('pub_type') == 'collection_article' %}selected{% endif %}>Сборник</option>
+                            <option value="dissertation" {% if request.args.get('pub_type') == 'dissertation' %}selected{% endif %}>Диссертация</option>
+                            <option value="abstract" {% if request.args.get('pub_type') == 'abstract' %}selected{% endif %}>Автореферат</option>
+                            <option value="internet" {% if request.args.get('pub_type') == 'internet' %}selected{% endif %}>Интернет</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select name="sort_by" class="form-select">
+                            <option value="date_desc" {% if request.args.get('sort_by', 'date_desc') == 'date_desc' %}selected{% endif %}>Новые</option>
+                            <option value="date_asc" {% if request.args.get('sort_by') == 'date_asc' %}selected{% endif %}>Старые</option>
+                            <option value="title" {% if request.args.get('sort_by') == 'title' %}selected{% endif %}>По названию</option>
+                            <option value="points" {% if request.args.get('sort_by') == 'points' %}selected{% endif %}>По очкам</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100">Найти</button>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Таблица -->
+            {% if publications.items %}
+                <table class="table rating-table">
+                    <thead>
+                        <tr>
+                            <th>ГОСТ-строка</th>
+                            <th>Тип</th>
+                            <th>Год</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pub in publications.items %}
+                        <tr>
+                            <td class="gost-string">
+                                <a href="{{ url_for('rating.view_publication', pub_id=pub.id) }}">
+                                    {{ pub.gost_string or pub.title }}
+                                </a>
+                            </td>
+                            <td>
+                                {% if pub.publication_type == 'book' %}Книга
+                                {% elif pub.publication_type == 'journal_article' %}Журнал
+                                {% elif pub.publication_type == 'collection_article' %}Сборник
+                                {% elif pub.publication_type == 'dissertation' %}Диссертация
+                                {% elif pub.publication_type == 'abstract' %}Автореферат
+                                {% elif pub.publication_type == 'internet' %}Интернет
+                                {% else %}{{ pub.publication_type }}{% endif %}
+                            </td>
+                            <td>{{ pub.year }}</td>
+                            <td class="action-buttons">
+                                <a href="{{ url_for('rating.edit_publication', pub_id=pub.id) }}" class="btn btn-sm btn-warning">✏️</a>
+                                <form method="POST" action="{{ url_for('rating.delete_publication', pub_id=pub.id) }}">
+                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Удалить публикацию?')">🗑️</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <!-- Пагинация -->
+                {% if publications.pages > 1 %}
+                <nav class="rating-pagination">
+                    <ul class="pagination">
+                        {% if publications.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('rating.publications_list', page=publications.prev_num, search_query=request.args.get('search_query',''), pub_type=request.args.get('pub_type',''), sort_by=request.args.get('sort_by','date_desc')) }}">Назад</a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for page_num in publications.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                            {% if page_num %}
+                                {% if page_num == publications.page %}
+                                <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
+                                {% else %}
+                                <li class="page-item"><a class="page-link" href="{{ url_for('rating.publications_list', page=page_num, search_query=request.args.get('search_query',''), pub_type=request.args.get('pub_type',''), sort_by=request.args.get('sort_by','date_desc')) }}">{{ page_num }}</a></li>
+                                {% endif %}
+                            {% else %}
+                                <li class="page-item disabled"><span class="page-link">…</span></li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if publications.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('rating.publications_list', page=publications.next_num, search_query=request.args.get('search_query',''), pub_type=request.args.get('pub_type',''), sort_by=request.args.get('sort_by','date_desc')) }}">Вперёд</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+
+            {% else %}
+                <div class="rating-empty-state">
+                    <p>Нет публикаций.</p>
+                    <a href="{{ url_for('rating.add_publication') }}" class="btn btn-primary">Добавить первую</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

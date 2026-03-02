@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Конференции - Портал кафедры{% endblock %}
+
+{% block content %}
+
+<div class="row">
+    <!-- ЛЕВОЕ МЕНЮ -->
+    <div class="col-lg-3">
+        <div class="rating-sidebar">
+            <h5>Разделы</h5>
+            <ul>
+                <li><a href="{{ url_for('rating.awards_list') }}">Награды</a></li>
+                <li><a href="{{ url_for('rating.publications_list') }}">Публикации</a></li>
+                <li><a href="{{ url_for('rating.conferences_list') }}" class="active">Конференции</a></li>
+                <li><a href="{{ url_for('rating.trainings_list') }}">Повышение квалификации</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- ОСНОВНОЙ КОНТЕНТ -->
+    <div class="col-lg-9">
+        <div class="rating-main-card">
+
+            <!-- Заголовок + кнопка -->
+            <div class="rating-header">
+                <h3>Конференции</h3>
+                <a href="{{ url_for('rating.add_conference') }}" class="btn btn-primary">Добавить конференцию</a>
+            </div>
+
+            <!-- Инфо-блок -->
+            <div class="rating-info-block conferences">
+                <span class="info-label">Скачать</span>
+                <span class="info-value"><strong>{{ total_points }}</strong></span>
+                <div class="rating-export-buttons">
+                    <a href="{{ url_for('rating.export_conferences_excel') }}" class="btn btn-sm btn-success">📊 Excel</a>
+                    <a href="{{ url_for('rating.export_conferences_word') }}" class="btn btn-sm btn-info">📄 Word</a>
+                </div>
+            </div>
+
+            <!-- Поиск и сортировка -->
+            <form method="GET" class="rating-search-form">
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <input type="text" name="search_query" class="form-control" 
+                               placeholder="Поиск по названию..." 
+                               value="{{ request.args.get('search_query', '') }}">
+                    </div>
+                    <div class="col-md-4">
+                        <select name="sort_by" class="form-select">
+                            <option value="date_desc" {% if request.args.get('sort_by', 'date_desc') == 'date_desc' %}selected{% endif %}>Сначала новые</option>
+                            <option value="date_asc" {% if request.args.get('sort_by') == 'date_asc' %}selected{% endif %}>Сначала старые</option>
+                            <option value="title" {% if request.args.get('sort_by') == 'title' %}selected{% endif %}>По названию</option>
+                            <option value="points" {% if request.args.get('sort_by') == 'points' %}selected{% endif %}>По очкам</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100">Найти</button>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Таблица -->
+            {% if conferences.items %}
+                <table class="table rating-table">
+                    <thead>
+                        <tr>
+                            <th>Название</th>
+                            <th>Роль</th>
+                            <th>Название доклада</th>
+                            <th>Дата</th>
+                            <th>Соавторы</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for conf in conferences.items %}
+                        <tr>
+                            <td><strong>{{ conf.name }}</strong></td>
+                            <td>{{ conf.role or '—' }}</td>
+                            <td>{{ conf.paper_title or '—' }}</td>
+                            <td>{{ conf.conference_date.strftime('%d.%m.%Y') }}</td>
+                            <td>{{ conf.coauthors or '—' }}</td>
+                            <td class="action-buttons">
+                                <a href="{{ url_for('rating.edit_conference', conf_id=conf.id) }}" class="btn btn-sm btn-warning">✏️</a>
+                                <form method="POST" action="{{ url_for('rating.delete_conference', conf_id=conf.id) }}">
+                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Удалить конференцию?')">🗑️</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <!-- Пагинация -->
+                {% if conferences.pages > 1 %}
+                <nav class="rating-pagination">
+                    <ul class="pagination">
+                        {% if conferences.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('rating.conferences_list', page=conferences.prev_num, search_query=request.args.get('search_query',''), sort_by=request.args.get('sort_by','date_desc')) }}">Назад</a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for page_num in conferences.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                            {% if page_num %}
+                                {% if page_num == conferences.page %}
+                                <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
+                                {% else %}
+                                <li class="page-item"><a class="page-link" href="{{ url_for('rating.conferences_list', page=page_num, search_query=request.args.get('search_query',''), sort_by=request.args.get('sort_by','date_desc')) }}">{{ page_num }}</a></li>
+                                {% endif %}
+                            {% else %}
+                                <li class="page-item disabled"><span class="page-link">…</span></li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if conferences.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('rating.conferences_list', page=conferences.next_num, search_query=request.args.get('search_query',''), sort_by=request.args.get('sort_by','date_desc')) }}">Вперёд</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+
+            {% else %}
+                <div class="rating-empty-state">
+                    <p>Нет конференций.</p>
+                    <a href="{{ url_for('rating.add_conference') }}" class="btn btn-primary">Добавить первую</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

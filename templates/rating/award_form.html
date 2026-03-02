@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Портал кафедры{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 30px;">
+            <h3 style="color: #007BFF; margin-bottom: 30px;">{{ title }}</h3>
+            
+            <form method="POST" novalidate>
+                {{ form.hidden_tag() }}
+                
+                <div class="mb-3">
+                    {{ form.title.label(class="form-label") }}
+                    {% if form.title.errors %}
+                        {{ form.title(class="form-control is-invalid") }}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.title.errors %}{{ error }}<br>{% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.title(class="form-control") }}
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    {{ form.description.label(class="form-label") }}
+                    {{ form.description(class="form-control", rows=4) }}
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.award_type.label(class="form-label") }}
+                        {{ form.award_type(class="form-select") }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.issuer.label(class="form-label") }}
+                        {{ form.issuer(class="form-control") }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.date_received.label(class="form-label") }}
+                        {{ form.date_received(class="form-control", type="date") }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group">
+                        {{ form.level.label(class="form-label") }}
+                        {{ form.level(class="form-select") }}
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    {{ form.submit(class="btn btn-primary") }}
+                    <a href="{{ url_for('rating.awards_list') }}" class="btn btn-secondary">Отмена</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

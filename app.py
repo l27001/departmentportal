@@ -4,6 +4,7 @@ from routes.auth import auth_bp
 from routes.tasks import tasks_bp
 from routes.documents import documents_bp
 from routes.users import users_bp
+from routes.rating import rating_bp
 from dotenv import load_dotenv
 from flask_cors import CORS
 from flask_jwt_extended import (
@@ -28,6 +29,7 @@ def create_app():
     app.register_blueprint(tasks_bp)
     app.register_blueprint(documents_bp)
     app.register_blueprint(users_bp)
+    app.register_blueprint(rating_bp)
 
     with app.app_context():
         db.create_all()

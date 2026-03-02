@@ -1,5 +1,6 @@
-from app import db
+from extensions import db
 from datetime import datetime
+from utils import generate_gost_string
 
 class Award(db.Model):
     __tablename__ = 'awards'
@@ -75,8 +76,8 @@ class Publication(db.Model):
     
     def get_gost_string(self):
         """Получить ГОСТ-строку (если не сгенерирована, сгенерировать)"""
-        # if not self.gost_string:
-        #     self.gost_string = generate_gost_string(self)
+        if not self.gost_string:
+            self.gost_string = generate_gost_string(self)
         return self.gost_string
 
 

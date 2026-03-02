@@ -1,40 +1,10 @@
 from flask import Blueprint, request, jsonify, render_template, url_for, redirect, flash
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, set_access_cookies, unset_jwt_cookies
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import check_password_hash
 from models.user import User
-from extensions import db
 from decorators.auth import jwt_required
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
-
-# @auth_bp.route('/register', methods=['POST'])
-# def register():
-#     data = request.json
-
-#     # Проверяем, что все необходимые данные присутствуют
-#     if not data.get('email') or not data.get('password') or not data.get('role'):
-#         return jsonify({"msg": "Missing required fields"}), 400
-
-#     # Проверяем, существует ли уже пользователь с таким email
-#     existing_user = User.query.filter_by(email=data['email']).first()
-#     if existing_user:
-#         return jsonify({"msg": "User with this email already exists"}), 400
-
-#     # Хешируем пароль
-#     hashed_password = generate_password_hash(data['password'])
-
-#     # Создаем нового пользователя
-#     user = User(
-#         email=data['email'],
-#         password=hashed_password,
-#         role=data['role']
-#     )
-
-#     # Добавляем пользователя в базу данных
-#     db.session.add(user)
-#     db.session.commit()
-
-#     return jsonify({"msg": "User registered successfully"}), 201
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -58,9 +28,8 @@ def login():
     return render_template("auth/login.html")
 
 @auth_bp.route('/profile', methods=['GET'])
-@jwt_required()  # Требует JWT для доступа
+@jwt_required()
 def profile():
-    # Получаем текущего пользователя по ID из JWT токена
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
     
