@@ -1,9 +1,10 @@
 {% extends "base.html" %}
+{% block extracss %}<link rel="stylesheet" href="{{ url_for('static', filename='css/rating.css') }}">{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <div class="row">
-        <div class="col-lg-8 mx-auto">
+    <div class="justify-content-center">
+        <div class="col-lg-8 mx-auto form-background">
             <h2>{{ title }}</h2>
             
             <form method="POST" class="mt-4">
@@ -12,7 +13,7 @@
                 <!-- ====== ОБЯЗАТЕЛЬНЫЕ ПОЛЯ ====== -->
                 <div class="card mb-4">
                     <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">Основная информация</h5>
+                        <h4 class="mb-0">Основная информация</h5>
                     </div>
                     <div class="card-body">
                         <div class="mb-3">
@@ -50,12 +51,12 @@
                 <!-- ====== ДИНАМИЧЕСКИЕ ПОЛЯ (показываются в зависимости от типа) ====== -->
                 <div class="card mb-4">
                     <div class="card-header bg-info text-white">
-                        <h5 class="mb-0">Детали публикации</h5>
+                        <h4 class="mb-0">Детали публикации</h5>
                     </div>
                     <div class="card-body">
                         <!-- КНИГА -->
                         <div id="book-fields" style="display: none;">
-                            <h6 class="mb-3">Книга</h6>
+                            <h5 class="mb-3">Книга</h5>
                             <div class="mb-3">
                                 {{ form.edition.label }}
                                 {{ form.edition(class="form-control", placeholder="3-е") }}
@@ -78,7 +79,7 @@
                         
                         <!-- ЖУРНАЛ -->
                         <div id="journal-fields" style="display: none;">
-                            <h6 class="mb-3">Статья из журнала</h6>
+                            <h5 class="mb-3">Статья из журнала</h5>
                             <div class="mb-3">
                                 {{ form.journal_name.label }}
                                 {{ form.journal_name(class="form-control") }}
@@ -97,7 +98,7 @@
                         
                         <!-- СБОРНИК -->
                         <div id="collection-fields" style="display: none;">
-                            <h6 class="mb-3">Статья из сборника</h6>
+                            <h5 class="mb-3">Статья из сборника</h5>
                             <div class="mb-3">
                                 {{ form.article_title.label }}
                                 {{ form.article_title(class="form-control") }}
@@ -124,7 +125,7 @@
                         
                         <!-- ДИССЕРТАЦИЯ
                         <div id="dissertation-fields" style="display: none;">
-                            <h6 class="mb-3">Диссертация</h6>
+                            <h5 class="mb-3">Диссертация</h5>
                             <div class="mb-3">
                                 {{ form.author_single.label }}
                                 {{ form.author_single(class="form-control", placeholder="Иванов И.М.") }}
@@ -157,7 +158,7 @@
                         
                         <!-- АВТОРЕФЕРАТ
                         <div id="abstract-fields" style="display: none;">
-                            <h6 class="mb-3">Автореферат диссертации</h6>
+                            <h5 class="mb-3">Автореферат диссертации</h5>
                             <div class="mb-3">
                                 {{ form.author_single.label }}
                                 {{ form.author_single(class="form-control", placeholder="Иванов И.М.") }}
@@ -190,7 +191,7 @@
                         
                         <!-- ИНТЕРНЕТ-РЕСУРС -->
                         <div id="internet-fields" style="display: none;">
-                            <h6 class="mb-3">Интернет-ресурс</h6>
+                            <h5 class="mb-3">Интернет-ресурс</h5>
                             <div class="mb-3">
                                 {{ form.site_name.label }}
                                 {{ form.site_name(class="form-control", placeholder="Ведомости") }}
@@ -218,8 +219,9 @@
                 </div>
                 
                 <!-- ====== SUBMIT ====== -->
-                <div class="d-grid gap-2">
-                    {{ form.submit(class="btn btn-primary btn-lg") }}
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    {{ form.submit(class="btn btn-primary") }}
+                    <a href="{{ url_for('rating.publications_list') }}" class="btn btn-secondary">Отмена</a>
                 </div>
             </form>
         </div>
