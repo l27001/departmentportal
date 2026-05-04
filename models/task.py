@@ -38,6 +38,12 @@ class Task(db.Model):
         backref="task"
     )
 
+    group_assignments = db.relationship(
+        "TaskGroup",
+        cascade="all, delete-orphan",
+        backref="task"
+    )
+
     def to_dict(self):
         return {
             "id": self.id,
