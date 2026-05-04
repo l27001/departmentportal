@@ -4,21 +4,23 @@
   <section class="task-section">
     <h2>{% block title %}Детали задачи{% endblock %}: {{ task.title }}</h2>
     <p><strong>Описание:</strong> {{ task.description }}</p>
-    {% if task.assignments |length > 0 %}
+    {% if is_assigned %}
     <p><strong>Статус:</strong>
-    {% for assign in task.assignments %}
-        {% if assign.user_id == user_id %}
-            <select autocomplete="off" onchange="updateTaskStatus(this, {{task.id}})">
-                <option {% if assign.status == 'не начата' %}selected{% endif %}>Не начата</option>
-                <option {% if assign.status == 'в работе' %}selected{% endif %}>В работе</option>
-                <option {% if assign.status == 'завершена' %}selected{% endif %}>Завершена</option>
+            <select style="width: auto;" autocomplete="off" onchange="updateTaskStatus(this, {{task.id}})">
+                {% if user_assignment and user_assignment.status %}
+                <option {% if user_assignment.status == 'не начата' %}selected{% endif %}>Не начата</option>
+                <option {% if user_assignment.status == 'в работе' %}selected{% endif %}>В работе</option>
+                <option {% if user_assignment.status == 'завершена' %}selected{% endif %}>Завершена</option>
+                {% else %}
+                <option selected>Не начата</option>
+                <option>В работе</option>
+                <option>Завершена</option>
+                {% endif %}
             </select>
         </p>
-        {% endif %}
-    {% endfor %}
     {% endif %}
     <p><strong>Приоритет:</strong>
-        {% if task.assignments |length > 0 and task.assignments[0].status != 'завершена' and task.deadline_at < today %}
+        {% if task.deadline_at < today and (is_assigned and task.assignments[0].status != 'завершена') %}
             <span class="status high">Дедлайн просрочен</span>
         {% endif %}
         {% if task.priority == 'low' %}
