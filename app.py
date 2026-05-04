@@ -14,6 +14,19 @@ from flask_jwt_extended import (
 load_dotenv()
 from config import Config
 
+# Import models so SQLAlchemy knows about them
+from models.user import User
+from models.role import Role
+from models.task import Task, TaskUserAssignment
+from models.document import Document
+from models.award import Award
+from models.announcement import Announcement
+from models.news import News
+from models.chat import GeneralChatMessage
+from models.group import Group, UserGroup, TaskGroup
+from models.attachment import Attachment
+from models.task_comment import TaskComment
+
 
 def create_app():
     app = Flask(__name__)

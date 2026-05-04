@@ -17,6 +17,8 @@ class Task(db.Model):
 
     is_personal = db.Column(db.Boolean, default=False)
 
+    no_review = db.Column(db.Boolean, default=False, nullable=False)
+
     creator_id = db.Column(
         db.Integer,
         db.ForeignKey("users.id"),
@@ -70,5 +72,10 @@ class TaskUserAssignment(db.Model):
         db.String(50),
         default="не начата"
     )
+
+    marked_complete = db.Column(db.Boolean, default=False)
+    approved = db.Column(db.Boolean, default=False)
+    completed_at = db.Column(db.DateTime, nullable=True)
+    approved_at = db.Column(db.DateTime, nullable=True)
 
     user = db.relationship("User", backref="task_assignments")
