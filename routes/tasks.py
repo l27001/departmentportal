@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, render_template, flash, url_for, redirect, send_file
+from flask import Blueprint, request, jsonify, render_template, flash, url_for, redirect, send_file, abort
 from io import StringIO, BytesIO
 import csv
 from flask_jwt_extended import (
@@ -7,11 +7,12 @@ from flask_jwt_extended import (
     get_jwt
 )
 from datetime import datetime, date
-from sqlalchemy import desc
+from sqlalchemy import desc, or_, exists
 from extensions import db
 from models.task import Task, TaskUserAssignment
 from models.user import User
 from models.role import Role
+from models.group import Group, UserGroup, TaskGroup
 from decorators.roles import roles_required
 
 tasks_bp = Blueprint("tasks", __name__, url_prefix="/tasks")
@@ -23,19 +24,41 @@ def list_tasks():
     user_id = get_jwt_identity()
     role = Role.query.filter_by(id=get_jwt()["role"]).first()
     users = []
+    groups = []
     if role.name in ("Документовед", "Руководитель"):
-        tasks = Task.query.join(Task.assignments.and_(TaskUserAssignment.user_id == user_id), isouter=True).order_by(desc(Task.deadline_at)).all()
+        tasks = Task.query.order_by(desc(Task.deadline_at)).all()
         users = User.query.all()
+        groups = Group.query.all()
+
+        task_ids_by_assignment = db.session.query(TaskUserAssignment.task_id).filter(TaskUserAssignment.user_id == user_id).all()
+        task_ids_by_group = (
+            db.session.query(TaskGroup.task_id)
+            .join(UserGroup, UserGroup.group_id == TaskGroup.group_id)
+            .filter(UserGroup.user_id == user_id)
+            .all()
+        )
+        assigned_task_ids = {t[0] for t in task_ids_by_assignment} | {t[0] for t in task_ids_by_group}
     else:
+        task_ids_by_assignment = db.session.query(TaskUserAssignment.task_id).filter(TaskUserAssignment.user_id == user_id)
+        task_ids_by_group = (
+            db.session.query(TaskGroup.task_id)
+            .join(UserGroup, UserGroup.group_id == TaskGroup.group_id)
+            .filter(UserGroup.user_id == user_id)
+        )
         tasks = (
             Task.query
-            .join(TaskUserAssignment)
-            .filter(TaskUserAssignment.user_id == user_id)
+            .filter(
+                or_(
+                    Task.id.in_(task_ids_by_assignment),
+                    Task.id.in_(task_ids_by_group)
+                )
+            )
             .order_by(desc(Task.deadline_at))
             .all()
         )
+        assigned_task_ids = {t.id for t in tasks}
 
-    return render_template("tasks/list.html", tasks=tasks, role=role, users=users, user_id=user_id, today=date.today())
+    return render_template("tasks/list.html", tasks=tasks, role=role, users=users, groups=groups, assigned_task_ids=assigned_task_ids, user_id=user_id, today=date.today())
 
 @tasks_bp.route("/", methods=["POST"])
 @jwt_required()
@@ -49,11 +72,13 @@ def create_task():
         priority = request.form['priority']
         starts_at = request.form['starts_at']
         deadline_at = request.form['deadline_at']
+        no_review = request.form.get('no_review') == 'on'
         try:
             assignees = request.form.getlist('assignees')
         except (ValueError):
             assignees = [user_id]
-        is_personal = role.name != 'Руководитель' or len(assignees) == 0
+        group_ids = request.form.getlist('groups')
+        is_personal = role.name != 'Руководитель' or (len(assignees) == 0 and len(group_ids) == 0)
 
         new_task = Task(
             title=title,
@@ -62,16 +87,21 @@ def create_task():
             starts_at=starts_at,
             deadline_at=deadline_at,
             is_personal=is_personal,
-            creator_id=user_id  # Создатель задачи
+            no_review=no_review,
+            creator_id=user_id
         )
 
-        # Сохранение задачи в базе данных
         db.session.add(new_task)
         db.session.commit()
 
         for assignee_id in assignees:
             task_assignment = TaskUserAssignment(task_id=new_task.id, user_id=assignee_id)
             db.session.add(task_assignment)
+
+        for group_id in group_ids:
+            task_group = TaskGroup(task_id=new_task.id, group_id=int(group_id))
+            db.session.add(task_group)
+
         db.session.commit()
 
         flash('Задача успешно создана!', 'success')
@@ -91,9 +121,17 @@ def filter_tasks():
     query = Task.query
 
     if role == "Сотрудник":
-        query = (
-            query.join(TaskUserAssignment)
-            .filter(TaskUserAssignment.user_id == user_id)
+        task_ids_by_assignment = db.session.query(TaskUserAssignment.task_id).filter(TaskUserAssignment.user_id == user_id)
+        task_ids_by_group = (
+            db.session.query(TaskGroup.task_id)
+            .join(UserGroup, UserGroup.group_id == TaskGroup.group_id)
+            .filter(UserGroup.user_id == user_id)
+        )
+        query = query.filter(
+            or_(
+                Task.id.in_(task_ids_by_assignment),
+                Task.id.in_(task_ids_by_group)
+            )
         )
 
     if priority:
@@ -123,18 +161,28 @@ def filter_tasks():
 @jwt_required()
 def calendar():
     user_id = get_jwt_identity()
-    role = get_jwt()["role"]
+    role = Role.query.filter_by(id=get_jwt()["role"]).first()
     tasks = []
 
-    if role == "Сотрудник":
+    if role.name == "Сотрудник":
+        task_ids_by_assignment = db.session.query(TaskUserAssignment.task_id).filter(TaskUserAssignment.user_id == user_id)
+        task_ids_by_group = (
+            db.session.query(TaskGroup.task_id)
+            .join(UserGroup, UserGroup.group_id == TaskGroup.group_id)
+            .filter(UserGroup.user_id == user_id)
+        )
         tasks = (
             Task.query
-            .join(TaskUserAssignment)
-            .filter(TaskUserAssignment.user_id == user_id)
+            .filter(
+                or_(
+                    Task.id.in_(task_ids_by_assignment),
+                    Task.id.in_(task_ids_by_group)
+                )
+            )
             .all()
         )
     else:
-        tasks = Task.query.join(TaskUserAssignment).all()
+        tasks = Task.query.order_by(desc(Task.deadline_at)).all()
 
     events = []
     for task in tasks:
@@ -171,9 +219,19 @@ def update_status(task_id):
     ).first()
 
     if not task_status:
-        return jsonify({"msg": "Task not assigned"}), 404
+        has_group = (
+            TaskGroup.query
+            .join(UserGroup, UserGroup.group_id == TaskGroup.group_id)
+            .filter(TaskGroup.task_id == task_id, UserGroup.user_id == user_id)
+            .first()
+        )
+        if not has_group:
+            return jsonify({"msg": "Task not assigned"}), 404
+        task_status = TaskUserAssignment(task_id=task_id, user_id=user_id, status=data["status"].lower())
+        db.session.add(task_status)
+    else:
+        task_status.status = data["status"].lower()
 
-    task_status.status = data["status"].lower()
     db.session.commit()
 
     return jsonify({"msg": "Status updated"})
@@ -193,15 +251,47 @@ def delete_task(task_id):
 @jwt_required()
 def task_details(task_id):
     user_id = get_jwt_identity()
-    task = Task.query.filter_by(id=task_id).join(Task.assignments.and_(TaskUserAssignment.user_id == user_id), isouter=True).first_or_404()
     role = Role.query.filter_by(id=get_jwt()["role"]).first()
-    assignees = []
-    if(role.name != 'Сотрудник'):
-        assignees = TaskUserAssignment.query.filter_by(task_id=task_id).all()  # Получаем исполнителей задачи
+
+    if role.name == 'Сотрудник':
+        has_assignment = TaskUserAssignment.query.filter_by(task_id=task_id, user_id=user_id).first()
+        has_group = (
+            TaskGroup.query
+            .join(UserGroup, UserGroup.group_id == TaskGroup.group_id)
+            .filter(TaskGroup.task_id == task_id, UserGroup.user_id == user_id)
+            .first()
+        )
+        if not has_assignment and not has_group:
+            return abort(404)
+        task = Task.query.filter_by(id=task_id).first_or_404()
     else:
-        assignees = [TaskUserAssignment.query.filter_by(task_id=task_id, user_id=user_id).first_or_404()]
-    
-    return render_template('tasks/details.html', task=task, assignees=assignees, today=date.today(), user_id=user_id, user_role=role)
+        task = Task.query.filter_by(id=task_id).first_or_404()
+
+    assignees = []
+    is_assigned = False
+    user_assignment = TaskUserAssignment.query.filter_by(task_id=task_id, user_id=user_id).first()
+    if role.name != 'Сотрудник':
+        assignees = TaskUserAssignment.query.filter_by(task_id=task_id).all()
+
+    if user_assignment:
+        is_assigned = True
+    else:
+        has_group = (
+            TaskGroup.query
+            .join(UserGroup, UserGroup.group_id == TaskGroup.group_id)
+            .filter(TaskGroup.task_id == task_id, UserGroup.user_id == user_id)
+            .first()
+        )
+        if has_group:
+            is_assigned = True
+            user_assignment = TaskUserAssignment(task_id=task_id, user_id=user_id, status="не начата")
+            db.session.add(user_assignment)
+            db.session.commit()
+
+    if role.name == 'Сотрудник':
+        assignees = [user_assignment] if user_assignment else []
+
+    return render_template('tasks/details.html', task=task, assignees=assignees, today=date.today(), user_id=user_id, user_role=role, is_assigned=is_assigned, user_assignment=user_assignment)
 
 @tasks_bp.route('/<int:task_id>/report', methods=['GET'])
 @jwt_required()
