@@ -295,8 +295,11 @@ select:focus {
 }
 
 .task-btn {
-  margin: 10px;
   display: grid;
+  text-align: center;
+  align-content: center;
+  max-height: fit-content;
+  margin: 10px;
   align-items: center;
 }
 
@@ -310,7 +313,11 @@ div.view-details {
 }
 
 .task-dates {
-  margin-left: 10px;
+    display: grid;
+    text-align: center;
+    align-content: center;
+    margin-left: 10px;
+    max-height: fit-content;
 }
 
 .task-dates p {
@@ -322,6 +329,7 @@ span.status {
   padding: 5px 10px;
   border-radius: 5px;
   color: white;
+  margin: 5px 0;
 }
 
 span.status.low {
