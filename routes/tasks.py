@@ -25,40 +25,47 @@ def list_tasks():
     role = Role.query.filter_by(id=get_jwt()["role"]).first()
     users = []
     groups = []
-    if role.name in ("Документовед", "Руководитель"):
+    groups_members = {}
+    tab = request.args.get("tab", "my")
+
+    user_assignments = {
+        a.task_id: a
+        for a in TaskUserAssignment.query.filter_by(user_id=user_id).all()
+    }
+
+    task_ids_by_assignment = db.session.query(TaskUserAssignment.task_id).filter(TaskUserAssignment.user_id == user_id).all()
+    task_ids_by_group = (
+        db.session.query(TaskGroup.task_id)
+        .join(UserGroup, UserGroup.group_id == TaskGroup.group_id)
+        .filter(UserGroup.user_id == user_id)
+        .all()
+    )
+    assigned_task_ids = {t[0] for t in task_ids_by_assignment} | {t[0] for t in task_ids_by_group}
+    my_task_ids = list(assigned_task_ids)
+
+    if role.name in ("Документовед", "Руководитель") and tab == "all":
         tasks = Task.query.order_by(asc(Task.deadline_at)).all()
         users = User.query.all()
         groups = Group.query.all()
-
-        task_ids_by_assignment = db.session.query(TaskUserAssignment.task_id).filter(TaskUserAssignment.user_id == user_id).all()
-        task_ids_by_group = (
-            db.session.query(TaskGroup.task_id)
-            .join(UserGroup, UserGroup.group_id == TaskGroup.group_id)
-            .filter(UserGroup.user_id == user_id)
-            .all()
-        )
-        assigned_task_ids = {t[0] for t in task_ids_by_assignment} | {t[0] for t in task_ids_by_group}
+        for group in groups:
+            members = (
+                db.session.query(User)
+                .join(UserGroup, UserGroup.user_id == User.id)
+                .filter(UserGroup.group_id == group.id)
+                .all()
+            )
+            groups_members[group.id] = [{"id": m.id, "name": m.name} for m in members]
     else:
-        task_ids_by_assignment = db.session.query(TaskUserAssignment.task_id).filter(TaskUserAssignment.user_id == user_id)
-        task_ids_by_group = (
-            db.session.query(TaskGroup.task_id)
-            .join(UserGroup, UserGroup.group_id == TaskGroup.group_id)
-            .filter(UserGroup.user_id == user_id)
-        )
         tasks = (
             Task.query
-            .filter(
-                or_(
-                    Task.id.in_(task_ids_by_assignment),
-                    Task.id.in_(task_ids_by_group)
-                )
-            )
+            .filter(Task.id.in_(my_task_ids))
             .order_by(asc(Task.deadline_at))
             .all()
         )
-        assigned_task_ids = {t.id for t in tasks}
 
-    return render_template("tasks/list.html", tasks=tasks, role=role, users=users, groups=groups, assigned_task_ids=assigned_task_ids, user_id=user_id, today=date.today())
+    tasks = sorted(tasks, key=lambda t: 1 if (user_assignments.get(t.id) and user_assignments[t.id].status == 'завершена') else 0)
+
+    return render_template("tasks/list.html", tasks=tasks, role=role, users=users, groups=groups, groups_members=groups_members, user_assignments=user_assignments, assigned_task_ids=assigned_task_ids, user_id=user_id, today=date.today(), tab=tab)
 
 @tasks_bp.route("/", methods=["POST"])
 @jwt_required()
@@ -76,9 +83,9 @@ def create_task():
         try:
             assignees = request.form.getlist('assignees')
         except (ValueError):
-            assignees = [user_id]
-        group_ids = request.form.getlist('groups')
-        is_personal = role.name != 'Руководитель' or (len(assignees) == 0 and len(group_ids) == 0)
+            assignees = []
+        group_id = request.form.get('group')
+        is_personal = role.name != 'Руководитель' or (len(assignees) == 0 and not group_id)
 
         new_task = Task(
             title=title,
@@ -98,7 +105,7 @@ def create_task():
             task_assignment = TaskUserAssignment(task_id=new_task.id, user_id=assignee_id)
             db.session.add(task_assignment)
 
-        for group_id in group_ids:
+        if group_id:
             task_group = TaskGroup(task_id=new_task.id, group_id=int(group_id))
             db.session.add(task_group)
 
@@ -163,33 +170,36 @@ def calendar():
     user_id = get_jwt_identity()
     role = Role.query.filter_by(id=get_jwt()["role"]).first()
     tasks = []
+    tab = request.args.get("tab", "my")
 
-    if role.name == "Сотрудник":
-        task_ids_by_assignment = db.session.query(TaskUserAssignment.task_id).filter(TaskUserAssignment.user_id == user_id)
-        task_ids_by_group = (
-            db.session.query(TaskGroup.task_id)
-            .join(UserGroup, UserGroup.group_id == TaskGroup.group_id)
-            .filter(UserGroup.user_id == user_id)
-        )
+    user_assignments = {
+        a.task_id: a
+        for a in TaskUserAssignment.query.filter_by(user_id=user_id).all()
+    }
+
+    task_ids_by_assignment = [r[0] for r in db.session.query(TaskUserAssignment.task_id).filter(TaskUserAssignment.user_id == user_id).all()]
+    task_ids_by_group = [r[0] for r in (
+        db.session.query(TaskGroup.task_id)
+        .join(UserGroup, UserGroup.group_id == TaskGroup.group_id)
+        .filter(UserGroup.user_id == user_id)
+        .all()
+    )]
+
+    if role.name in ("Документовед", "Руководитель") and tab == "all":
+        tasks = Task.query.order_by(desc(Task.deadline_at)).all()
+    else:
         tasks = (
             Task.query
-            .filter(
-                or_(
-                    Task.id.in_(task_ids_by_assignment),
-                    Task.id.in_(task_ids_by_group)
-                )
-            )
+            .filter(Task.id.in_(task_ids_by_assignment + task_ids_by_group))
+            .order_by(desc(Task.deadline_at))
             .all()
         )
-    else:
-        tasks = Task.query.order_by(desc(Task.deadline_at)).all()
 
     events = []
     today = date.today()
     for task in tasks:
-        status = None
-        if len(task.assignments) > 0:
-            status = task.assignments[0].status
+        assignment = user_assignments.get(task.id)
+        status = assignment.status if assignment else None
         is_overdue = status != 'завершена' and task.deadline_at < today
         color = None
         if is_overdue:
@@ -212,36 +222,29 @@ def calendar():
             'url': url_for('tasks.task_details', task_id=task.id),
             'status': status
         })
-    return render_template("tasks/calendar.html", tasks=events)
+    tasks_by_deadline = {}
+    today = date.today()
+    for task in tasks:
+        deadline_str = task.deadline_at.strftime('%Y-%m-%d')
+        if deadline_str not in tasks_by_deadline:
+            tasks_by_deadline[deadline_str] = []
+        assignment = user_assignments.get(task.id)
+        status = assignment.status if assignment else None
+        tasks_by_deadline[deadline_str].append({
+            'id': task.id,
+            'title': task.title,
+            'status': status,
+            'priority': task.priority,
+            'is_overdue': status != 'завершена' and task.deadline_at < today
+        })
 
-@tasks_bp.route("/<int:task_id>/status", methods=["PATCH"])
-@jwt_required()
-def update_status(task_id):
-    user_id = get_jwt_identity()
-    data = request.json
+    days_all_completed = {}
+    days_has_unassigned = {}
+    for day, day_tasks in tasks_by_deadline.items():
+        days_all_completed[day] = all(t['status'] == 'завершена' for t in day_tasks)
+        days_has_unassigned[day] = any(t['status'] is None for t in day_tasks)
 
-    task_status = TaskUserAssignment.query.filter_by(
-        task_id=task_id,
-        user_id=user_id
-    ).first()
-
-    if not task_status:
-        has_group = (
-            TaskGroup.query
-            .join(UserGroup, UserGroup.group_id == TaskGroup.group_id)
-            .filter(TaskGroup.task_id == task_id, UserGroup.user_id == user_id)
-            .first()
-        )
-        if not has_group:
-            return jsonify({"msg": "Task not assigned"}), 404
-        task_status = TaskUserAssignment(task_id=task_id, user_id=user_id, status=data["status"].lower())
-        db.session.add(task_status)
-    else:
-        task_status.status = data["status"].lower()
-
-    db.session.commit()
-
-    return jsonify({"msg": "Status updated"})
+    return render_template("tasks/calendar.html", tasks=events, tasks_by_deadline=tasks_by_deadline, days_all_completed=days_all_completed, days_has_unassigned=days_has_unassigned, tab=tab, role=role)
 
 @tasks_bp.route("/<int:task_id>", methods=["DELETE"])
 @jwt_required()
@@ -255,6 +258,7 @@ def delete_task(task_id):
     return jsonify({"msg": "Task deleted"})
 
 @tasks_bp.route('/get/<int:task_id>', methods=['GET'])
+@tasks_bp.route('/<int:task_id>', methods=['GET'])
 @jwt_required()
 def task_details(task_id):
     user_id = get_jwt_identity()

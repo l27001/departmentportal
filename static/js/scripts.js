@@ -24,11 +24,12 @@ window.onclick = function(event) {
 }
 
 function updateTaskStatus(el, id) {
-    fetch(`/tasks/${id}/status`, {
+    fetch(`/api/tasks/${id}/status`, {
         method: "PATCH",
         headers: {
             "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({ status: el.value }),
     })
     .then(function(response){

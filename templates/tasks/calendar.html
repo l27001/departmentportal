@@ -1,22 +1,100 @@
 {% extends 'base.html' %}
 {% block extracss %}
   <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js'></script>
-  <script src=" https://cdn.jsdelivr.net/npm/@fullcalendar/interaction@6.1.19/index.global.min.js "></script>
-  <script src=" https://cdn.jsdelivr.net/npm/@fullcalendar/list@6.1.19/index.global.min.js "></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/interaction@6.1.19/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/list@6.1.19/index.global.min.js"></script>
   <script>
-
       document.addEventListener('DOMContentLoaded', function() {
         var calendarEl = document.getElementById('calendar');
+        var tasksByDeadline = {{ tasks_by_deadline | tojson }};
+        var daysAllCompleted = {{ days_all_completed | tojson }};
+        var daysHasUnassigned = {{ days_has_unassigned | tojson }};
         var calendar = new FullCalendar.Calendar(calendarEl, {
           initialView: 'dayGridMonth',
-          events: {{tasks | tojson}},
+          events: [],
           selectable: true,
           headerToolbar: {
             left: 'prev,next today',
             center: 'title',
             right: ''
-            //right: 'dayGridMonth,listMonth'
           },
+          dayCellDidMount: function(arg) {
+            var d = arg.date;
+            var dateStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+            if (tasksByDeadline[dateStr]) {
+              var dayTasks = tasksByDeadline[dateStr];
+              var count = dayTasks.length;
+              var hasOverdue = dayTasks.some(function(t) { return t.is_overdue; });
+              var allDone = daysAllCompleted[dateStr];
+              var hasUnassigned = daysHasUnassigned[dateStr];
+              var badge = document.createElement('div');
+              badge.className = 'task-count-badge';
+              if (allDone) {
+                badge.classList.add('all-completed');
+              }
+              var suffix = 'задач';
+              if (count === 1) suffix = 'задача';
+              else if (count >= 2 && count <= 4) suffix = 'задачи';
+              badge.textContent = count + ' ' + suffix;
+              if (hasOverdue) {
+                badge.style.background = 'linear-gradient(135deg, #c62828, #e53935)';
+              } else if (hasUnassigned) {
+                badge.style.background = 'linear-gradient(135deg, #78909c, #90a4ae)';
+              } else if (allDone) {
+                badge.style.background = 'linear-gradient(135deg, #2e7d32, #43a047)';
+              } else if (count >= 3) {
+                badge.style.background = 'linear-gradient(135deg, #ef6c00, #fb8c00)';
+              } else {
+                badge.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+              }
+              var frame = arg.el.querySelector('.fc-daygrid-day-frame');
+              if (frame) {
+                frame.appendChild(badge);
+              }
+            }
+          },
+          dateClick: function(info) {
+            var dateStr = info.dateStr;
+            var dayTasks = tasksByDeadline[dateStr];
+            if (dayTasks && dayTasks.length > 0) {
+              var modal = document.getElementById('dayTasksModal');
+              var listEl = document.getElementById('dayTasksList');
+              var titleEl = document.getElementById('dayTasksTitle');
+              var formattedDate = info.date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+              titleEl.textContent = 'Задачи на ' + formattedDate;
+              listEl.innerHTML = '';
+              dayTasks.sort(function(a, b) {
+                if (a.status === 'завершена' && b.status !== 'завершена') return 1;
+                if (a.status !== 'завершена' && b.status === 'завершена') return -1;
+                return 0;
+              });
+              dayTasks.forEach(function(task) {
+                var item = document.createElement('div');
+                item.className = 'day-task-item';
+                var statusClass;
+                var statusText;
+                if (!task.status) {
+                  statusText = 'Не назначена';
+                  statusClass = 'unassigned';
+                } else {
+                  statusText = task.status.charAt(0).toUpperCase() + task.status.slice(1);
+                  if (task.is_overdue) {
+                    statusClass = 'overdue';
+                  } else if (task.status === 'завершена') {
+                    statusClass = 'completed';
+                  } else {
+                    statusClass = 'pending';
+                  }
+                }
+                item.innerHTML = '<a href="/tasks/' + task.id + '" class="day-task-link">' +
+                  '<span class="day-task-title">' + task.title + '</span>' +
+                  '<span class="day-task-status ' + statusClass + '">' + statusText + '</span>' +
+                  '</a>';
+                listEl.appendChild(item);
+              });
+              modal.style.display = 'block';
+            }
+          }
         });
         calendar.render();
         calendar.setOption('locale', 'ru');
@@ -29,20 +107,37 @@
           })
       });
 
+      function closeDayTasksModal() {
+        document.getElementById('dayTasksModal').style.display = 'none';
+      }
+
+      window.onclick = function(event) {
+        var modal = document.getElementById('dayTasksModal');
+        if (event.target == modal) {
+          modal.style.display = 'none';
+        }
+      }
     </script>
-  <style>
-    /* Настройки для календаря */
-    #calendar {
-      max-width: 900px;
-      margin: 0 auto;
-    }
-  </style>
   {% endblock %}
 
   {% block content %}
   <div class="container">
     <h2>Календарь задач</h2>
+    {% if role.name in ('Руководитель', 'Документовед') %}
+    <div class="task-tabs">
+      <a href="{{ url_for('tasks.calendar', tab='my') }}" class="task-tab {% if tab == 'my' %}active{% endif %}">Мои задачи</a>
+      <a href="{{ url_for('tasks.calendar', tab='all') }}" class="task-tab {% if tab == 'all' %}active{% endif %}">Все задачи</a>
+    </div>
+    {% endif %}
     <div id="calendar"></div>
+  </div>
+
+  <div id="dayTasksModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="closeDayTasksModal()">&times;</span>
+      <h2 id="dayTasksTitle"></h2>
+      <div id="dayTasksList"></div>
+    </div>
   </div>
   {% endblock %}
 

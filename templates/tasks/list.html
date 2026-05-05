@@ -3,6 +3,12 @@
 {% block content %}
 <section id="tasks" class="task-section">
       <h2>{% block title %}Список задач{% endblock %}</h2>
+      {% if role.name in ('Руководитель', 'Документовед') %}
+      <div class="task-tabs">
+        <a href="{{ url_for('tasks.list_tasks', tab='my') }}" class="task-tab {% if tab == 'my' %}active{% endif %}">Мои задачи</a>
+        <a href="{{ url_for('tasks.list_tasks', tab='all') }}" class="task-tab {% if tab == 'all' %}active{% endif %}">Все задачи</a>
+      </div>
+      {% endif %}
       <div class="header-btns">
         {% if role.name == 'Руководитель' %}
         <button class="add-task-btn" onclick="openModal('addTask')">Добавить задачу</button>
@@ -18,10 +24,10 @@
             {% if task.id in assigned_task_ids %}
             <div class="task-btn">
               <select autocomplete="off" onchange="updateTaskStatus(this, {{task.id}})">
-                {% if task.assignments |length > 0 %}
-                <option {% if task.assignments[0].status == 'не начата' %}selected{% endif %}>Не начата</option>
-                <option {% if task.assignments[0].status == 'в работе' %}selected{% endif %}>В работе</option>
-                <option {% if task.assignments[0].status == 'завершена' %}selected{% endif %}>Завершена</option>
+                {% if user_assignments.get(task.id) %}
+                <option {% if user_assignments.get(task.id).status == 'не начата' %}selected{% endif %}>Не начата</option>
+                <option {% if user_assignments.get(task.id).status == 'в работе' %}selected{% endif %}>В работе</option>
+                <option {% if user_assignments.get(task.id).status == 'завершена' %}selected{% endif %}>Завершена</option>
                 {% else %}
                 <option selected>Не начата</option>
                 <option>В работе</option>
@@ -38,7 +44,7 @@
                 {% else %}
                     <span class="status high">Высокий приоритет</span>
                 {% endif %}
-                {% if task.deadline_at < today and (task.id in assigned_task_ids and task.assignments[0].status != 'завершена') %}
+                {% if task.deadline_at < today and (task.id in assigned_task_ids and user_assignments.get(task.id) and user_assignments.get(task.id).status != 'завершена') %}
                   <span class="status high">Дедлайн просрочен</span>
                 {% endif %}
             </div>
@@ -87,7 +93,7 @@
 
           <div class="input-group">
             <label for="taskStartAt">Дата начала:</label>
-            <input type="date" id="taskStartAt" name="starts_at" required>
+            <input type="date" id="taskStartAt" name="starts_at" required value="{{ today.isoformat() }}">
           </div>
 
           <div class="input-group">
@@ -97,20 +103,18 @@
 
           {% if role.name == 'Руководитель' %}
             <div class="input-group">
-              <label for="assignees">Исполнители:</label>
-              <select id="assignees" name="assignees" multiple>
-              {% for user in users %}
-                  <option value="{{ user.id }}">{{ user.name }}</option>
+              <label for="group">Группа исполнителей:</label>
+              <select id="group" name="group" onchange="loadGroupMembers()">
+                <option value="">— Выберите группу —</option>
+              {% for group in groups %}
+                  <option value="{{ group.id }}">{{ group.name }}</option>
               {% endfor %}
               </select>
             </div>
-            <div class="input-group">
-              <label for="groups">Группы исполнителей:</label>
-              <select id="groups" name="groups" multiple>
-              {% for group in groups %}
-                  <option selected value="{{ group.id }}">{{ group.name }}</option>
-              {% endfor %}
-              </select>
+            <div class="input-group" id="assigneesGroup" style="display:none;">
+              <label>Исполнители:</label>
+              <div id="assigneesCheckboxes" class="checkbox-group">
+              </div>
             </div>
             <div class="input-group">
               <label>
@@ -125,5 +129,31 @@
         </form>
       </div>
     </div>
+
+<script>
+  var groupsMembers = {{ groups_members | tojson }};
+
+  function loadGroupMembers() {
+    var groupSelect = document.getElementById('group');
+    var assigneesGroup = document.getElementById('assigneesGroup');
+    var assigneesCheckboxes = document.getElementById('assigneesCheckboxes');
+    var groupId = groupSelect.value;
+
+    assigneesCheckboxes.innerHTML = '';
+
+    if (groupId && groupsMembers[groupId]) {
+      var members = groupsMembers[groupId];
+      members.forEach(function(member) {
+        var label = document.createElement('label');
+        label.className = 'checkbox-label';
+        label.innerHTML = '<input type="checkbox" name="assignees" value="' + member.id + '" checked> ' + member.name;
+        assigneesCheckboxes.appendChild(label);
+      });
+      assigneesGroup.style.display = 'block';
+    } else {
+      assigneesGroup.style.display = 'none';
+    }
+  }
+</script>
 
 {% endblock %}
