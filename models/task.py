@@ -47,6 +47,7 @@ class Task(db.Model):
             "starts_at": self.starts_at.isoformat(),
             "deadline_at": self.deadline_at.isoformat(),
             "is_personal": self.is_personal,
+            "no_review": self.no_review,
             "creator_id": self.creator_id
         }
     

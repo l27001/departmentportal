@@ -23,17 +23,28 @@
                 {% if user_assignment and user_assignment.status %}
                 <option {% if user_assignment.status == 'не начата' %}selected{% endif %}>Не начата</option>
                 <option {% if user_assignment.status == 'в работе' %}selected{% endif %}>В работе</option>
+                {% if task.no_review %}
                 <option {% if user_assignment.status == 'завершена' %}selected{% endif %}>Завершена</option>
+                {% else %}
+                <option {% if user_assignment.status == 'на проверке' %}selected{% endif %}>На проверке</option>
+                {% if user_assignment.approved %}
+                <option selected>Завершена</option>
+                {% endif %}
+                {% endif %}
                 {% else %}
                 <option selected>Не начата</option>
                 <option>В работе</option>
+                {% if task.no_review %}
                 <option>Завершена</option>
+                {% else %}
+                <option>На проверке</option>
+                {% endif %}
                 {% endif %}
             </select>
         </p>
     {% endif %}
     <p><strong>Приоритет:</strong>
-        {% if task.deadline_at < today and (is_assigned and task.assignments[0].status != 'завершена') %}
+        {% if task.deadline_at < today and (is_assigned and user_assignment.status not in ('завершена', 'на проверке')) %}
             <span class="status high">Дедлайн просрочен</span>
         {% endif %}
         {% if task.priority == 'low' %}
@@ -47,7 +58,7 @@
     <p><strong>Дата начала:</strong> {{ task.starts_at.strftime('%d.%m.%Y') }}</p>
     <p><strong>Дата выполнения:</strong> {{ task.deadline_at.strftime('%d.%m.%Y') }}</p>
 
-    {% if not task.is_personal and user_role.name == 'Руководитель' %}
+    {% if not task.is_personal and user_role.name in ('Руководитель', 'Документовед') %}
     <h3>Исполнители:</h3>
     <div class="assignee-list">
       {% for assignment in assignees %}
@@ -56,8 +67,22 @@
           <div class="assignee-status {{ assignment.status.replace(' ', '-') }}">
             {{ assignment.status | capitalize }}
           </div>
+          {% if assignment.status == 'на проверке' %}
+          <div class="review-actions">
+            <button class="btn-approve" onclick="reviewAssignment({{task.id}}, {{assignment.user_id}}, true)">Принять</button>
+            <button class="btn-reject" onclick="reviewAssignment({{task.id}}, {{assignment.user_id}}, false)">На доработку</button>
+          </div>
+          {% endif %}
           {% if assignment.completed_at %}
-            <div class="assignee-date">Завершено: {{ assignment.completed_at.strftime('%d.%m.%Y') }}</div>
+            <div class="assignee-date">
+              {% if assignment.status == 'на проверке' %}
+                Отправлено на проверку: {{ assignment.completed_at.strftime('%d.%m.%Y') }}
+              {% elif assignment.approved %}
+                Завершено: {{ assignment.completed_at.strftime('%d.%m.%Y') }}
+              {% else %}
+                Завершено: {{ assignment.completed_at.strftime('%d.%m.%Y') }}
+              {% endif %}
+            </div>
           {% endif %}
         </div>
       {% else %}
@@ -97,6 +122,20 @@
       };
       document.getElementById('closeBtn').onclick = backAction;
       document.getElementById('backBtn').onclick = function(e) { e.preventDefault(); backAction(); };
+
+      function reviewAssignment(taskId, assigneeId, approved) {
+        fetch(`/api/tasks/${taskId}/assignees/${assigneeId}/approve`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ approved: approved }),
+        })
+        .then(function(response) {
+          if (response.ok) {
+            window.location.reload();
+          }
+        });
+      }
     </script>
   </section>
 {% endblock %}

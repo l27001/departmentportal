@@ -27,11 +27,22 @@
                 {% if user_assignments.get(task.id) %}
                 <option {% if user_assignments.get(task.id).status == 'не начата' %}selected{% endif %}>Не начата</option>
                 <option {% if user_assignments.get(task.id).status == 'в работе' %}selected{% endif %}>В работе</option>
+                {% if task.no_review %}
                 <option {% if user_assignments.get(task.id).status == 'завершена' %}selected{% endif %}>Завершена</option>
+                {% else %}
+                <option {% if user_assignments.get(task.id).status == 'на проверке' %}selected{% endif %}>На проверке</option>
+                {% if user_assignments.get(task.id).approved %}
+                <option selected>Завершена</option>
+                {% endif %}
+                {% endif %}
                 {% else %}
                 <option selected>Не начата</option>
                 <option>В работе</option>
+                {% if task.no_review %}
                 <option>Завершена</option>
+                {% else %}
+                <option>На проверке</option>
+                {% endif %}
                 {% endif %}
               </select>
             </div>
@@ -44,7 +55,7 @@
                 {% else %}
                     <span class="status high">Высокий приоритет</span>
                 {% endif %}
-                {% if task.deadline_at < today and (task.id in assigned_task_ids and user_assignments.get(task.id) and user_assignments.get(task.id).status != 'завершена') %}
+                {% if task.deadline_at < today and (task.id in assigned_task_ids and user_assignments.get(task.id) and user_assignments.get(task.id).status not in ('завершена', 'на проверке')) %}
                   <span class="status high">Дедлайн просрочен</span>
                 {% endif %}
             </div>

@@ -64,7 +64,7 @@ def list_tasks():
             .all()
         )
 
-    tasks = sorted(tasks, key=lambda t: 1 if (user_assignments.get(t.id) and user_assignments[t.id].status == 'завершена') else 0)
+    tasks = sorted(tasks, key=lambda t: 1 if (user_assignments.get(t.id) and user_assignments[t.id].status in ('завершена', 'на проверке')) else 0)
 
     total = len(tasks)
     start = (page - 1) * per_page
@@ -212,7 +212,7 @@ def calendar():
     for task in tasks:
         assignment = user_assignments.get(task.id)
         status = assignment.status if assignment else None
-        is_overdue = status != 'завершена' and task.deadline_at < today
+        is_overdue = status not in ('завершена', 'на проверке') and task.deadline_at < today
         color = None
         if is_overdue:
             color = 'darkred'
@@ -253,7 +253,7 @@ def calendar():
     days_all_completed = {}
     days_has_unassigned = {}
     for day, day_tasks in tasks_by_deadline.items():
-        days_all_completed[day] = all(t['status'] == 'завершена' for t in day_tasks)
+        days_all_completed[day] = all(t['status'] in ('завершена', 'на проверке') for t in day_tasks)
         days_has_unassigned[day] = any(t['status'] is None for t in day_tasks)
 
     return render_template("tasks/calendar.html", tasks=events, tasks_by_deadline=tasks_by_deadline, days_all_completed=days_all_completed, days_has_unassigned=days_has_unassigned, tab=tab, role=role)

@@ -68,8 +68,10 @@
               titleEl.textContent = 'Задачи на ' + formattedDate;
               listEl.innerHTML = '';
               dayTasks.sort(function(a, b) {
-                if (a.status === 'завершена' && b.status !== 'завершена') return 1;
-                if (a.status !== 'завершена' && b.status === 'завершена') return -1;
+                var aDone = (a.status === 'завершена' || a.status === 'на проверке');
+                var bDone = (b.status === 'завершена' || b.status === 'на проверке');
+                if (aDone && !bDone) return 1;
+                if (!aDone && bDone) return -1;
                 return 0;
               });
               dayTasks.forEach(function(task) {
@@ -86,6 +88,8 @@
                     statusClass = 'overdue';
                   } else if (task.status === 'завершена') {
                     statusClass = 'completed';
+                  } else if (task.status === 'на проверке') {
+                    statusClass = 'review';
                   } else {
                     statusClass = 'pending';
                   }

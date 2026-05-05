@@ -380,17 +380,25 @@ def update_status(task_id):
     if not task_status:
         return jsonify({"msg": "Task not assigned"}), 404
 
-    task_status.status = new_status
+    task = Task.query.get_or_404(task_id)
 
-    if new_status == "завершена":
+    if new_status == "завершена" and not task.no_review:
+        task_status.status = "на проверке"
         task_status.marked_complete = True
         task_status.completed_at = datetime.utcnow()
+        task_status.approved = False
     else:
-        task_status.marked_complete = False
-        task_status.completed_at = None
+        task_status.status = new_status
+        if new_status == "завершена":
+            task_status.marked_complete = True
+            task_status.completed_at = datetime.utcnow()
+            task_status.approved = True
+        else:
+            task_status.marked_complete = False
+            task_status.completed_at = None
 
     db.session.commit()
-    return jsonify({"msg": "Status updated"})
+    return jsonify({"msg": "Status updated", "status": task_status.status})
 
 
 @api_tasks_bp.route("/<int:task_id>/assignees/<int:assignee_id>/approve", methods=["PATCH"])
@@ -426,7 +434,7 @@ def approve_assignee(task_id, assignee_id):
         description: Доступ запрещён
     """
     role = get_jwt()["role"]
-    if role != 1:
+    if role not in (1, 2):
         return jsonify({"msg": "Доступ запрещён"}), 403
 
     assignment = TaskUserAssignment.query.filter_by(task_id=task_id, user_id=assignee_id).first_or_404()
@@ -439,6 +447,7 @@ def approve_assignee(task_id, assignee_id):
     else:
         assignment.approved = False
         assignment.status = "в работе"
+        assignment.marked_complete = False
 
     db.session.commit()
     return jsonify({"msg": "Status updated"})
