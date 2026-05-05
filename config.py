@@ -9,7 +9,7 @@ class Config:
 
     # JWT
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
-    JWT_TOKEN_LOCATION = ["cookies"]
+    JWT_TOKEN_LOCATION = ["headers", "cookies"]
     JWT_COOKIE_CSRF_PROTECT = False
     JWT_VERIFY_SUB = False
     JWT_REFRESH_COOKIE_PATH = "/token-refresh"

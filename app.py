@@ -1,12 +1,22 @@
-from flask import Flask, redirect, render_template, url_for, jsonify, flash
+from flask import Flask, redirect, render_template, url_for, jsonify, flash, request
 from extensions import db, jwt
 from routes.auth import auth_bp
 from routes.tasks import tasks_bp
 from routes.documents import documents_bp
 from routes.users import users_bp
 from routes.rating import rating_bp
+from routes.api.announcements import announcements_bp
+from routes.api.news import news_bp
+from routes.api.chat import chat_bp
+from routes.api.groups import groups_bp
+from routes.api.attachments import attachments_bp
+from routes.api.task_comments import task_comments_bp
+from routes.api.tasks import api_tasks_bp
+from routes.api.documents import api_documents_bp
+from routes.api.auth import api_auth_bp
 from dotenv import load_dotenv
 from flask_cors import CORS
+from flasgger import Swagger
 from flask_jwt_extended import (
     jwt_required, create_access_token,
     get_jwt_identity, set_access_cookies,
@@ -33,6 +43,205 @@ def create_app():
 
     app.config.from_object(Config)
 
+    swagger_template = {
+        "swagger": "2.0",
+        "info": {
+            "title": "Department Portal API",
+            "version": "0.0.1"
+        },
+        "definitions": {
+            "Announcement": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "integer"},
+                    "title": {"type": "string"},
+                    "text": {"type": "string"},
+                    "deadline": {"type": "string", "format": "date"},
+                    "created_at": {"type": "string"},
+                    "updated_at": {"type": "string"},
+                    "is_deleted": {"type": "boolean"}
+                }
+            },
+            "AnnouncementInput": {
+                "type": "object",
+                "required": ["title", "text", "deadline"],
+                "properties": {
+                    "title": {"type": "string"},
+                    "text": {"type": "string"},
+                    "deadline": {"type": "string", "format": "date", "example": "2026-06-01"}
+                }
+            },
+            "News": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "integer"},
+                    "title": {"type": "string"},
+                    "text": {"type": "string"},
+                    "created_at": {"type": "string"},
+                    "updated_at": {"type": "string"},
+                    "is_pinned": {"type": "boolean"},
+                    "is_deleted": {"type": "boolean"}
+                }
+            },
+            "NewsInput": {
+                "type": "object",
+                "required": ["title", "text"],
+                "properties": {
+                    "title": {"type": "string"},
+                    "text": {"type": "string"},
+                    "is_pinned": {"type": "boolean"}
+                }
+            },
+            "ChatMessage": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "integer"},
+                    "author_id": {"type": "integer"},
+                    "author_name": {"type": "string"},
+                    "text": {"type": "string"},
+                    "created_at": {"type": "string"}
+                }
+            },
+            "Group": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "integer"},
+                    "name": {"type": "string"}
+                }
+            },
+            "User": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "integer"},
+                    "email": {"type": "string"},
+                    "name": {"type": "string"},
+                    "role": {"type": "string"}
+                }
+            },
+            "Attachment": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "integer"},
+                    "task_id": {"type": "integer"},
+                    "file_name": {"type": "string"},
+                    "file_path": {"type": "string"},
+                    "mime_type": {"type": "string"},
+                    "size": {"type": "integer"},
+                    "uploaded_at": {"type": "string"}
+                }
+            },
+            "Document": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "integer"},
+                    "title": {"type": "string"},
+                    "filename": {"type": "string"},
+                    "filepath": {"type": "string"},
+                    "category": {"type": "string"},
+                    "creator_id": {"type": "integer"},
+                    "created_at": {"type": "string"}
+                }
+            },
+            "TaskComment": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "integer"},
+                    "task_id": {"type": "integer"},
+                    "author_id": {"type": "integer"},
+                    "author_name": {"type": "string"},
+                    "recipient_id": {"type": "integer"},
+                    "recipient_name": {"type": "string"},
+                    "text": {"type": "string"},
+                    "created_at": {"type": "string"}
+                }
+            },
+            "Task": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "integer"},
+                    "title": {"type": "string"},
+                    "description": {"type": "string"},
+                    "priority": {"type": "string", "enum": ["low", "medium", "high"]},
+                    "starts_at": {"type": "string", "format": "date"},
+                    "deadline_at": {"type": "string", "format": "date"},
+                    "is_personal": {"type": "boolean"},
+                    "no_review": {"type": "boolean"},
+                    "creator_id": {"type": "integer"},
+                    "created_at": {"type": "string"}
+                }
+            },
+            "TaskInput": {
+                "type": "object",
+                "required": ["title", "starts_at", "deadline_at"],
+                "properties": {
+                    "title": {"type": "string"},
+                    "description": {"type": "string"},
+                    "priority": {"type": "string", "enum": ["low", "medium", "high"], "default": "medium"},
+                    "starts_at": {"type": "string", "format": "date", "example": "2026-06-01"},
+                    "deadline_at": {"type": "string", "format": "date", "example": "2026-07-01"},
+                    "no_review": {"type": "boolean", "default": False},
+                    "assignees": {"type": "array", "items": {"type": "integer"}},
+                    "group_ids": {"type": "array", "items": {"type": "integer"}}
+                }
+            },
+            "TaskDetail": {
+                "allOf": [
+                    {"$ref": "#/definitions/Task"},
+                    {
+                        "type": "object",
+                        "properties": {
+                            "assignments": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "user_id": {"type": "integer"},
+                                        "user_name": {"type": "string"},
+                                        "status": {"type": "string"},
+                                        "marked_complete": {"type": "boolean"},
+                                        "approved": {"type": "boolean"},
+                                        "completed_at": {"type": "string"},
+                                        "approved_at": {"type": "string"}
+                                    }
+                                }
+                            },
+                            "groups": {
+                                "type": "array",
+                                "items": {"$ref": "#/definitions/Group"}
+                            }
+                        }
+                    }
+                ]
+            },
+            "LoginInput": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                    "email": {"type": "string", "example": "user@example.com"},
+                    "password": {"type": "string", "example": "secret123"}
+                }
+            },
+            "LoginResponse": {
+                "type": "object",
+                "properties": {
+                    "access_token": {"type": "string"},
+                    "user": {"$ref": "#/definitions/User"}
+                }
+            }
+        },
+        "securityDefinitions": {
+            "BearerAuth": {
+                "type": "apiKey",
+                "in": "header",
+                "name": "Authorization",
+                "description": "Format: Bearer {token}"
+            }
+        },
+        "security": [{"BearerAuth": []}]
+    }
+
+    Swagger(app, template=swagger_template)
+
     db.init_app(app)
     jwt.init_app(app)
 
@@ -43,6 +252,16 @@ def create_app():
     app.register_blueprint(documents_bp)
     app.register_blueprint(users_bp)
     app.register_blueprint(rating_bp)
+
+    app.register_blueprint(announcements_bp)
+    app.register_blueprint(news_bp)
+    app.register_blueprint(chat_bp)
+    app.register_blueprint(groups_bp)
+    app.register_blueprint(attachments_bp)
+    app.register_blueprint(task_comments_bp)
+    app.register_blueprint(api_tasks_bp)
+    app.register_blueprint(api_documents_bp)
+    app.register_blueprint(api_auth_bp)
 
     with app.app_context():
         db.create_all()
@@ -67,16 +286,22 @@ def create_app():
 
     @jwt.unauthorized_loader
     def missing_token_callback(reason):
+        if request.path.startswith("/api/"):
+            return jsonify({"msg": "Требуется авторизация"}), 401
         flash("Требуется авторизация", "warning")
         return redirect(url_for("auth.login"))
 
     @jwt.invalid_token_loader
     def invalid_token_callback(reason):
+        if request.path.startswith("/api/"):
+            return jsonify({"msg": "Недействительный токен"}), 401
         flash("Требуется авторизация", "warning")
         return redirect(url_for("auth.login"))
 
     @jwt.expired_token_loader
     def expired_token_callback(jwt_header, jwt_payload):
+        if request.path.startswith("/api/"):
+            return jsonify({"msg": "Токен истёк"}), 401
         flash("Требуется авторизация", "warning")
         return redirect(url_for("auth.login"))
 

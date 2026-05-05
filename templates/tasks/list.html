@@ -108,13 +108,13 @@
               <label for="groups">Группы исполнителей:</label>
               <select id="groups" name="groups" multiple>
               {% for group in groups %}
-                  <option value="{{ group.id }}">{{ group.name }}</option>
+                  <option selected value="{{ group.id }}">{{ group.name }}</option>
               {% endfor %}
               </select>
             </div>
             <div class="input-group">
               <label>
-                <input type="checkbox" name="no_review" style="width:auto;"> Без согласования
+                <input type="checkbox" name="no_review" style="width:auto;" checked> Без проверки
               </label>
             </div>
           {% endif %}

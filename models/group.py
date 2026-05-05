@@ -28,6 +28,8 @@ class UserGroup(db.Model):
         primary_key=True,
     )
 
+    user = db.relationship("User")
+
 
 class TaskGroup(db.Model):
     __tablename__ = "task_groups"
