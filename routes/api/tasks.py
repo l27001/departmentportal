@@ -120,6 +120,9 @@ def create_task():
     title = data.get("title")
     description = data.get("description", "")
     priority = data.get("priority", "medium")
+    allowed_priorities = ["low", "medium", "high"]
+    if priority not in allowed_priorities:
+        return jsonify({"msg": f"Недопустимый приоритет. Разрешены: {', '.join(allowed_priorities)}"}), 400
     starts_at = data.get("starts_at")
     deadline_at = data.get("deadline_at")
     no_review = data.get("no_review", False)
@@ -276,6 +279,9 @@ def update_task(task_id):
     if "description" in data:
         task.description = data["description"]
     if "priority" in data:
+        allowed_priorities = ["low", "medium", "high"]
+        if data["priority"] not in allowed_priorities:
+            return jsonify({"msg": f"Недопустимый приоритет. Разрешены: {', '.join(allowed_priorities)}"}), 400
         task.priority = data["priority"]
     if "starts_at" in data:
         task.starts_at = date.fromisoformat(data["starts_at"])
