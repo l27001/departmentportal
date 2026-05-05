@@ -108,7 +108,8 @@ def create_task():
         db.session.commit()
 
         flash('Задача успешно создана!', 'success')
-        return redirect(url_for('tasks.list_tasks'))
+        tab = request.args.get('tab', 'my')
+        return redirect(url_for('tasks.list_tasks', tab=tab))
 
 @tasks_bp.route("/filter", methods=["GET"])
 @jwt_required()
