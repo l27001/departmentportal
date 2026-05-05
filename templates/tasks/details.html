@@ -2,6 +2,9 @@
 
 {% block content %}
   <section class="task-section">
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+      <span style="font-size: 28px; font-weight: bold; cursor: pointer;" onclick="history.back()">&times;</span>
+    </div>
     <h2>{% block title %}Детали задачи{% endblock %}: {{ task.title }}</h2>
     <p><strong>Описание:</strong> {{ task.description }}</p>
     {% if is_assigned %}
@@ -49,8 +52,7 @@
     {% endif %}
 
     <div class="view-details">
-      <a href="{{ url_for('tasks.list_tasks') }}" class="view-details-btn">Назад к задачам</a>
-      <a href="{{ url_for('tasks.calendar') }}" class="view-details-btn">Назад к календарю</a>
+      <a href="#" class="view-details-btn" onclick="history.back(); return false;">Назад</a>
       {% if user_role.name == 'Руководитель' %}
         <a href="{{ url_for('tasks.generate_task_report', task_id=task.id) }}" class="view-details-btn">Сгенерировать отчёт</a>
       {% endif %}
