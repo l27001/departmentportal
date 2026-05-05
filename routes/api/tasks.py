@@ -349,6 +349,12 @@ def update_status(task_id):
     user_id = get_jwt_identity()
     data = request.json
 
+    allowed_statuses = ["не начата", "в работе", "завершена"]
+    new_status = data.get("status", "").strip().lower()
+
+    if new_status not in allowed_statuses:
+        return jsonify({"msg": f"Недопустимый статус. Разрешены: {', '.join(allowed_statuses)}"}), 400
+
     task_status = TaskUserAssignment.query.filter_by(task_id=task_id, user_id=user_id).first()
 
     if not task_status:
@@ -360,10 +366,10 @@ def update_status(task_id):
         )
         if not has_group:
             return jsonify({"msg": "Task not assigned"}), 404
-        task_status = TaskUserAssignment(task_id=task_id, user_id=user_id, status=data["status"].lower())
+        task_status = TaskUserAssignment(task_id=task_id, user_id=user_id, status=new_status)
         db.session.add(task_status)
     else:
-        task_status.status = data["status"].lower()
+        task_status.status = new_status
 
     db.session.commit()
     return jsonify({"msg": "Status updated"})
