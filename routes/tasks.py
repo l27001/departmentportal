@@ -27,6 +27,8 @@ def list_tasks():
     groups = []
     groups_members = {}
     tab = request.args.get("tab", "my")
+    page = request.args.get("page", 1, type=int)
+    per_page = 10
 
     user_assignments = {
         a.task_id: a
@@ -65,7 +67,12 @@ def list_tasks():
 
     tasks = sorted(tasks, key=lambda t: 1 if (user_assignments.get(t.id) and user_assignments[t.id].status == 'завершена') else 0)
 
-    return render_template("tasks/list.html", tasks=tasks, role=role, users=users, groups=groups, groups_members=groups_members, user_assignments=user_assignments, assigned_task_ids=assigned_task_ids, user_id=user_id, today=date.today(), tab=tab)
+    total = len(tasks)
+    start = (page - 1) * per_page
+    end = start + per_page
+    paginated_tasks = tasks[start:end]
+
+    return render_template("tasks/list.html", tasks=paginated_tasks, role=role, users=users, groups=groups, groups_members=groups_members, user_assignments=user_assignments, assigned_task_ids=assigned_task_ids, user_id=user_id, today=date.today(), tab=tab, page=page, total=total, per_page=per_page)
 
 @tasks_bp.route("/", methods=["POST"])
 @jwt_required()

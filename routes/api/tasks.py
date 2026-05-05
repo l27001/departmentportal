@@ -35,13 +35,35 @@ def list_tasks():
         in: query
         type: string
         format: date
+      - name: page
+        in: query
+        type: integer
+        default: 1
+      - name: per_page
+        in: query
+        type: integer
+        default: 10
     responses:
       200:
-        description: Список задач
+        description: Список задач с пагинацией
         schema:
-          type: array
-          items:
-            $ref: '#/definitions/Task'
+          type: object
+          properties:
+            tasks:
+              type: array
+              items:
+                $ref: '#/definitions/Task'
+            pagination:
+              type: object
+              properties:
+                page:
+                  type: integer
+                per_page:
+                  type: integer
+                total:
+                  type: integer
+                total_pages:
+                  type: integer
     """
     user_id = get_jwt_identity()
     role = get_jwt()["role"]
@@ -54,12 +76,11 @@ def list_tasks():
     query = Task.query
 
     if role == 3:
-        task_ids_by_assignment = db.session.query(TaskUserAssignment.task_id).filter(TaskUserAssignment.user_id == user_id)
-        task_ids_by_group = (
-            db.session.query(TaskGroup.task_id)
+        task_ids_by_assignment = [r[0] for r in db.session.query(TaskUserAssignment.task_id).filter(TaskUserAssignment.user_id == user_id).all()]
+        task_ids_by_group = [r[0] for r in db.session.query(TaskGroup.task_id)
             .join(UserGroup, UserGroup.group_id == TaskGroup.group_id)
             .filter(UserGroup.user_id == user_id)
-        )
+            .all()]
         query = query.filter(
             or_(
                 Task.id.in_(task_ids_by_assignment),
@@ -85,7 +106,23 @@ def list_tasks():
             )
         ]
 
-    return jsonify([task.to_dict() for task in tasks])
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 10, type=int)
+    total = len(tasks)
+    start = (page - 1) * per_page
+    end = start + per_page
+    paginated_tasks = tasks[start:end]
+    total_pages = (total + per_page - 1) // per_page if per_page > 0 else 1
+
+    return jsonify({
+        "tasks": [task.to_dict() for task in paginated_tasks],
+        "pagination": {
+            "page": page,
+            "per_page": per_page,
+            "total": total,
+            "total_pages": total_pages
+        }
+    })
 
 
 @api_tasks_bp.route("/", methods=["POST"])
