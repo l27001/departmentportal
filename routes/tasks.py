@@ -7,7 +7,7 @@ from flask_jwt_extended import (
     get_jwt
 )
 from datetime import datetime, date
-from sqlalchemy import desc, or_, exists
+from sqlalchemy import desc, or_, exists, asc
 from extensions import db
 from models.task import Task, TaskUserAssignment
 from models.user import User
@@ -26,7 +26,7 @@ def list_tasks():
     users = []
     groups = []
     if role.name in ("Документовед", "Руководитель"):
-        tasks = Task.query.order_by(desc(Task.deadline_at)).all()
+        tasks = Task.query.order_by(asc(Task.deadline_at)).all()
         users = User.query.all()
         groups = Group.query.all()
 
@@ -53,7 +53,7 @@ def list_tasks():
                     Task.id.in_(task_ids_by_group)
                 )
             )
-            .order_by(desc(Task.deadline_at))
+            .order_by(asc(Task.deadline_at))
             .all()
         )
         assigned_task_ids = {t.id for t in tasks}
