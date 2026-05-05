@@ -1,30 +1,127 @@
 {% extends 'base.html' %}
 
+{% block title %}Профиль — {{ user.name }}{% endblock %}
+
 {% block content %}
-  <section class="profile-section">
-      <h1>Профиль пользователя</h1>
-      <div class="profile-info">
-        <p><strong>Имя:</strong> {{ user.name }}</p>
-        <p><strong>Email:</strong> {{ user.email }}</p>
-      </div>
+<section class="profile-page">
+  <div class="profile-header">
+    <div class="profile-avatar">
+      {% if user.avatar_url %}
+        <img src="{{ user.avatar_url }}" alt="{{ user.name }}">
+      {% else %}
+        <div class="avatar-placeholder">{{ user.name | default('?', true) | first | upper }}</div>
+      {% endif %}
+    </div>
+    <div class="profile-header-info">
+      <h1>{{ user.name | default('Пользователь', true) }}</h1>
+      <span class="profile-role-badge role-{{ user.role.name | lower }}">{{ user.role.name }}</span>
+      {% if user.job_title %}
+        <p class="profile-job-title">{{ user.job_title }}</p>
+      {% endif %}
+    </div>
+  </div>
 
-      <h2>Редактирование профиля</h2>
-      <form method="POST" action="{{ url_for('users.update_profile') }}">
-        <div class="input-group">
-          <label for="name">Имя:</label>
-          <input type="text" id="name" name="name" value="{{ user.name }}" required>
+  <div class="profile-grid">
+    <div class="profile-card">
+      <h2><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Контактная информация</h2>
+      <div class="profile-details">
+        <div class="detail-row">
+          <span class="detail-label">Email</span>
+          <span class="detail-value">{{ user.email }}</span>
         </div>
-        <div class="input-group">
-          <label for="email">Email:</label>
-          <input type="email" id="email" name="email" value="{{ user.email }}" required>
+        <div class="detail-row">
+          <span class="detail-label">Телефон</span>
+          <span class="detail-value">{{ user.phone | default('Не указан', true) }}</span>
         </div>
-        <div class="input-group">
-          <button type="submit" class="add-task-btn">Сохранить изменения</button>
-        </div>
-      </form>
-
-      <div class="header-btns">
-        <a href="{{ url_for('auth.logout') }}" class="view-details-btn">Выйти</a>
       </div>
-    </section>
+    </div>
+
+    <div class="profile-card">
+      <h2><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg> Должность и квалификация</h2>
+      <div class="profile-details">
+        <div class="detail-row">
+          <span class="detail-label">Учёная степень</span>
+          <span class="detail-value">{{ user.degree | default('Не указана', true) }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Учёное звание</span>
+          <span class="detail-value">{{ user.academic_title | default('Не указано', true) }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Тип ставки</span>
+          <span class="detail-value">{{ user.rate_type | default('—', true) }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Количество ставок</span>
+          <span class="detail-value">{{ user.rate_count }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="profile-card">
+      <h2><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Аккаунт</h2>
+      <div class="profile-details">
+        <div class="detail-row">
+          <span class="detail-label">Дата регистрации</span>
+          <span class="detail-value">{{ user.created_at.strftime('%d.%m.%Y') if user.created_at else '—' }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Статус</span>
+          <span class="detail-value">
+            {% if user.is_active %}
+              <span class="status-active">Активен</span>
+            {% else %}
+              <span class="status-inactive">Неактивен</span>
+            {% endif %}
+          </span>
+        </div>
+        {% if user.groups %}
+        <div class="detail-row">
+          <span class="detail-label">Группы</span>
+          <span class="detail-value">
+            {% for group in user.groups %}
+              <span class="group-badge">{{ group.name }}</span>
+            {% endfor %}
+          </span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="profile-card profile-edit-card">
+    <h2><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Редактировать профиль</h2>
+    <form method="POST" action="{{ url_for('users.update_profile') }}" class="profile-edit-form">
+      <div class="form-row">
+        <div class="input-group">
+          <label for="name">Имя</label>
+          <input type="text" id="name" name="name" value="{{ user.name | default('', true) }}">
+        </div>
+        <div class="input-group">
+          <label for="job_title">Должность</label>
+          <input type="text" id="job_title" name="job_title" value="{{ user.job_title | default('', true) }}">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="input-group">
+          <label for="phone">Телефон</label>
+          <input type="text" id="phone" name="phone" value="{{ user.phone | default('', true) }}">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="input-group">
+          <label for="degree">Учёная степень</label>
+          <input type="text" id="degree" name="degree" value="{{ user.degree | default('', true) }}">
+        </div>
+        <div class="input-group">
+          <label for="academic_title">Учёное звание</label>
+          <input type="text" id="academic_title" name="academic_title" value="{{ user.academic_title | default('', true) }}">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+      </div>
+    </form>
+  </div>
+</section>
 {% endblock %}

@@ -7,29 +7,28 @@ from decorators.roles import roles_required
 users_bp = Blueprint('users', __name__, url_prefix='/users')
 
 @users_bp.route('/profile', methods=['GET'])
-@jwt_required()  # Требует авторизации через JWT
+@jwt_required()
 def get_profile():
-    user_id = get_jwt_identity()  # Получаем ID текущего пользователя из JWT
-    user = User.query.get_or_404(user_id)  # Получаем пользователя по ID
-
+    user_id = get_jwt_identity()
+    user = User.query.get_or_404(user_id)
     return render_template('user/profile.html', user=user)
 
 @users_bp.route('/profile', methods=['POST'])
-@jwt_required()  # Требует авторизации через JWT
+@jwt_required()
 def update_profile():
-    user_id = get_jwt_identity()  # Получаем ID текущего пользователя из JWT
-    user = User.query.get_or_404(user_id)  # Получаем пользователя по ID
+    user_id = get_jwt_identity()
+    user = User.query.get_or_404(user_id)
 
-    # Получаем данные, которые будут обновлены
     data = request.form
     user.name = data.get('name', user.name)
     user.job_title = data.get('job_title', user.job_title)
+    user.phone = data.get('phone', user.phone)
+    user.degree = data.get('degree', user.degree)
+    user.academic_title = data.get('academic_title', user.academic_title)
 
-    # Сохраняем обновления в базе данных
     db.session.commit()
     flash("Данные успешно сохранены", "success")
 
-    # Возвращаем обновленную информацию о пользователе
     return redirect(url_for('users.get_profile'))
 
 @users_bp.route('/', methods=['GET'])
