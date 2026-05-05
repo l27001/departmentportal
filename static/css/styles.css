@@ -761,3 +761,8 @@ div.card {
     flex: 1;
   }
 }
+
+textarea {
+  min-width: 100%;
+  min-height: 80px;
+}
