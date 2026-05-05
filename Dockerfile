@@ -18,4 +18,8 @@ EXPOSE 5000
 ENV FLASK_APP=app.py
 ENV FLASK_DEBUG=0
 
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["flask", "run", "--host=0.0.0.0", "--port=5000"]
