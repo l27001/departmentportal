@@ -28,5 +28,5 @@ class UserGroup(db.Model):
         primary_key=True,
     )
 
-    user = db.relationship("User")
+    user = db.relationship("User", overlaps="groups,users")
 
