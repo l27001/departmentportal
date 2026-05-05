@@ -1,0 +1,600 @@
+from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
+from datetime import datetime, date
+from sqlalchemy import desc, or_, asc
+from extensions import db
+from models.task import Task, TaskUserAssignment
+from models.user import User
+from models.group import Group, UserGroup, TaskGroup
+
+api_tasks_bp = Blueprint("api_tasks", __name__, url_prefix="/api/tasks")
+
+
+@api_tasks_bp.route("/", methods=["GET"])
+@jwt_required()
+def list_tasks():
+    """Получить список задач текущего пользователя
+    ---
+    tags: [Tasks]
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: priority
+        in: query
+        type: string
+        enum: [low, medium, high]
+      - name: status
+        in: query
+        type: string
+        enum: [не начата, в работе, завершена]
+      - name: date_from
+        in: query
+        type: string
+        format: date
+      - name: date_to
+        in: query
+        type: string
+        format: date
+    responses:
+      200:
+        description: Список задач
+        schema:
+          type: array
+          items:
+            $ref: '#/definitions/Task'
+    """
+    user_id = get_jwt_identity()
+    role = get_jwt()["role"]
+
+    priority = request.args.get("priority")
+    status = request.args.get("status")
+    date_from = request.args.get("date_from")
+    date_to = request.args.get("date_to")
+
+    query = Task.query
+
+    if role == 3:
+        task_ids_by_assignment = db.session.query(TaskUserAssignment.task_id).filter(TaskUserAssignment.user_id == user_id)
+        task_ids_by_group = (
+            db.session.query(TaskGroup.task_id)
+            .join(UserGroup, UserGroup.group_id == TaskGroup.group_id)
+            .filter(UserGroup.user_id == user_id)
+        )
+        query = query.filter(
+            or_(
+                Task.id.in_(task_ids_by_assignment),
+                Task.id.in_(task_ids_by_group)
+            )
+        )
+
+    if priority:
+        query = query.filter(Task.priority == priority)
+    if date_from:
+        query = query.filter(Task.deadline_at >= datetime.fromisoformat(date_from))
+    if date_to:
+        query = query.filter(Task.deadline_at <= datetime.fromisoformat(date_to))
+
+    tasks = query.order_by(asc(Task.deadline_at)).all()
+
+    if status:
+        tasks = [
+            t for t in tasks
+            if any(
+                s.status == status and s.user_id == user_id
+                for s in t.assignments
+            )
+        ]
+
+    return jsonify([task.to_dict() for task in tasks])
+
+
+@api_tasks_bp.route("/", methods=["POST"])
+@jwt_required()
+def create_task():
+    """Создать задачу (только Руководитель)
+    ---
+    tags: [Tasks]
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/TaskInput'
+    responses:
+      201:
+        description: Задача создана
+        schema:
+          $ref: '#/definitions/Task'
+      403:
+        description: Доступ запрещён
+    """
+    role = get_jwt()["role"]
+    if role != 1:
+        return jsonify({"msg": "Доступ запрещён"}), 403
+
+    user_id = get_jwt_identity()
+    data = request.json
+
+    title = data.get("title")
+    description = data.get("description", "")
+    priority = data.get("priority", "medium")
+    starts_at = data.get("starts_at")
+    deadline_at = data.get("deadline_at")
+    no_review = data.get("no_review", False)
+    assignees = data.get("assignees", [])
+    group_ids = data.get("group_ids", [])
+
+    if not title or not starts_at or not deadline_at:
+        return jsonify({"msg": "Заполните обязательные поля"}), 400
+
+    try:
+        starts_at_date = date.fromisoformat(starts_at)
+        deadline_at_date = date.fromisoformat(deadline_at)
+    except ValueError:
+        return jsonify({"msg": "Неверный формат даты"}), 400
+
+    is_personal = len(assignees) == 0 and len(group_ids) == 0
+
+    task = Task(
+        title=title,
+        description=description,
+        priority=priority,
+        starts_at=starts_at_date,
+        deadline_at=deadline_at_date,
+        is_personal=is_personal,
+        no_review=no_review,
+        creator_id=user_id
+    )
+    db.session.add(task)
+    db.session.flush()
+
+    for assignee_id in assignees:
+        assignment = TaskUserAssignment(task_id=task.id, user_id=assignee_id)
+        db.session.add(assignment)
+
+    for group_id in group_ids:
+        task_group = TaskGroup(task_id=task.id, group_id=int(group_id))
+        db.session.add(task_group)
+
+    db.session.commit()
+
+    return jsonify(task.to_dict()), 201
+
+
+@api_tasks_bp.route("/<int:task_id>", methods=["GET"])
+@jwt_required()
+def get_task(task_id):
+    """Получить задачу по ID
+    ---
+    tags: [Tasks]
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: task_id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Задача с исполнителями и группами
+        schema:
+          $ref: '#/definitions/TaskDetail'
+      403:
+        description: Нет доступа к задаче
+      404:
+        description: Не найдено
+    """
+    user_id = get_jwt_identity()
+    role = get_jwt()["role"]
+
+    if role != 1:
+        has_assignment = TaskUserAssignment.query.filter_by(task_id=task_id, user_id=user_id).first()
+        has_group = (
+            TaskGroup.query
+            .join(UserGroup, UserGroup.group_id == TaskGroup.group_id)
+            .filter(TaskGroup.task_id == task_id, UserGroup.user_id == user_id)
+            .first()
+        )
+        if not has_assignment and not has_group:
+            return jsonify({"msg": "Нет доступа к задаче"}), 403
+
+    task = Task.query.get_or_404(task_id)
+    assignments = TaskUserAssignment.query.filter_by(task_id=task_id).all()
+    task_groups = TaskGroup.query.filter_by(task_id=task_id).all()
+    groups = Group.query.filter(Group.id.in_([tg.group_id for tg in task_groups])).all() if task_groups else []
+
+    result = task.to_dict()
+    result["assignments"] = [
+        {
+            "user_id": a.user_id,
+            "user_name": a.user.name if a.user else None,
+            "status": a.status,
+            "marked_complete": a.marked_complete,
+            "approved": a.approved,
+            "completed_at": a.completed_at.isoformat() if a.completed_at else None,
+            "approved_at": a.approved_at.isoformat() if a.approved_at else None,
+        }
+        for a in assignments
+    ]
+    result["groups"] = [g.to_dict() for g in groups]
+    return jsonify(result)
+
+
+@api_tasks_bp.route("/<int:task_id>", methods=["PATCH"])
+@jwt_required()
+def update_task(task_id):
+    """Обновить задачу (только Руководитель)
+    ---
+    tags: [Tasks]
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: task_id
+        in: path
+        type: integer
+        required: true
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            title:
+              type: string
+            description:
+              type: string
+            priority:
+              type: string
+              enum: [low, medium, high]
+            starts_at:
+              type: string
+              format: date
+            deadline_at:
+              type: string
+              format: date
+            no_review:
+              type: boolean
+    responses:
+      200:
+        description: Задача обновлена
+        schema:
+          $ref: '#/definitions/Task'
+      403:
+        description: Доступ запрещён
+    """
+    role = get_jwt()["role"]
+    if role != 1:
+        return jsonify({"msg": "Доступ запрещён"}), 403
+
+    task = Task.query.get_or_404(task_id)
+    data = request.json
+
+    if "title" in data:
+        task.title = data["title"]
+    if "description" in data:
+        task.description = data["description"]
+    if "priority" in data:
+        task.priority = data["priority"]
+    if "starts_at" in data:
+        task.starts_at = date.fromisoformat(data["starts_at"])
+    if "deadline_at" in data:
+        task.deadline_at = date.fromisoformat(data["deadline_at"])
+    if "no_review" in data:
+        task.no_review = data["no_review"]
+
+    db.session.commit()
+    return jsonify(task.to_dict())
+
+
+@api_tasks_bp.route("/<int:task_id>", methods=["DELETE"])
+@jwt_required()
+def delete_task(task_id):
+    """Удалить задачу (только Руководитель)
+    ---
+    tags: [Tasks]
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: task_id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Задача удалена
+      403:
+        description: Доступ запрещён
+    """
+    role = get_jwt()["role"]
+    if role != 1:
+        return jsonify({"msg": "Доступ запрещён"}), 403
+
+    task = Task.query.get_or_404(task_id)
+    db.session.delete(task)
+    db.session.commit()
+    return jsonify({"msg": "Задача удалена"})
+
+
+@api_tasks_bp.route("/<int:task_id>/status", methods=["PATCH"])
+@jwt_required()
+def update_status(task_id):
+    """Обновить статус исполнителя задачи
+    ---
+    tags: [Tasks]
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: task_id
+        in: path
+        type: integer
+        required: true
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required: [status]
+          properties:
+            status:
+              type: string
+              enum: [не начата, в работе, завершена]
+    responses:
+      200:
+        description: Статус обновлён
+      404:
+        description: Задача не назначена
+    """
+    user_id = get_jwt_identity()
+    data = request.json
+
+    task_status = TaskUserAssignment.query.filter_by(task_id=task_id, user_id=user_id).first()
+
+    if not task_status:
+        has_group = (
+            TaskGroup.query
+            .join(UserGroup, UserGroup.group_id == TaskGroup.group_id)
+            .filter(TaskGroup.task_id == task_id, UserGroup.user_id == user_id)
+            .first()
+        )
+        if not has_group:
+            return jsonify({"msg": "Task not assigned"}), 404
+        task_status = TaskUserAssignment(task_id=task_id, user_id=user_id, status=data["status"].lower())
+        db.session.add(task_status)
+    else:
+        task_status.status = data["status"].lower()
+
+    db.session.commit()
+    return jsonify({"msg": "Status updated"})
+
+
+@api_tasks_bp.route("/<int:task_id>/complete", methods=["PATCH"])
+@jwt_required()
+def mark_complete(task_id):
+    """Отметить задачу как выполненную (для сотрудника)
+    ---
+    tags: [Tasks]
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: task_id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Задача отмечена как выполненная
+      404:
+        description: Задача не назначена
+    """
+    user_id = get_jwt_identity()
+
+    task_status = TaskUserAssignment.query.filter_by(task_id=task_id, user_id=user_id).first()
+    if not task_status:
+        has_group = (
+            TaskGroup.query
+            .join(UserGroup, UserGroup.group_id == TaskGroup.group_id)
+            .filter(TaskGroup.task_id == task_id, UserGroup.user_id == user_id)
+            .first()
+        )
+        if not has_group:
+            return jsonify({"msg": "Task not assigned"}), 404
+        task_status = TaskUserAssignment(
+            task_id=task_id,
+            user_id=user_id,
+            status="завершена",
+            marked_complete=True,
+            completed_at=datetime.utcnow()
+        )
+        db.session.add(task_status)
+    else:
+        task_status.status = "завершена"
+        task_status.marked_complete = True
+        task_status.completed_at = datetime.utcnow()
+
+    db.session.commit()
+    return jsonify({"msg": "Task marked as complete"})
+
+
+@api_tasks_bp.route("/<int:task_id>/assignees/<int:assignee_id>/approve", methods=["PATCH"])
+@jwt_required()
+def approve_assignee(task_id, assignee_id):
+    """Подтвердить выполнение задачи исполнителем (только Руководитель)
+    ---
+    tags: [Tasks]
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: task_id
+        in: path
+        type: integer
+        required: true
+      - name: assignee_id
+        in: path
+        type: integer
+        required: true
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            approved:
+              type: boolean
+              default: true
+    responses:
+      200:
+        description: Статус подтверждён
+      403:
+        description: Доступ запрещён
+    """
+    role = get_jwt()["role"]
+    if role != 1:
+        return jsonify({"msg": "Доступ запрещён"}), 403
+
+    assignment = TaskUserAssignment.query.filter_by(task_id=task_id, user_id=assignee_id).first_or_404()
+    data = request.json
+
+    if data.get("approved", True):
+        assignment.approved = True
+        assignment.approved_at = datetime.utcnow()
+        assignment.status = "завершена"
+    else:
+        assignment.approved = False
+        assignment.status = "в работе"
+
+    db.session.commit()
+    return jsonify({"msg": "Status updated"})
+
+
+@api_tasks_bp.route("/<int:task_id>/assignees", methods=["POST"])
+@jwt_required()
+def add_assignees(task_id):
+    """Добавить исполнителей к задаче (только Руководитель)
+    ---
+    tags: [Tasks]
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: task_id
+        in: path
+        type: integer
+        required: true
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required: [user_ids]
+          properties:
+            user_ids:
+              type: array
+              items:
+                type: integer
+    responses:
+      200:
+        description: Исполнители добавлены
+      403:
+        description: Доступ запрещён
+    """
+    role = get_jwt()["role"]
+    if role != 1:
+        return jsonify({"msg": "Доступ запрещён"}), 403
+
+    Task.query.get_or_404(task_id)
+    data = request.json
+    user_ids = data.get("user_ids", [])
+
+    for uid in user_ids:
+        existing = TaskUserAssignment.query.filter_by(task_id=task_id, user_id=uid).first()
+        if not existing:
+            assignment = TaskUserAssignment(task_id=task_id, user_id=uid)
+            db.session.add(assignment)
+
+    db.session.commit()
+    return jsonify({"msg": "Assignees added"})
+
+
+@api_tasks_bp.route("/<int:task_id>/groups", methods=["POST"])
+@jwt_required()
+def add_task_groups(task_id):
+    """Добавить группы к задаче (только Руководитель)
+    ---
+    tags: [Tasks]
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: task_id
+        in: path
+        type: integer
+        required: true
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required: [group_ids]
+          properties:
+            group_ids:
+              type: array
+              items:
+                type: integer
+    responses:
+      200:
+        description: Группы добавлены
+      403:
+        description: Доступ запрещён
+    """
+    role = get_jwt()["role"]
+    if role != 1:
+        return jsonify({"msg": "Доступ запрещён"}), 403
+
+    Task.query.get_or_404(task_id)
+    data = request.json
+    group_ids = data.get("group_ids", [])
+
+    for gid in group_ids:
+        existing = TaskGroup.query.filter_by(task_id=task_id, group_id=gid).first()
+        if not existing:
+            task_group = TaskGroup(task_id=task_id, group_id=int(gid))
+            db.session.add(task_group)
+
+    db.session.commit()
+    return jsonify({"msg": "Groups added"})
+
+
+@api_tasks_bp.route("/<int:task_id>/groups/<int:group_id>", methods=["DELETE"])
+@jwt_required()
+def remove_task_group(task_id, group_id):
+    """Удалить группу из задачи (только Руководитель)
+    ---
+    tags: [Tasks]
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: task_id
+        in: path
+        type: integer
+        required: true
+      - name: group_id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Группа удалена из задачи
+      403:
+        description: Доступ запрещён
+    """
+    role = get_jwt()["role"]
+    if role != 1:
+        return jsonify({"msg": "Доступ запрещён"}), 403
+
+    task_group = TaskGroup.query.filter_by(task_id=task_id, group_id=group_id).first()
+    if not task_group:
+        return jsonify({"msg": "Group not assigned"}), 404
+
+    db.session.delete(task_group)
+    db.session.commit()
+    return jsonify({"msg": "Group removed"})
