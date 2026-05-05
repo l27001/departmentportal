@@ -377,56 +377,15 @@ def update_status(task_id):
     else:
         task_status.status = new_status
 
-    db.session.commit()
-    return jsonify({"msg": "Status updated"})
-
-
-@api_tasks_bp.route("/<int:task_id>/complete", methods=["PATCH"])
-@jwt_required()
-def mark_complete(task_id):
-    """Отметить задачу как выполненную (для сотрудника)
-    ---
-    tags: [Tasks]
-    security:
-      - BearerAuth: []
-    parameters:
-      - name: task_id
-        in: path
-        type: integer
-        required: true
-    responses:
-      200:
-        description: Задача отмечена как выполненная
-      404:
-        description: Задача не назначена
-    """
-    user_id = get_jwt_identity()
-
-    task_status = TaskUserAssignment.query.filter_by(task_id=task_id, user_id=user_id).first()
-    if not task_status:
-        has_group = (
-            TaskGroup.query
-            .join(UserGroup, UserGroup.group_id == TaskGroup.group_id)
-            .filter(TaskGroup.task_id == task_id, UserGroup.user_id == user_id)
-            .first()
-        )
-        if not has_group:
-            return jsonify({"msg": "Task not assigned"}), 404
-        task_status = TaskUserAssignment(
-            task_id=task_id,
-            user_id=user_id,
-            status="завершена",
-            marked_complete=True,
-            completed_at=datetime.utcnow()
-        )
-        db.session.add(task_status)
-    else:
-        task_status.status = "завершена"
+    if new_status == "завершена":
         task_status.marked_complete = True
         task_status.completed_at = datetime.utcnow()
+    else:
+        task_status.marked_complete = False
+        task_status.completed_at = None
 
     db.session.commit()
-    return jsonify({"msg": "Task marked as complete"})
+    return jsonify({"msg": "Status updated"})
 
 
 @api_tasks_bp.route("/<int:task_id>/assignees/<int:assignee_id>/approve", methods=["PATCH"])
