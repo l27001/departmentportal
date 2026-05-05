@@ -49,6 +49,8 @@ def upload_document():
             filename
         )
 
+        os.makedirs(current_app.config["UPLOAD_FOLDER"], exist_ok=True)
+
         file.save(save_path)
 
         document = Document(
