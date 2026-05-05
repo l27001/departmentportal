@@ -7,12 +7,12 @@ from flask_jwt_extended import (
     get_jwt
 )
 from datetime import datetime, date
-from sqlalchemy import desc, or_, exists, asc
+from sqlalchemy import desc, exists, asc
 from extensions import db
 from models.task import Task, TaskUserAssignment
 from models.user import User
 from models.role import Role
-from models.group import Group, UserGroup, TaskGroup
+from models.group import Group, UserGroup
 from decorators.roles import roles_required
 
 tasks_bp = Blueprint("tasks", __name__, url_prefix="/tasks")
@@ -35,15 +35,9 @@ def list_tasks():
         for a in TaskUserAssignment.query.filter_by(user_id=user_id).all()
     }
 
-    task_ids_by_assignment = db.session.query(TaskUserAssignment.task_id).filter(TaskUserAssignment.user_id == user_id).all()
-    task_ids_by_group = (
-        db.session.query(TaskGroup.task_id)
-        .join(UserGroup, UserGroup.group_id == TaskGroup.group_id)
-        .filter(UserGroup.user_id == user_id)
-        .all()
-    )
-    assigned_task_ids = {t[0] for t in task_ids_by_assignment} | {t[0] for t in task_ids_by_group}
-    my_task_ids = list(assigned_task_ids)
+    task_ids_by_assignment = [r[0] for r in db.session.query(TaskUserAssignment.task_id).filter(TaskUserAssignment.user_id == user_id).all()]
+    my_task_ids = task_ids_by_assignment
+    assigned_task_ids = set(my_task_ids)
 
     if role.name in ("Документовед", "Руководитель") and tab == "all":
         tasks = Task.query.order_by(asc(Task.deadline_at)).all()
@@ -91,8 +85,7 @@ def create_task():
             assignees = request.form.getlist('assignees')
         except (ValueError):
             assignees = []
-        group_id = request.form.get('group')
-        is_personal = role.name != 'Руководитель' or (len(assignees) == 0 and not group_id)
+        is_personal = role.name != 'Руководитель' or len(assignees) == 0
 
         new_task = Task(
             title=title,
@@ -112,10 +105,6 @@ def create_task():
             task_assignment = TaskUserAssignment(task_id=new_task.id, user_id=assignee_id)
             db.session.add(task_assignment)
 
-        if group_id:
-            task_group = TaskGroup(task_id=new_task.id, group_id=int(group_id))
-            db.session.add(task_group)
-
         db.session.commit()
 
         flash('Задача успешно создана!', 'success')
@@ -134,19 +123,9 @@ def filter_tasks():
 
     query = Task.query
 
-    if role == "Сотрудник":
-        task_ids_by_assignment = db.session.query(TaskUserAssignment.task_id).filter(TaskUserAssignment.user_id == user_id)
-        task_ids_by_group = (
-            db.session.query(TaskGroup.task_id)
-            .join(UserGroup, UserGroup.group_id == TaskGroup.group_id)
-            .filter(UserGroup.user_id == user_id)
-        )
-        query = query.filter(
-            or_(
-                Task.id.in_(task_ids_by_assignment),
-                Task.id.in_(task_ids_by_group)
-            )
-        )
+    if role == 3:
+        task_ids_by_assignment = [r[0] for r in db.session.query(TaskUserAssignment.task_id).filter(TaskUserAssignment.user_id == user_id).all()]
+        query = query.filter(Task.id.in_(task_ids_by_assignment))
 
     if priority:
         query = query.filter(Task.priority == priority)
@@ -185,19 +164,13 @@ def calendar():
     }
 
     task_ids_by_assignment = [r[0] for r in db.session.query(TaskUserAssignment.task_id).filter(TaskUserAssignment.user_id == user_id).all()]
-    task_ids_by_group = [r[0] for r in (
-        db.session.query(TaskGroup.task_id)
-        .join(UserGroup, UserGroup.group_id == TaskGroup.group_id)
-        .filter(UserGroup.user_id == user_id)
-        .all()
-    )]
 
     if role.name in ("Документовед", "Руководитель") and tab == "all":
         tasks = Task.query.order_by(desc(Task.deadline_at)).all()
     else:
         tasks = (
             Task.query
-            .filter(Task.id.in_(task_ids_by_assignment + task_ids_by_group))
+            .filter(Task.id.in_(task_ids_by_assignment))
             .order_by(desc(Task.deadline_at))
             .all()
         )
@@ -273,13 +246,7 @@ def task_details(task_id):
 
     if role.name == 'Сотрудник':
         has_assignment = TaskUserAssignment.query.filter_by(task_id=task_id, user_id=user_id).first()
-        has_group = (
-            TaskGroup.query
-            .join(UserGroup, UserGroup.group_id == TaskGroup.group_id)
-            .filter(TaskGroup.task_id == task_id, UserGroup.user_id == user_id)
-            .first()
-        )
-        if not has_assignment and not has_group:
+        if not has_assignment:
             return abort(404)
         task = Task.query.filter_by(id=task_id).first_or_404()
     else:
@@ -293,18 +260,6 @@ def task_details(task_id):
 
     if user_assignment:
         is_assigned = True
-    else:
-        has_group = (
-            TaskGroup.query
-            .join(UserGroup, UserGroup.group_id == TaskGroup.group_id)
-            .filter(TaskGroup.task_id == task_id, UserGroup.user_id == user_id)
-            .first()
-        )
-        if has_group:
-            is_assigned = True
-            user_assignment = TaskUserAssignment(task_id=task_id, user_id=user_id, status="не начата")
-            db.session.add(user_assignment)
-            db.session.commit()
 
     if role.name == 'Сотрудник':
         assignees = [user_assignment] if user_assignment else []

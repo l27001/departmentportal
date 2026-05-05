@@ -30,17 +30,3 @@ class UserGroup(db.Model):
 
     user = db.relationship("User")
 
-
-class TaskGroup(db.Model):
-    __tablename__ = "task_groups"
-
-    task_id = db.Column(
-        db.Integer,
-        db.ForeignKey("tasks.id", ondelete="CASCADE"),
-        primary_key=True,
-    )
-    group_id = db.Column(
-        db.Integer,
-        db.ForeignKey("groups.id", ondelete="CASCADE"),
-        primary_key=True,
-    )

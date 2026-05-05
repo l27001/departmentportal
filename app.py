@@ -35,7 +35,7 @@ from models.award import Award
 from models.announcement import Announcement
 from models.news import News
 from models.chat import GeneralChatMessage
-from models.group import Group, UserGroup, TaskGroup
+from models.group import Group, UserGroup
 from models.attachment import Attachment
 from models.task_comment import TaskComment
 
