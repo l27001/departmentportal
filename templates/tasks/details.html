@@ -2,10 +2,20 @@
 
 {% block content %}
   <section class="task-section">
-    <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
-      <span style="font-size: 28px; font-weight: bold; cursor: pointer;" onclick="history.back()">&times;</span>
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <h2 style="margin: 10px 0;">{% block title %}Детали задачи{% endblock %}: {{ task.title }}</h2>
+      <span id="closeBtn" style="font-size: 36px; font-weight: bold; cursor: pointer; color: #b70000;">&times;</span>
     </div>
-    <h2>{% block title %}Детали задачи{% endblock %}: {{ task.title }}</h2>
+    <script>
+      document.getElementById('closeBtn').onclick = function() {
+        var referrer = document.referrer;
+        if (referrer && referrer.startsWith(window.location.origin)) {
+          history.back();
+        } else {
+          window.location.href = "{{ url_for('tasks.list_tasks') }}";
+        }
+      };
+    </script>
     <p><strong>Описание:</strong> {{ task.description }}</p>
     {% if is_assigned %}
     <p><strong>Статус:</strong>
@@ -52,10 +62,22 @@
     {% endif %}
 
     <div class="view-details">
-      <a href="#" class="view-details-btn" onclick="history.back(); return false;">Назад</a>
+      <a href="#" class="view-details-btn" id="backBtn">Назад</a>
       {% if user_role.name == 'Руководитель' %}
         <a href="{{ url_for('tasks.generate_task_report', task_id=task.id) }}" class="view-details-btn">Сгенерировать отчёт</a>
       {% endif %}
     </div>
+    <script>
+      var backAction = function() {
+        var referrer = document.referrer;
+        if (referrer && referrer.startsWith(window.location.origin)) {
+          history.back();
+        } else {
+          window.location.href = "{{ url_for('tasks.list_tasks') }}";
+        }
+      };
+      document.getElementById('closeBtn').onclick = backAction;
+      document.getElementById('backBtn').onclick = function(e) { e.preventDefault(); backAction(); };
+    </script>
   </section>
 {% endblock %}
