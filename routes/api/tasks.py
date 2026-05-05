@@ -366,7 +366,7 @@ def update_status(task_id):
     user_id = get_jwt_identity()
     data = request.json
 
-    allowed_statuses = ["не начата", "в работе", "завершена"]
+    allowed_statuses = ["не начата", "в работе", "завершена", "на проверке"]
     new_status = data.get("status", "").strip().lower()
 
     if new_status not in allowed_statuses:
