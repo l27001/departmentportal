@@ -48,6 +48,7 @@ def create_app():
         db.create_all()
 
     @app.route('/')
+    @jwt_required()
     def index():
         return render_template("index.html")
         # return redirect(url_for("tasks.list_tasks"))
