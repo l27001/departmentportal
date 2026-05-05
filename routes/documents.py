@@ -1,22 +1,16 @@
 import os
+import uuid
 from flask import Blueprint, request, jsonify, render_template, flash, send_file, redirect, url_for, current_app
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from werkzeug.utils import secure_filename
 from models.document import Document
+from models.attachment import Attachment
 from models.role import Role
 from flask_jwt_extended import (
     jwt_required,
     get_jwt_identity,
     get_jwt
 )
-from extensions import db
+from extensions import db, allowed_file
 from decorators.auth import roles_required
-
-def allowed_file(filename):
-    return (
-        "." in filename and
-        filename.rsplit(".", 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
-    )
 
 documents_bp = Blueprint('documents', __name__, url_prefix='/documents')
 
@@ -35,7 +29,7 @@ def upload_document():
             flash("Файл не выбран", "danger")
             return redirect(url_for("documents.documents"))
 
-        if not allowed_file(file.filename):
+        if not allowed_file(file.filename, current_app.config):
             flash("Недопустимый формат файла", "danger")
             return redirect(url_for("documents.documents"))
         
@@ -43,21 +37,31 @@ def upload_document():
             flash("Выберите категорию файла", "danger")
             return redirect(url_for("documents.documents"))
 
-        filename = secure_filename(file.filename)
-        save_path = os.path.join(
-            current_app.config["UPLOAD_FOLDER"],
-            filename
-        )
-
-        os.makedirs(current_app.config["UPLOAD_FOLDER"], exist_ok=True)
+        original_filename = file.filename
+        ext = os.path.splitext(original_filename)[1] if '.' in original_filename else ''
+        safe_name = str(uuid.uuid4()) + ext
+        upload_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "attachments")
+        os.makedirs(upload_dir, exist_ok=True)
+        save_path = os.path.join(upload_dir, safe_name)
 
         file.save(save_path)
+        file.seek(0, 2)
+        file_size = file.tell()
+
+        attachment = Attachment(
+            task_id=None,
+            file_name=original_filename,
+            file_path=save_path,
+            mime_type=file.content_type or 'application/octet-stream',
+            size=file_size
+        )
+        db.session.add(attachment)
+        db.session.flush()
 
         document = Document(
             title=title,
             category=doc_type,
-            filename=filename,
-            filepath=save_path,
+            attachment_id=attachment.id,
             creator_id=user_id
         )
 
@@ -82,10 +86,11 @@ def documents():
 @jwt_required()
 def download_document(document_id):
     document = Document.query.get_or_404(document_id)
+    attachment = document.attachment
     return send_file(
-        document.filepath,
+        attachment.file_path,
         as_attachment=True,
-        download_name=document.filename
+        download_name=attachment.file_name
     )
 
 @documents_bp.route('/<int:document_id>', methods=['DELETE'])
@@ -93,19 +98,15 @@ def download_document(document_id):
 @roles_required('Документовед', 'Руководитель')
 def delete_document(document_id):
     document = Document.query.get_or_404(document_id)
-
-    # Проверка, что пользователь имеет доступ к удалению документа
     user_id = get_jwt_identity()
-    if document.creator_id != user_id and get_jwt_identity().get('role') != 'Руководитель':
+    if document.creator_id != user_id and get_jwt()["role"] != 1:
         return jsonify({"msg": "Access denied"}), 403
 
-    # Удаляем файл с сервера
-    try:
-        os.remove(document.filepath)
-    except OSError:
-        return jsonify({"msg": "Error deleting file from server"}), 500
+    attachment = document.attachment
+    if attachment and os.path.exists(attachment.file_path):
+        os.remove(attachment.file_path)
+        db.session.delete(attachment)
 
-    # Удаляем документ из базы данных
     db.session.delete(document)
     db.session.commit()
 

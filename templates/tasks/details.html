@@ -49,16 +49,35 @@
 
     {% if not task.is_personal and user_role.name == 'Руководитель' %}
     <h3>Исполнители:</h3>
-    <ul>
+    <div class="assignee-list">
       {% for assignment in assignees %}
-        <li>{{ assignment.user.name }} | 
-          <strong>Прогресс:</strong>
-              <span>{{ assignment.status }}</span>
-        </li>
+        <div class="assignee-card">
+          <div class="assignee-name">{{ assignment.user.name }}</div>
+          <div class="assignee-status {{ assignment.status.replace(' ', '-') }}">
+            {{ assignment.status | capitalize }}
+          </div>
+          {% if assignment.completed_at %}
+            <div class="assignee-date">Завершено: {{ assignment.completed_at.strftime('%d.%m.%Y') }}</div>
+          {% endif %}
+        </div>
       {% else %}
-        <p>У этой задачи нет исполнителей.</p>
+        <div class="assignee-card">
+          <p>У этой задачи нет исполнителей.</p>
+        </div>
       {% endfor %}
-    </ul>
+    </div>
+    {% endif %}
+
+    {% if task.attachments | length > 0 %}
+    <h3>Файлы:</h3>
+    <div class="attachment-list">
+      {% for attachment in task.attachments | sort(attribute='uploaded_at', reverse=True) %}
+        <div class="attachment-card">
+          <a href="{{ url_for('api_attachments.download_attachment', id=attachment.id) }}" class="attachment-name" target="_blank">{{ attachment.file_name }}</a>
+          <span class="attachment-size">{{ "%.1f"|format(attachment.size / 1024) }} KB</span>
+        </div>
+      {% endfor %}
+    </div>
     {% endif %}
 
     <div class="view-details">

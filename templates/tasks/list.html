@@ -92,7 +92,7 @@
       <div class="modal-content">
         <span class="close" onclick="closeModal('addTask')">&times;</span>
         <h2>Создание задачи</h2>
-        <form method="POST" action="{{ url_for('tasks.create_task', tab=tab) }}">
+        <form method="POST" action="{{ url_for('tasks.create_task', tab=tab) }}" enctype="multipart/form-data">
 
           <div class="input-group">
             <label for="taskTitle">Название задачи:</label>
@@ -121,6 +121,11 @@
           <div class="input-group">
             <label for="taskDeadlineAt">Дата выполнения:</label>
             <input type="date" id="taskDeadlineAt" name="deadline_at" required>
+          </div>
+
+          <div class="input-group">
+            <label for="taskFiles">Файлы:</label>
+            <input type="file" id="taskFiles" name="files" multiple>
           </div>
 
           {% if role.name == 'Руководитель' %}

@@ -1,6 +1,8 @@
-from flask import Blueprint, request, jsonify, render_template, flash, url_for, redirect, send_file, abort
+from flask import Blueprint, request, jsonify, render_template, flash, url_for, redirect, abort, current_app
 from io import StringIO, BytesIO
 import csv
+import os
+import uuid
 from flask_jwt_extended import (
     jwt_required,
     get_jwt_identity,
@@ -8,11 +10,12 @@ from flask_jwt_extended import (
 )
 from datetime import datetime, date
 from sqlalchemy import desc, exists, asc
-from extensions import db
+from extensions import db, allowed_file
 from models.task import Task, TaskUserAssignment
 from models.user import User
 from models.role import Role
 from models.group import Group, UserGroup
+from models.attachment import Attachment
 from decorators.roles import roles_required
 
 tasks_bp = Blueprint("tasks", __name__, url_prefix="/tasks")
@@ -39,8 +42,7 @@ def list_tasks():
     my_task_ids = task_ids_by_assignment
     assigned_task_ids = set(my_task_ids)
 
-    if role.name in ("Документовед", "Руководитель") and tab == "all":
-        tasks = Task.query.order_by(asc(Task.deadline_at)).all()
+    if role.name in ("Документовед", "Руководитель"):
         users = User.query.all()
         groups = Group.query.all()
         for group in groups:
@@ -51,6 +53,9 @@ def list_tasks():
                 .all()
             )
             groups_members[group.id] = [{"id": m.id, "name": m.name} for m in members]
+
+    if role.name in ("Документовед", "Руководитель") and tab == "all":
+        tasks = Task.query.order_by(asc(Task.deadline_at)).all()
     else:
         tasks = (
             Task.query
@@ -100,6 +105,32 @@ def create_task():
 
         db.session.add(new_task)
         db.session.commit()
+
+        files = request.files.getlist('files')
+        if files and files[0].filename:
+            for file in files:
+                if file.filename:
+                    if not allowed_file(file.filename, current_app.config):
+                        flash(f'Недопустимый формат файла: {file.filename}', 'danger')
+                        return redirect(url_for('tasks.task_details', task_id=new_task.id))
+
+                    original_name = file.filename
+                    ext = os.path.splitext(original_name)[1].lower()
+                    safe_filename = str(uuid.uuid4()) + ext
+                    upload_dir = os.path.join(current_app.config.get('UPLOAD_FOLDER', 'uploads'), 'attachments')
+                    os.makedirs(upload_dir, exist_ok=True)
+                    file_path = os.path.join(upload_dir, safe_filename)
+                    file.save(file_path)
+                    file.seek(0, 2)
+                    file_size = file.tell()
+                    attachment = Attachment(
+                        task_id=new_task.id,
+                        file_name=original_name,
+                        file_path=file_path,
+                        mime_type=file.content_type or 'application/octet-stream',
+                        size=file_size
+                    )
+                    db.session.add(attachment)
 
         for assignee_id in assignees:
             task_assignment = TaskUserAssignment(task_id=new_task.id, user_id=assignee_id)

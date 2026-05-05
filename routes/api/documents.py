@@ -1,17 +1,12 @@
 import os
+import uuid
 from flask import Blueprint, request, jsonify, send_file, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
-from werkzeug.utils import secure_filename
-from extensions import db
+from extensions import db, allowed_file
 from models.document import Document
-
-ALLOWED_EXTENSIONS = {"pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt"}
+from models.attachment import Attachment
 
 api_documents_bp = Blueprint("api_documents", __name__, url_prefix="/api/documents")
-
-
-def _allowed_file(filename):
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 @api_documents_bp.route("/", methods=["GET"])
@@ -82,23 +77,35 @@ def upload_document():
     if file.filename == "":
         return jsonify({"msg": "Файл не выбран"}), 400
 
-    if not _allowed_file(file.filename):
+    if not allowed_file(file.filename, current_app.config):
         return jsonify({"msg": "Недопустимый тип файла"}), 400
 
     title = request.form.get("title", file.filename)
     category = request.form.get("category")
 
-    filename = secure_filename(file.filename)
-    upload_dir = os.path.join(current_app.config.get("UPLOAD_FOLDER", "uploads"), "documents")
+    original_filename = file.filename
+    ext = os.path.splitext(original_filename)[1] if '.' in original_filename else ''
+    safe_name = str(uuid.uuid4()) + ext
+    upload_dir = os.path.join(current_app.config.get("UPLOAD_FOLDER", "uploads"), "attachments")
     os.makedirs(upload_dir, exist_ok=True)
-    save_path = os.path.join(upload_dir, filename)
+    save_path = os.path.join(upload_dir, safe_name)
 
     file.save(save_path)
+    file_size = os.path.getsize(save_path)
+
+    attachment = Attachment(
+        task_id=None,
+        file_name=original_filename,
+        file_path=save_path,
+        mime_type=file.content_type or "application/octet-stream",
+        size=file_size,
+    )
+    db.session.add(attachment)
+    db.session.flush()
 
     doc = Document(
         title=title,
-        filename=filename,
-        filepath=save_path,
+        attachment_id=attachment.id,
         creator_id=user_id,
         category=category,
     )
@@ -130,10 +137,11 @@ def download_document(id):
         description: Не найдено
     """
     doc = Document.query.get_or_404(id)
-    if not os.path.exists(doc.filepath):
+    attachment = doc.attachment
+    if not attachment or not os.path.exists(attachment.file_path):
         return jsonify({"msg": "Файл не найден на сервере"}), 404
 
-    return send_file(doc.filepath, as_attachment=True, download_name=doc.filename)
+    return send_file(attachment.file_path, as_attachment=True, download_name=attachment.file_name)
 
 
 @api_documents_bp.route("/<int:id>", methods=["PATCH"])
@@ -210,8 +218,11 @@ def delete_document(id):
     if doc.creator_id != user_id and role not in (1, 2):
         return jsonify({"msg": "Доступ запрещён"}), 403
 
-    if os.path.exists(doc.filepath):
-        os.remove(doc.filepath)
+    attachment = doc.attachment
+    if attachment and os.path.exists(attachment.file_path):
+        os.remove(attachment.file_path)
+        db.session.delete(attachment)
+
     db.session.delete(doc)
     db.session.commit()
     return jsonify({"msg": "Документ удалён"})

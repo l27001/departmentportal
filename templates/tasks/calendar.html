@@ -5,6 +5,10 @@
   <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/list@6.1.19/index.global.min.js"></script>
   <script>
       document.addEventListener('DOMContentLoaded', function() {
+        var closeBtn = document.getElementById('dayTasksCloseBtn');
+        if (closeBtn) {
+          closeBtn.onclick = closeDayTasksModal;
+        }
         var calendarEl = document.getElementById('calendar');
         var tasksByDeadline = {{ tasks_by_deadline | tojson }};
         var daysAllCompleted = {{ days_all_completed | tojson }};
@@ -134,8 +138,10 @@
 
   <div id="dayTasksModal" class="modal">
     <div class="modal-content">
-      <span class="close-modal" onclick="closeDayTasksModal()">&times;</span>
-      <h2 id="dayTasksTitle"></h2>
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <h2 id="dayTasksTitle" style="margin: 10px 0;"></h2>
+        <span id="dayTasksCloseBtn" style="font-size: 36px; font-weight: bold; cursor: pointer; color: #b70000;">&times;</span>
+      </div>
       <div id="dayTasksList"></div>
     </div>
   </div>

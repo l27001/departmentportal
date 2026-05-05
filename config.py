@@ -25,6 +25,8 @@ class Config:
         "pdf", "doc", "docx",
         "xls", "xlsx",
         "ppt", "pptx",
-        "txt"
+        "txt",
+        "png", "jpg", "jpeg", "gif",
+        "zip", "rar"
     }
     MAX_CONTENT_LENGTH = 20 * 1024 * 1024  # 20 MB

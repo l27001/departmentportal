@@ -1,18 +1,12 @@
 import os
+import uuid
 from flask import Blueprint, request, jsonify, send_file, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from werkzeug.utils import secure_filename
-from extensions import db
+from extensions import db, allowed_file
 from models.attachment import Attachment
 from models.task import Task
 
-ALLOWED_EXTENSIONS = {"pdf", "doc", "docx", "xls", "xlsx", "png", "jpg", "jpeg", "gif", "txt", "zip", "rar"}
-
 attachments_bp = Blueprint("api_attachments", __name__, url_prefix="/api")
-
-
-def _allowed_file(filename):
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 @attachments_bp.route("/tasks/<int:task_id>/attachments", methods=["GET"])
@@ -76,13 +70,15 @@ def upload_attachment(task_id):
     if file.filename == "":
         return jsonify({"msg": "Файл не выбран"}), 400
 
-    if not _allowed_file(file.filename):
+    if not allowed_file(file.filename, current_app.config):
         return jsonify({"msg": "Недопустимый тип файла"}), 400
 
-    filename = secure_filename(file.filename)
+    original_name = file.filename
+    ext = os.path.splitext(original_name)[1] if '.' in original_name else ''
+    safe_filename = str(uuid.uuid4()) + ext
     upload_dir = os.path.join(current_app.config.get("UPLOAD_FOLDER", "uploads"), "attachments", str(task_id))
     os.makedirs(upload_dir, exist_ok=True)
-    save_path = os.path.join(upload_dir, filename)
+    save_path = os.path.join(upload_dir, safe_filename)
 
     file.save(save_path)
     file_size = os.path.getsize(save_path)
@@ -90,7 +86,7 @@ def upload_attachment(task_id):
     mime_type = file.content_type or "application/octet-stream"
     attachment = Attachment(
         task_id=task_id,
-        file_name=filename,
+        file_name=original_name,
         file_path=save_path,
         mime_type=mime_type,
         size=file_size,
