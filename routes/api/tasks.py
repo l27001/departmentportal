@@ -165,15 +165,12 @@ def create_task():
     except ValueError:
         return jsonify({"msg": "Неверный формат даты"}), 400
 
-    is_personal = len(assignees) == 0
-
     task = Task(
         title=title,
         description=description,
         priority=priority,
         starts_at=starts_at_date,
         deadline_at=deadline_at_date,
-        is_personal=is_personal,
         no_review=no_review,
         creator_id=user_id
     )

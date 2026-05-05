@@ -90,7 +90,6 @@ def create_task():
             assignees = request.form.getlist('assignees')
         except (ValueError):
             assignees = []
-        is_personal = role.name != 'Руководитель' or len(assignees) == 0
 
         new_task = Task(
             title=title,
@@ -98,7 +97,6 @@ def create_task():
             priority=priority,
             starts_at=starts_at,
             deadline_at=deadline_at,
-            is_personal=is_personal,
             no_review=no_review,
             creator_id=user_id
         )

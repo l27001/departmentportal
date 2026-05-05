@@ -15,8 +15,6 @@ class Task(db.Model):
     starts_at = db.Column(db.Date, nullable=False)
     deadline_at = db.Column(db.Date, nullable=False)
 
-    is_personal = db.Column(db.Boolean, default=False)
-
     no_review = db.Column(db.Boolean, default=False, nullable=False)
 
     creator_id = db.Column(
@@ -46,7 +44,6 @@ class Task(db.Model):
             "priority": self.priority,
             "starts_at": self.starts_at.isoformat(),
             "deadline_at": self.deadline_at.isoformat(),
-            "is_personal": self.is_personal,
             "no_review": self.no_review,
             "creator_id": self.creator_id
         }

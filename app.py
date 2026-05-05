@@ -168,7 +168,6 @@ def create_app():
                     "priority": {"type": "string", "enum": ["low", "medium", "high"]},
                     "starts_at": {"type": "string", "format": "date"},
                     "deadline_at": {"type": "string", "format": "date"},
-                    "is_personal": {"type": "boolean"},
                     "no_review": {"type": "boolean"},
                     "creator_id": {"type": "integer"},
                     "created_at": {"type": "string"}

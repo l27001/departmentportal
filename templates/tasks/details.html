@@ -58,7 +58,7 @@
     <p><strong>Дата начала:</strong> {{ task.starts_at.strftime('%d.%m.%Y') }}</p>
     <p><strong>Дата выполнения:</strong> {{ task.deadline_at.strftime('%d.%m.%Y') }}</p>
 
-    {% if not task.is_personal and user_role.name in ('Руководитель', 'Документовед') %}
+    {% if user_role.name in ('Руководитель', 'Документовед') %}
     <h3>Исполнители:</h3>
     <div class="assignee-list">
       {% for assignment in assignees %}
