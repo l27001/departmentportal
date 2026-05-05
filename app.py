@@ -17,6 +17,7 @@ from routes.api.auth import api_auth_bp
 from dotenv import load_dotenv
 from flask_cors import CORS
 from flasgger import Swagger
+from flask_migrate import Migrate
 from flask_jwt_extended import (
     jwt_required, create_access_token,
     get_jwt_identity, set_access_cookies,
@@ -243,6 +244,7 @@ def create_app():
     Swagger(app, template=swagger_template)
 
     db.init_app(app)
+    migrate = Migrate(app, db)
     jwt.init_app(app)
 
     CORS(app, supports_credentials=True)
@@ -262,9 +264,6 @@ def create_app():
     app.register_blueprint(api_tasks_bp)
     app.register_blueprint(api_documents_bp)
     app.register_blueprint(api_auth_bp)
-
-    with app.app_context():
-        db.create_all()
 
     @app.route('/')
     @jwt_required()
