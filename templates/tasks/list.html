@@ -4,7 +4,9 @@
 <section id="tasks" class="task-section">
       <h2>{% block title %}Список задач{% endblock %}</h2>
       <div class="header-btns">
+        {% if role.name == 'Руководитель' %}
         <button class="add-task-btn" onclick="openModal('addTask')">Добавить задачу</button>
+        {% endif %}
       </div>
       <div class="task-list">
         {% for task in tasks %}
