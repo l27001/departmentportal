@@ -1,3 +1,4 @@
+import os
 from flask import Flask, redirect, render_template, url_for, jsonify, flash, request
 from extensions import db, jwt
 from routes.auth import auth_bp
@@ -44,11 +45,13 @@ def create_app():
 
     app.config.from_object(Config)
 
+    app_version = os.getenv("APP_VERSION", "dev")
+
     swagger_template = {
         "swagger": "2.0",
         "info": {
             "title": "Department Portal API",
-            "version": "0.0.1"
+            "version": app_version
         },
         "definitions": {
             "Announcement": {

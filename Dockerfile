@@ -17,6 +17,10 @@ EXPOSE 5000
 
 ENV FLASK_APP=app.py
 ENV FLASK_DEBUG=0
+ENV APP_VERSION=dev
+
+ARG APP_VERSION_ARG
+ENV APP_VERSION=${APP_VERSION_ARG}
 
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
