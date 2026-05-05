@@ -185,21 +185,28 @@ def calendar():
         tasks = Task.query.order_by(desc(Task.deadline_at)).all()
 
     events = []
+    today = date.today()
     for task in tasks:
         status = None
-        if(len(task.assignments) > 0):
+        if len(task.assignments) > 0:
             status = task.assignments[0].status
+        is_overdue = status != 'завершена' and task.deadline_at < today
         color = None
-        if(task.priority == 'high'):
+        if is_overdue:
+            color = 'darkred'
+        elif task.priority == 'high':
             color = 'red'
-        elif(task.priority == 'medium'):
+        elif task.priority == 'medium':
             color = 'orange'
         else:
             color = 'light-blue'
+        title = task.title
+        if is_overdue:
+            title = f'⚠ {task.title}'
         events.append({
-            'title': task.title,
-            'start': task.starts_at.strftime('%Y-%m-%d'),  # Дата окончания задачи
-            'end': task.deadline_at.strftime('%Y-%m-%d'),  # Дата окончания задачи
+            'title': title,
+            'start': task.starts_at.strftime('%Y-%m-%d'),
+            'end': task.deadline_at.strftime('%Y-%m-%d'),
             'description': task.description,
             'color': color,
             'url': url_for('tasks.task_details', task_id=task.id),
