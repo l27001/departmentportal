@@ -151,7 +151,6 @@ def create_task():
     allowed_priorities = ["low", "medium", "high"]
     if priority not in allowed_priorities:
         return jsonify({"msg": f"Недопустимый приоритет. Разрешены: {', '.join(allowed_priorities)}"}), 400
-    starts_at = data.get("starts_at")
     deadline_at = data.get("deadline_at")
     no_review = data.get("no_review", False)
     assignees = data.get("assignees", [])
