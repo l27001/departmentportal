@@ -42,10 +42,10 @@
               badge.textContent = count + ' ' + suffix;
               if (hasOverdue) {
                 badge.style.background = 'linear-gradient(135deg, #c62828, #e53935)';
-              } else if (hasUnassigned) {
-                badge.style.background = 'linear-gradient(135deg, #78909c, #90a4ae)';
               } else if (allDone) {
                 badge.style.background = 'linear-gradient(135deg, #2e7d32, #43a047)';
+              } else if (hasUnassigned) {
+                badge.style.background = 'linear-gradient(135deg, #78909c, #90a4ae)';
               } else if (count >= 3) {
                 badge.style.background = 'linear-gradient(135deg, #ef6c00, #fb8c00)';
               } else {

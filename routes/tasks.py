@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, render_template, flash, url_for, redirect, abort, current_app
+from flask import Blueprint, request, jsonify, render_template, flash, url_for, redirect, abort, current_app, send_file
 from io import StringIO, BytesIO
 import csv
 import os
@@ -245,13 +245,14 @@ def calendar():
             'title': task.title,
             'status': status,
             'priority': task.priority,
-            'is_overdue': status != 'завершена' and task.deadline_at < today
+            'is_overdue': status is not None and status not in ('завершена', 'на проверке') and task.deadline_at < today
         })
 
     days_all_completed = {}
     days_has_unassigned = {}
     for day, day_tasks in tasks_by_deadline.items():
-        days_all_completed[day] = all(t['status'] in ('завершена', 'на проверке') for t in day_tasks)
+        assigned = [t for t in day_tasks if t['status'] is not None]
+        days_all_completed[day] = len(assigned) > 0 and all(t['status'] in ('завершена', 'на проверке') for t in assigned)
         days_has_unassigned[day] = any(t['status'] is None for t in day_tasks)
 
     return render_template("tasks/calendar.html", tasks=events, tasks_by_deadline=tasks_by_deadline, days_all_completed=days_all_completed, days_has_unassigned=days_has_unassigned, tab=tab, role=role)
