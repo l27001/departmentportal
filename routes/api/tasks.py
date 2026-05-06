@@ -357,6 +357,9 @@ def update_status(task_id):
         description: Задача не назначена
     """
     user_id = get_jwt_identity()
+    role_id = get_jwt()["role"]
+    from models.role import Role
+    role = Role.query.get(role_id)
     data = request.json
 
     allowed_statuses = ["не начата", "в работе", "завершена", "на проверке"]
@@ -372,7 +375,7 @@ def update_status(task_id):
 
     task = Task.query.get_or_404(task_id)
 
-    if new_status == "завершена" and not task.no_review:
+    if new_status == "завершена" and not task.no_review and role.name not in ("Руководитель", "Документовед"):
         task_status.status = "на проверке"
         task_status.marked_complete = True
         task_status.completed_at = datetime.utcnow()

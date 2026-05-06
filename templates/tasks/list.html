@@ -42,7 +42,7 @@
         {% set asgn = user_assignments.get(tid) %}
         {% set is_completed = asgn and asgn.approved %}
         {% set is_review = asgn and asgn.status == 'на проверке' %}
-        <div class="task-item {% if is_completed %}task-completed{% endif %} {% if is_review %}task-review{% endif %}">
+        <div class="task-item {% if tab == 'my' %}{% if is_completed %}task-completed{% endif %} {% if is_review and tab != 'all' %}task-review{% endif %}{% endif %}">
             <div class="task-info">
                 <h3 class="task-title">{{ task.title }}</h3>
                 <p class="task-description">{{ task.description }}</p>
@@ -50,23 +50,26 @@
             {% if tid in assigned_task_ids %}
             <div class="task-btn">
               {% set is_approved = asgn and asgn.approved %}
+              {% set is_leader = role.name in ('Руководитель', 'Документовед') %}
               <select autocomplete="off" onchange="updateTaskStatus(this, {{ task.id }})">
                 {% if is_approved %}
                 <option selected>Завершена</option>
                 {% elif asgn %}
                 <option {% if asgn.status == 'не начата' %}selected{% endif %}>Не начата</option>
                 <option {% if asgn.status == 'в работе' %}selected{% endif %}>В работе</option>
-                {% if task.no_review %}
+                {% if task.no_review or is_leader %}
                 <option {% if asgn.status == 'завершена' %}selected{% endif %}>Завершена</option>
-                {% else %}
+                {% endif %}
+                {% if not task.no_review and not is_leader %}
                 <option {% if asgn.status == 'на проверке' %}selected{% endif %}>На проверке</option>
                 {% endif %}
                 {% else %}
                 <option selected>Не начата</option>
                 <option>В работе</option>
-                {% if task.no_review %}
+                {% if task.no_review or is_leader %}
                 <option>Завершена</option>
-                {% else %}
+                {% endif %}
+                {% if not task.no_review and not is_leader %}
                 <option>На проверке</option>
                 {% endif %}
                 {% endif %}
@@ -80,6 +83,9 @@
                     <span class="status medium">Средний приоритет</span>
                 {% else %}
                     <span class="status high">Высокий приоритет</span>
+                {% endif %}
+                {% if tab == 'all' and tid in review_task_ids %}
+                    <span class="status awaiting-review">Ожидает проверки</span>
                 {% endif %}
                 {% if task.deadline_at < today and (tid in assigned_task_ids and asgn and asgn.status not in ('завершена', 'на проверке')) %}
                   <span class="status high">Дедлайн просрочен</span>

@@ -20,23 +20,27 @@
     {% if is_assigned %}
     <p><strong>Статус:</strong>
             <select style="width: auto;" autocomplete="off" onchange="updateTaskStatus(this, {{task.id}})">
+                {% set is_leader = user_role.name in ('Руководитель', 'Документовед') %}
                 {% if user_assignment and user_assignment.status %}
-                <option {% if user_assignment.status == 'не начата' %}selected{% endif %}>Не начата</option>
-                <option {% if user_assignment.status == 'в работе' %}selected{% endif %}>В работе</option>
-                {% if task.no_review %}
-                <option {% if user_assignment.status == 'завершена' %}selected{% endif %}>Завершена</option>
-                {% else %}
-                <option {% if user_assignment.status == 'на проверке' %}selected{% endif %}>На проверке</option>
                 {% if user_assignment.approved %}
                 <option selected>Завершена</option>
+                {% else %}
+                <option {% if user_assignment.status == 'не начата' %}selected{% endif %}>Не начата</option>
+                <option {% if user_assignment.status == 'в работе' %}selected{% endif %}>В работе</option>
+                {% if task.no_review or is_leader %}
+                <option {% if user_assignment.status == 'завершена' %}selected{% endif %}>Завершена</option>
+                {% endif %}
+                {% if not task.no_review and not is_leader %}
+                <option {% if user_assignment.status == 'на проверке' %}selected{% endif %}>На проверке</option>
                 {% endif %}
                 {% endif %}
                 {% else %}
                 <option selected>Не начата</option>
                 <option>В работе</option>
-                {% if task.no_review %}
+                {% if task.no_review or is_leader %}
                 <option>Завершена</option>
-                {% else %}
+                {% endif %}
+                {% if not task.no_review and not is_leader %}
                 <option>На проверке</option>
                 {% endif %}
                 {% endif %}
