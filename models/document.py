@@ -8,16 +8,14 @@ class Document(db.Model):
     title = db.Column(db.String(255), nullable=False)
     category = db.Column(db.String(100), nullable=True)
     creator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    attachment_id = db.Column(db.Integer, db.ForeignKey('attachments.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     creator = db.relationship('User', backref='documents', lazy=True)
-    attachment = db.relationship('Attachment', lazy=True)
+    attachments = db.relationship('Attachment', backref='document', lazy=True, cascade='all, delete-orphan')
     
-    def __init__(self, title, creator_id, attachment_id, category=None):
+    def __init__(self, title, creator_id, category=None):
         self.title = title
         self.creator_id = creator_id
-        self.attachment_id = attachment_id
         self.category = category
     
     def to_dict(self):
@@ -27,7 +25,5 @@ class Document(db.Model):
             'category': self.category,
             'creator_id': self.creator_id,
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'file_name': self.attachment.file_name if self.attachment else None,
-            'mime_type': self.attachment.mime_type if self.attachment else None,
-            'size': self.attachment.size if self.attachment else None,
+            'attachments': [a.to_dict() for a in self.attachments],
         }

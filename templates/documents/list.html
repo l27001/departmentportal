@@ -21,9 +21,16 @@
                             Тип: {{ document.category | capitalize }}<br>
                             Дата загрузки: {{ document.created_at.strftime('%d.%m.%Y') }}
                         </p>
-                    </div>
-                    <div class="document-actions">
-                        <a class="view-details-btn" href="{{url_for('documents.download_document', document_id=document.id)}}">Скачать</a>
+                        {% if document.attachments %}
+                        <div class="document-file-list">
+                            {% for attachment in document.attachments %}
+                            <div class="document-file-link">
+                                <a href="{{ url_for('documents.download_document', document_id=document.id, attachment_id=attachment.id) }}" target="_blank">{{ attachment.file_name }}</a>
+                                <span class="file-size">({{ "%.1f"|format(attachment.size / 1024) }} KB)</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             {% endfor %}
@@ -59,8 +66,8 @@
             </div>
 
             <div class="input-group">
-                <label for="file">Файл документа</label>
-                <input type="file" id="file" name="file" required>
+                <label for="file">Файлы документа</label>
+                <input type="file" id="file" name="file" multiple required>
             </div>
 
             <div class="modal-actions">

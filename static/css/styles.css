@@ -417,6 +417,28 @@ span.status.high {
   color: #666;
 }
 
+.document-file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.document-file-link a {
+  color: #0275d8;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.document-file-link a:hover {
+  text-decoration: underline;
+}
+
+.file-size {
+  font-size: 12px;
+  color: #6c757d;
+}
+
 .document-actions {
   margin-left: 20px;
 }

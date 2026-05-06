@@ -7,6 +7,7 @@ from models.attachment import Attachment
 from models.task import Task
 from models.news import News
 from models.announcement import Announcement
+from models.document import Document
 
 attachments_bp = Blueprint("api_attachments", __name__, url_prefix="/api")
 
@@ -218,3 +219,17 @@ def list_announcement_attachments(announcement_id):
 @jwt_required()
 def upload_announcement_attachment(announcement_id):
     return _upload_attachment(Announcement, announcement_id)
+
+
+@attachments_bp.route("/documents/<int:document_id>/attachments", methods=["GET"])
+@jwt_required()
+def list_document_attachments(document_id):
+    Document.query.get_or_404(document_id)
+    attachments = Attachment.query.filter_by(document_id=document_id).order_by(Attachment.uploaded_at.desc()).all()
+    return jsonify([a.to_dict() for a in attachments])
+
+
+@attachments_bp.route("/documents/<int:document_id>/attachments", methods=["POST"])
+@jwt_required()
+def upload_document_attachment(document_id):
+    return _upload_attachment(Document, document_id)
