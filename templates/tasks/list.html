@@ -88,7 +88,7 @@
                     <span class="status awaiting-review">Ожидает проверки</span>
                 {% endif %}
                 {% if task.deadline_at < today and (tid in assigned_task_ids and asgn and asgn.status not in ('завершена', 'на проверке')) %}
-                  <span class="status high">Дедлайн просрочен</span>
+                  <span class="status expired">Дедлайн просрочен</span>
                 {% endif %}
             </div>
             <div class="task-dates">

@@ -449,6 +449,11 @@ span.status.high {
   background-color: #d9534f;
 }
 
+span.status.expired {
+  background-color: darkred;
+  animation: pulse-review 2s infinite;
+}
+
 span.status.awaiting-review {
   background-color: #8a2be2;
   animation: pulse-review 2s infinite;
