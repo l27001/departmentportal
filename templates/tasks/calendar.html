@@ -131,8 +131,20 @@
   {% endblock %}
 
   {% block content %}
-  <div class="container">
-    <h2>Календарь задач</h2>
+  <section class="task-section">
+    <div class="task-header">
+      <h2>Календарь</h2>
+      <div class="task-view-switch">
+        <a href="{{ url_for('tasks.list_tasks', tab=tab) }}" class="view-switch-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          Список
+        </a>
+        <a href="{{ url_for('tasks.calendar', tab=tab) }}" class="view-switch-btn active">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Календарь
+        </a>
+      </div>
+    </div>
     {% if role.name in ('Руководитель', 'Документовед') %}
     <div class="task-tabs">
       <a href="{{ url_for('tasks.calendar', tab='my') }}" class="task-tab {% if tab == 'my' %}active{% endif %}">Мои задачи</a>
@@ -140,7 +152,7 @@
     </div>
     {% endif %}
     <div id="calendar"></div>
-  </div>
+  </section>
 
   <div id="dayTasksModal" class="modal">
     <div class="modal-content">

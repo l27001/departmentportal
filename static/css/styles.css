@@ -262,7 +262,59 @@ select:focus {
 ============================== */
 
 .task-section {
-  margin-bottom: 40px;
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.task-header h2 {
+  font-size: 22px;
+  color: #333;
+  margin: 0;
+}
+
+.task-view-switch {
+  display: flex;
+  gap: 4px;
+  background: #e9ecef;
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.view-switch-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: #495057;
+  transition: 0.2s;
+}
+
+.view-switch-btn:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.view-switch-btn.active {
+  background: #fff;
+  color: #007bff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.view-switch-btn svg {
+  flex-shrink: 0;
 }
 
 .task-list {
@@ -1118,6 +1170,7 @@ textarea {
 #calendar {
   max-width: 900px;
   margin: 0 auto;
+  padding: 10px 0;
 }
 
 .fc-daygrid-day {
