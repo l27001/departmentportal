@@ -38,17 +38,19 @@
       {% endif %}
       <div class="task-list">
         {% for task in tasks %}
-        {% set is_completed = task.id in assigned_task_ids and user_assignments.get(task.id) and user_assignments.get(task.id).approved %}
-        <div class="task-item {% if is_completed %}task-completed{% endif %}">
+        {% set tid = task.id|int %}
+        {% set asgn = user_assignments.get(tid) %}
+        {% set is_completed = asgn and asgn.approved %}
+        {% set is_review = asgn and asgn.status == 'на проверке' %}
+        <div class="task-item {% if is_completed %}task-completed{% endif %} {% if is_review %}task-review{% endif %}">
             <div class="task-info">
                 <h3 class="task-title">{{ task.title }}</h3>
                 <p class="task-description">{{ task.description }}</p>
             </div>
-            {% if task.id in assigned_task_ids %}
+            {% if tid in assigned_task_ids %}
             <div class="task-btn">
-              {% set asgn = user_assignments.get(task.id) %}
               {% set is_approved = asgn and asgn.approved %}
-              <select autocomplete="off" onchange="updateTaskStatus(this, {{task.id}})">
+              <select autocomplete="off" onchange="updateTaskStatus(this, {{ task.id }})">
                 {% if is_approved %}
                 <option selected>Завершена</option>
                 {% elif asgn %}
@@ -79,7 +81,7 @@
                 {% else %}
                     <span class="status high">Высокий приоритет</span>
                 {% endif %}
-                {% if task.deadline_at < today and (task.id in assigned_task_ids and user_assignments.get(task.id) and user_assignments.get(task.id).status not in ('завершена', 'на проверке')) %}
+                {% if task.deadline_at < today and (tid in assigned_task_ids and asgn and asgn.status not in ('завершена', 'на проверке')) %}
                   <span class="status high">Дедлайн просрочен</span>
                 {% endif %}
             </div>

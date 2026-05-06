@@ -35,11 +35,11 @@ def list_tasks():
     per_page = 10
 
     user_assignments = {
-        a.task_id: a
+        int(a.task_id): a
         for a in TaskUserAssignment.query.filter_by(user_id=user_id).all()
     }
 
-    task_ids_by_assignment = [r[0] for r in db.session.query(TaskUserAssignment.task_id).filter(TaskUserAssignment.user_id == user_id).all()]
+    task_ids_by_assignment = [int(r[0]) for r in db.session.query(TaskUserAssignment.task_id).filter(TaskUserAssignment.user_id == user_id).all()]
     my_task_ids = task_ids_by_assignment
     assigned_task_ids = set(my_task_ids)
 
@@ -66,10 +66,12 @@ def list_tasks():
         )
 
     def task_sort_key(t):
-        asgn = user_assignments.get(t.id)
-        if asgn and asgn.approved:
+        asgn = user_assignments.get(int(t.id))
+        if not asgn:
+            return 0
+        if asgn.approved:
             return 2
-        if asgn and asgn.status == 'на проверке':
+        if asgn.status == 'на проверке':
             return 1
         return 0
 

@@ -40,9 +40,20 @@ function updateTaskStatus(el, id) {
     .then(function(result){
         console.log(result)
         if (newVal === 'Завершена') {
-            if (taskItem) taskItem.classList.add('task-completed');
+            if (taskItem) {
+                taskItem.classList.add('task-completed');
+                taskItem.classList.remove('task-review');
+            }
+        } else if (newVal === 'На проверке') {
+            if (taskItem) {
+                taskItem.classList.add('task-review');
+                taskItem.classList.remove('task-completed');
+            }
         } else {
-            if (taskItem) taskItem.classList.remove('task-completed');
+            if (taskItem) {
+                taskItem.classList.remove('task-completed');
+                taskItem.classList.remove('task-review');
+            }
         }
     })
 }

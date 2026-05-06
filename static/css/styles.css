@@ -344,6 +344,11 @@ select:focus {
   color: #6c757d;
 }
 
+.task-item.task-review {
+  border-left-color: #ffc107;
+  background-color: #fffef5;
+}
+
 .task-info {
   flex: 1;
 }
