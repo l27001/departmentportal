@@ -64,7 +64,7 @@ def get_news(id):
 @news_bp.route("/", methods=["POST"])
 @jwt_required()
 def create_news():
-    """Создать новость (только Руководитель/Документовед)
+    """Создать новость
     ---
     tags: [News]
     security:
@@ -82,12 +82,8 @@ def create_news():
           $ref: '#/definitions/News'
       400:
         description: Ошибка валидации
-      403:
-        description: Доступ запрещён
     """
-    role = get_jwt()["role"]
-    if role not in (1, 2):
-        return jsonify({"msg": "Доступ запрещён"}), 403
+    user_id = get_jwt_identity()
 
     data = request.json
     title = data.get("title")

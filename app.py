@@ -42,7 +42,7 @@ from models.chat import GeneralChatMessage
 from models.group import Group, UserGroup
 from models.attachment import Attachment
 from models.task_comment import TaskComment
-from models.meeting import DepartmentMeeting, MeetingTask, MeetingAnnouncement, MeetingDocument
+from models.meeting import DepartmentMeeting, MeetingTask
 
 
 def create_app():

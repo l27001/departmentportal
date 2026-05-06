@@ -17,6 +17,7 @@ from models.role import Role
 from models.group import Group, UserGroup
 from models.attachment import Attachment
 from models.announcement import Announcement, AnnouncementView
+from models.meeting import MeetingTask, DepartmentMeeting
 from decorators.roles import roles_required
 
 tasks_bp = Blueprint("tasks", __name__, url_prefix="/tasks")
@@ -120,10 +121,12 @@ def create_task():
         priority = request.form['priority']
         deadline_at = request.form['deadline_at']
         no_review = request.form.get('no_review') == 'on'
-        try:
-            assignees = request.form.getlist('assignees')
-        except (ValueError):
-            assignees = []
+        assignees = request.form.getlist('assignees')
+        assignees = [a for a in assignees if a.strip()]
+
+        if not assignees:
+            flash('Укажите исполнителей для задачи', 'danger')
+            return redirect(url_for('tasks.list_tasks', tab=request.args.get('tab', 'my')))
 
         new_task = Task(
             title=title,
@@ -335,7 +338,16 @@ def task_details(task_id):
     if role.name == 'Сотрудник':
         assignees = [user_assignment] if user_assignment else []
 
-    return render_template('tasks/details.html', task=task, assignees=assignees, today=date.today(), user_id=user_id, user_role=role, is_assigned=is_assigned, user_assignment=user_assignment, tab=tab, page=page, from_page=from_page)
+    mt = MeetingTask.query.filter_by(task_id=task_id).first()
+    meeting_id = None
+    meeting_title = None
+    if mt:
+        m = DepartmentMeeting.query.get(mt.meeting_id)
+        if m:
+            meeting_id = m.id
+            meeting_title = m.title
+
+    return render_template('tasks/details.html', task=task, assignees=assignees, today=date.today(), user_id=user_id, user_role=role, is_assigned=is_assigned, user_assignment=user_assignment, tab=tab, page=page, from_page=from_page, meeting_id=meeting_id, meeting_title=meeting_title)
 
 @tasks_bp.route('/<int:task_id>/report', methods=['GET'])
 @jwt_required()

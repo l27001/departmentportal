@@ -10,6 +10,7 @@ class Attachment(db.Model):
     news_id = db.Column(db.Integer, db.ForeignKey("news.id", ondelete="CASCADE"), nullable=True)
     announcement_id = db.Column(db.Integer, db.ForeignKey("announcements.id", ondelete="CASCADE"), nullable=True)
     document_id = db.Column(db.Integer, db.ForeignKey("documents.id", ondelete="CASCADE"), nullable=True)
+    meeting_id = db.Column(db.Integer, db.ForeignKey("department_meetings.id", ondelete="CASCADE"), nullable=True)
     file_name = db.Column(db.String(255), nullable=False)
     file_path = db.Column(db.String(500), nullable=False)
     mime_type = db.Column(db.String(100), nullable=False)
@@ -20,6 +21,7 @@ class Attachment(db.Model):
     news = db.relationship("News", backref="attachments")
     announcement = db.relationship("Announcement", backref="attachments")
     document = db.relationship("Document")
+    meeting = db.relationship("DepartmentMeeting", backref="attachments")
 
     def to_dict(self):
         return {
@@ -28,6 +30,7 @@ class Attachment(db.Model):
             "news_id": self.news_id,
             "announcement_id": self.announcement_id,
             "document_id": self.document_id,
+            "meeting_id": self.meeting_id,
             "file_name": self.file_name,
             "file_path": self.file_path,
             "mime_type": self.mime_type,

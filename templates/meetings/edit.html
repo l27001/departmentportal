@@ -1,0 +1,249 @@
+{% extends 'base.html' %}
+
+{% block title %}Редактировать заседание{% endblock %}
+
+{% block content %}
+<section class="meeting-form-section">
+    <h2>Редактирование заседания</h2>
+
+    <form method="POST" action="{{ url_for('web_meetings.edit_meeting', meeting_id=meeting.id) }}" enctype="multipart/form-data" id="meetingForm">
+        <div class="input-group">
+            <label for="title">Название</label>
+            <input type="text" id="title" name="title" value="{{ meeting.title }}" required>
+        </div>
+
+        <div class="input-group">
+            <label for="date">Дата</label>
+            <input type="date" id="date" name="date" value="{{ meeting.date.isoformat() }}" required>
+        </div>
+
+        <div class="input-group">
+            <label for="description">Описание</label>
+            <textarea id="description" name="description" rows="4">{{ meeting.description }}</textarea>
+        </div>
+
+        <div class="input-group">
+            <label>Существующие задачи</label>
+            <div class="task-search-wrapper">
+                <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="taskSearch" placeholder="Поиск по названию..." oninput="filterExistingTasks()">
+            </div>
+            <div class="checkbox-group task-checkbox-list" id="taskCheckboxes">
+                {% for task in tasks %}
+                <label class="checkbox-label task-checkbox-item" data-task-title="{{ task.title|lower }}">
+                    <input type="checkbox" name="task_ids" value="{{ task.id }}" {% if task in meeting.tasks %}checked{% endif %}>
+                    <span class="task-checkbox-title">{{ task.title }}</span>
+                    <span class="task-checkbox-date">{{ task.deadline_at.strftime('%d.%m.%Y') }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        {% if meeting.attachments|length > 0 %}
+        <div class="input-group">
+            <label>Прикреплённые файлы</label>
+            <div class="meeting-edit-files">
+                {% for att in meeting.attachments %}
+                <div class="edit-file-item">
+                    <a href="{{ url_for('web_meetings.serve_meeting_file', attachment_id=att.id) }}" target="_blank" class="file-link">{{ att.file_name }}</a>
+                    <label class="delete-checkbox">
+                        <input type="checkbox" name="delete_attachments" value="{{ att.id }}"> Удалить
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="input-group new-task-section">
+            <div class="new-task-header">
+                <label>Новые задачи</label>
+                <button type="button" class="btn btn-add-task" onclick="addNewTask()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Добавить задачу
+                </button>
+            </div>
+            <div id="newTasksContainer"></div>
+        </div>
+
+        <div class="input-group">
+            <label for="files">Добавить файлы</label>
+            <input type="file" id="files" name="files" multiple>
+        </div>
+
+        <div class="modal-actions">
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+            <a href="{{ url_for('web_meetings.meeting_details', meeting_id=meeting.id) }}" class="btn btn-cancel">Отмена</a>
+        </div>
+    </form>
+</section>
+
+<template id="newTaskTemplate">
+    <div class="new-task-card">
+        <div class="new-task-card-header">
+            <span class="new-task-badge">Новая задача</span>
+            <button type="button" class="btn-remove-task" onclick="removeNewTask(this)" title="Удалить">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="new-task-fields">
+            <div class="input-group">
+                <label>Название</label>
+                <input type="text" name="new_task_title" required placeholder="Введите название задачи">
+            </div>
+            <div class="input-group">
+                <label>Описание</label>
+                <textarea name="new_task_desc" placeholder="Описание задачи" rows="2"></textarea>
+            </div>
+            <div class="new-task-row">
+                <div class="input-group">
+                    <label>Дедлайн</label>
+                    <input type="date" name="new_task_deadline" required>
+                </div>
+                <div class="input-group">
+                    <label>Приоритет</label>
+                    <select name="new_task_priority">
+                        <option value="low">Низкий</option>
+                        <option value="medium" selected>Средний</option>
+                        <option value="high">Высокий</option>
+                    </select>
+                </div>
+            </div>
+            <div class="input-group">
+                <label>Группы исполнителей</label>
+                <div class="group-multi-select">
+                    <div class="group-chips" onclick="this.parentElement.querySelector('.group-dropdown').classList.toggle('open')">
+                        <span class="group-chip-placeholder">Выберите группы...</span>
+                    </div>
+                    <div class="group-dropdown">
+                        {% for group in groups %}
+                        <label class="group-dropdown-item">
+                            <input type="checkbox" class="group-cb" value="{{ group.id }}" data-group-id="{{ group.id }}" onchange="updateTaskGroups(this.closest('.new-task-card'))">
+                            {{ group.name }}
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="input-group" style="display:none;" class="task-executors-section">
+                <label>Исполнители</label>
+                <div class="executor-checkboxes">
+                </div>
+                <input type="hidden" name="new_task_executors" class="executor-hidden">
+            </div>
+            <div class="input-group">
+                <label class="no-review-label">
+                    <input type="checkbox" class="no-review-cb" name="new_task_no_review" value="1" checked>
+                    Без проверки
+                </label>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script>
+var groupsMembers = {{ groups_members | tojson }};
+
+document.getElementById('meetingForm').addEventListener('submit', function(e) {
+    var hasErrors = false;
+    document.querySelectorAll('.new-task-card').forEach(function(card) {
+        var title = card.querySelector('[name="new_task_title"]').value.trim();
+        if (!title) return;
+        var checked = [];
+        card.querySelectorAll('.executor-cb:checked').forEach(function(cb) {
+            checked.push(cb.value);
+        });
+        card.querySelector('.executor-hidden').value = checked.join(',');
+        if (checked.length === 0) {
+            card.style.border = '2px solid #dc3545';
+            hasErrors = true;
+        } else {
+            card.style.border = '';
+        }
+    });
+    if (hasErrors) {
+        e.preventDefault();
+        alert('Укажите исполнителей для каждой задачи');
+    }
+});
+
+function addNewTask() {
+    var template = document.getElementById('newTaskTemplate');
+    var clone = template.content.cloneNode(true);
+    document.getElementById('newTasksContainer').appendChild(clone);
+}
+
+function removeNewTask(btn) {
+    btn.closest('.new-task-card').remove();
+}
+
+function updateTaskGroups(card) {
+    var selectedGroupIds = [];
+    var selectedGroupNames = [];
+    card.querySelectorAll('.group-cb:checked').forEach(function(cb) {
+        selectedGroupIds.push(cb.value);
+        selectedGroupNames.push(cb.parentElement.textContent.trim());
+    });
+
+    var chipsContainer = card.querySelector('.group-chips');
+    var ph = chipsContainer.querySelector('.group-chip-placeholder');
+    if (ph) ph.remove();
+    chipsContainer.querySelectorAll('.group-chip').forEach(function(c) { c.remove(); });
+
+    var selectedUsers = {};
+    selectedGroupIds.forEach(function(gid) {
+        if (groupsMembers[gid]) {
+            groupsMembers[gid].forEach(function(member) {
+                selectedUsers[member.id] = member.name;
+            });
+        }
+    });
+
+    selectedGroupNames.forEach(function(name) {
+        var chip = document.createElement('span');
+        chip.className = 'group-chip';
+        chip.textContent = name;
+        chipsContainer.appendChild(chip);
+    });
+
+    if (selectedGroupIds.length === 0) {
+        var newPh = document.createElement('span');
+        newPh.className = 'group-chip-placeholder';
+        newPh.textContent = 'Выберите группы...';
+        chipsContainer.appendChild(newPh);
+    }
+
+    var executorsSection = card.querySelector('.executor-checkboxes').parentElement;
+    var executorsContainer = card.querySelector('.executor-checkboxes');
+    executorsContainer.innerHTML = '';
+
+    if (Object.keys(selectedUsers).length > 0) {
+        executorsSection.style.display = '';
+        for (var uid in selectedUsers) {
+            var label = document.createElement('label');
+            label.className = 'executor-label';
+            label.innerHTML = '<input type="checkbox" class="executor-cb" value="' + uid + '" checked> ' + selectedUsers[uid];
+            executorsContainer.appendChild(label);
+        }
+    } else {
+        executorsSection.style.display = 'none';
+    }
+}
+
+function filterExistingTasks() {
+    var query = document.getElementById('taskSearch').value.toLowerCase();
+    document.querySelectorAll('.task-checkbox-item').forEach(function(item) {
+        var title = item.getAttribute('data-task-title');
+        item.style.display = title.includes(query) ? '' : 'none';
+    });
+}
+
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.group-multi-select')) {
+        document.querySelectorAll('.group-dropdown.open').forEach(function(dd) {
+            dd.classList.remove('open');
+        });
+    }
+});
+</script>
+{% endblock %}

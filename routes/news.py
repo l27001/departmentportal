@@ -24,9 +24,6 @@ def list_news():
 @jwt_required()
 def create_news():
     role = Role.query.filter_by(id=get_jwt()["role"]).first()
-    if role.name not in ("Руководитель", "Документовед"):
-        flash("Доступ запрещён", "danger")
-        return redirect(url_for("web_news.list_news"))
 
     if request.method == "POST":
         title = request.form.get("title")

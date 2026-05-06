@@ -6,9 +6,7 @@
 <section class="news-section">
     <div class="news-header">
         <h2>Информация</h2>
-        {% if role.name in ('Руководитель', 'Документовед') %}
         <a href="{{ url_for('web_news.create_news') }}" class="btn btn-primary">Добавить новость</a>
-        {% endif %}
     </div>
 
     {% if news|length > 0 %}

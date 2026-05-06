@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}Заседания кафедры{% endblock %}
+
+{% block content %}
+<section class="meetings-section">
+    <div class="meetings-header">
+        <h2>Заседания кафедры</h2>
+        {% if role.name in ('Руководитель', 'Документовед') %}
+        <a href="{{ url_for('web_meetings.create_meeting') }}" class="btn btn-primary">Добавить заседание</a>
+        {% endif %}
+    </div>
+
+    {% if meetings|length > 0 %}
+    <div class="meetings-list">
+        {% for meeting in meetings %}
+        <div class="meeting-card">
+            <div class="meeting-card-main" onclick="window.location.href='{{ url_for('web_meetings.meeting_details', meeting_id=meeting.id) }}'">
+                <h3 class="meeting-card-title">{{ meeting.title }}</h3>
+                <p class="meeting-card-date">{{ meeting.date.strftime('%d.%m.%Y') }}</p>
+                {% if meeting.description %}
+                <p class="meeting-card-desc">{{ meeting.description[:150] }}{% if meeting.description|length > 150 %}...{% endif %}</p>
+                {% endif %}
+                <div class="meeting-card-badges">
+                    {% if meeting.tasks|length > 0 %}
+                    <span class="meeting-badge badge-tasks">{{ meeting.tasks|length }} задач</span>
+                    {% endif %}
+                    {% if meeting.attachments|length > 0 %}
+                    <span class="meeting-badge badge-attachments">{{ meeting.attachments|length }} файлов</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% if role.name in ('Руководитель', 'Документовед') %}
+            <div class="meeting-card-actions">
+                <a href="{{ url_for('web_meetings.edit_meeting', meeting_id=meeting.id) }}" class="btn btn-sm btn-edit">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </a>
+                <form method="POST" action="{{ url_for('web_meetings.delete_meeting', meeting_id=meeting.id) }}" onsubmit="return confirm('Удалить заседание?')">
+                    <button type="submit" class="btn btn-sm btn-delete">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if total_pages > 1 %}
+    <div class="meetings-pagination">
+        {% if page > 1 %}
+            <a href="{{ url_for('web_meetings.list_meetings', page=page - 1) }}" class="page-link">&laquo;</a>
+        {% endif %}
+        {% for p in range(1, total_pages + 1) %}
+            {% if p == page %}
+                <span class="page-link page-item active">{{ p }}</span>
+            {% elif p <= 3 or p > total_pages - 3 or (p >= page - 2 and p <= page + 2) %}
+                <a href="{{ url_for('web_meetings.list_meetings', page=p) }}" class="page-link">{{ p }}</a>
+            {% elif p == 4 and page > 4 %}
+                <span class="page-link ellipsis">...</span>
+            {% elif p == total_pages - 3 and page < total_pages - 3 %}
+                <span class="page-link ellipsis">...</span>
+            {% endif %}
+        {% endfor %}
+        {% if page < total_pages %}
+            <a href="{{ url_for('web_meetings.list_meetings', page=page + 1) }}" class="page-link">&raquo;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <p class="empty-meetings">Нет заседаний</p>
+    {% endif %}
+</section>
+{% endblock %}

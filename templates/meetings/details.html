@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ meeting.title }}{% endblock %}
+
+{% block content %}
+<section class="meeting-details-section">
+    <div class="meeting-details-header">
+        <h2>{{ meeting.title }}</h2>
+        <div class="meeting-details-actions">
+            {% if role.name in ('Руководитель', 'Документовед') %}
+            <a href="{{ url_for('web_meetings.edit_meeting', meeting_id=meeting.id) }}" class="btn btn-primary">Редактировать</a>
+            {% endif %}
+            {% if request.args.get('from_task') %}
+            <a href="{{ url_for('tasks.task_details', task_id=request.args.get('from_task')) }}" class="btn btn-cancel">Назад</a>
+            {% else %}
+            <a href="{{ url_for('web_meetings.list_meetings') }}" class="btn btn-cancel">Назад</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="meeting-details-meta">
+        <span class="meta-badge meta-date">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            {{ meeting.date.strftime('%d.%m.%Y') }}
+        </span>
+    </div>
+
+    {% if meeting.description %}
+    <div class="meeting-details-description">
+        {{ meeting.description }}
+    </div>
+    {% endif %}
+
+    {% if meeting.tasks|length > 0 %}
+    <div class="meeting-details-block">
+        <h3>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            Задачи
+        </h3>
+        <div class="meeting-details-list">
+            {% for task in meeting.tasks %}
+            <a href="{{ url_for('tasks.task_details', task_id=task.id) }}" class="meeting-details-item">
+                <span class="item-title">{{ task.title }}</span>
+                <span class="item-date">{{ task.deadline_at.strftime('%d.%m.%Y') }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if meeting.attachments|length > 0 %}
+    <div class="meeting-details-block">
+        <h3>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+            Прикреплённые файлы
+        </h3>
+        <div class="meeting-details-list">
+            {% for att in meeting.attachments %}
+            <a href="{{ url_for('web_meetings.serve_meeting_file', attachment_id=att.id) }}" class="meeting-details-item" download>
+                <span class="item-title">{{ att.file_name }}</span>
+                <span class="item-date">{% if att.size %}{{ (att.size / 1024)|round(1) }} КБ{% endif %}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}
