@@ -65,7 +65,26 @@ def list_tasks():
             .all()
         )
 
+    all_assignments = {
+        int(a.task_id): a
+        for a in TaskUserAssignment.query.all()
+    }
+
+    review_task_ids = set()
+    for tid, a in all_assignments.items():
+        if a.status == 'на проверке':
+            review_task_ids.add(tid)
+
     def task_sort_key(t):
+        if tab == 'all':
+            has_review = int(t.id) in review_task_ids
+            has_completed = any(a.approved for aid, a in all_assignments.items() if aid == int(t.id))
+            has_incomplete = any(not a.approved for aid, a in all_assignments.items() if aid == int(t.id))
+            if has_review:
+                return 0
+            if not has_incomplete:
+                return 1
+            return 2
         asgn = user_assignments.get(int(t.id))
         if not asgn:
             return 0
@@ -87,7 +106,7 @@ def list_tasks():
     announcements = announcements[:15]
     viewed_ids = {v.announcement_id for v in AnnouncementView.query.filter_by(user_id=user_id).all()}
 
-    return render_template("tasks/list.html", tasks=paginated_tasks, role=role, users=users, groups=groups, groups_members=groups_members, user_assignments=user_assignments, assigned_task_ids=assigned_task_ids, user_id=user_id, today=date.today(), tab=tab, page=page, total=total, per_page=per_page, announcements=announcements, viewed_ids=viewed_ids, has_more_announcements=has_more)
+    return render_template("tasks/list.html", tasks=paginated_tasks, role=role, users=users, groups=groups, groups_members=groups_members, user_assignments=user_assignments, assigned_task_ids=assigned_task_ids, user_id=user_id, today=date.today(), tab=tab, page=page, total=total, per_page=per_page, announcements=announcements, viewed_ids=viewed_ids, has_more_announcements=has_more, review_task_ids=review_task_ids)
 
 @tasks_bp.route("/", methods=["POST"])
 @jwt_required()
@@ -292,6 +311,9 @@ def delete_task(task_id):
 def task_details(task_id):
     user_id = get_jwt_identity()
     role = Role.query.filter_by(id=get_jwt()["role"]).first()
+    tab = request.args.get('tab', 'my')
+    page = request.args.get('page', 1, type=int)
+    from_page = request.args.get('from', None)
 
     if role.name == 'Сотрудник':
         has_assignment = TaskUserAssignment.query.filter_by(task_id=task_id, user_id=user_id).first()
@@ -313,7 +335,7 @@ def task_details(task_id):
     if role.name == 'Сотрудник':
         assignees = [user_assignment] if user_assignment else []
 
-    return render_template('tasks/details.html', task=task, assignees=assignees, today=date.today(), user_id=user_id, user_role=role, is_assigned=is_assigned, user_assignment=user_assignment)
+    return render_template('tasks/details.html', task=task, assignees=assignees, today=date.today(), user_id=user_id, user_role=role, is_assigned=is_assigned, user_assignment=user_assignment, tab=tab, page=page, from_page=from_page)
 
 @tasks_bp.route('/<int:task_id>/report', methods=['GET'])
 @jwt_required()

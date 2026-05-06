@@ -449,6 +449,16 @@ span.status.high {
   background-color: #d9534f;
 }
 
+span.status.awaiting-review {
+  background-color: #8a2be2;
+  animation: pulse-review 2s infinite;
+}
+
+@keyframes pulse-review {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.75; }
+}
+
 .status.pending {
   background-color: #f0ad4e;
 }

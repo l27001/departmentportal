@@ -95,7 +95,7 @@
                 <p><strong>Дата выполнения:</strong> {{ task.deadline_at.strftime('%d.%m.%Y') }}</p>
             </div>
             <div class="task-btn">
-                <a class="view-details-btn" href="{{url_for('tasks.task_details', task_id=task.id)}}">Просмотр</a>
+                <a class="view-details-btn" href="{{url_for('tasks.task_details', task_id=task.id, tab=tab, page=page)}}">Просмотр</a>
             </div>
         </div>
         {% else %}

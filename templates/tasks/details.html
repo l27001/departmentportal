@@ -4,18 +4,12 @@
   <section class="task-section">
     <div style="display: flex; align-items: center; justify-content: space-between;">
       <h2 style="margin: 10px 0;">{% block title %}Детали задачи{% endblock %}: {{ task.title }}</h2>
-      <span id="closeBtn" style="font-size: 36px; font-weight: bold; cursor: pointer; color: #b70000;">&times;</span>
+      {% if from_page == 'calendar' %}
+      <span onclick="window.location.href='{{ url_for('tasks.calendar', tab=tab) }}'" style="font-size: 36px; font-weight: bold; cursor: pointer; color: #b70000;">&times;</span>
+      {% else %}
+      <span onclick="window.location.href='{{ url_for('tasks.list_tasks', tab=tab, page=page) }}'" style="font-size: 36px; font-weight: bold; cursor: pointer; color: #b70000;">&times;</span>
+      {% endif %}
     </div>
-    <script>
-      document.getElementById('closeBtn').onclick = function() {
-        var referrer = document.referrer;
-        if (referrer && referrer.startsWith(window.location.origin)) {
-          history.back();
-        } else {
-          window.location.href = "{{ url_for('tasks.list_tasks') }}";
-        }
-      };
-    </script>
     <p><strong>Описание:</strong> {{ task.description }}</p>
     {% if is_assigned %}
     <p><strong>Статус:</strong>
@@ -110,22 +104,16 @@
     {% endif %}
 
     <div class="view-details">
-      <a href="#" class="view-details-btn" id="backBtn">Назад</a>
+      {% if from_page == 'calendar' %}
+      <a href="{{ url_for('tasks.calendar', tab=tab) }}" class="view-details-btn">Назад</a>
+      {% else %}
+      <a href="{{ url_for('tasks.list_tasks', tab=tab, page=page) }}" class="view-details-btn">Назад</a>
+      {% endif %}
       {% if user_role.name == 'Руководитель' %}
         <a href="{{ url_for('tasks.generate_task_report', task_id=task.id) }}" class="view-details-btn">Сгенерировать отчёт</a>
       {% endif %}
     </div>
     <script>
-      var backAction = function() {
-        var referrer = document.referrer;
-        if (referrer && referrer.startsWith(window.location.origin)) {
-          history.back();
-        } else {
-          window.location.href = "{{ url_for('tasks.list_tasks') }}";
-        }
-      };
-      document.getElementById('closeBtn').onclick = backAction;
-      document.getElementById('backBtn').onclick = function(e) { e.preventDefault(); backAction(); };
 
       function reviewAssignment(taskId, assigneeId, approved) {
         fetch(`/api/tasks/${taskId}/assignees/${assigneeId}/approve`, {

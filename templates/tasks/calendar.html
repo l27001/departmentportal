@@ -101,7 +101,7 @@
                     statusClass = 'pending';
                   }
                 }
-                item.innerHTML = '<a href="/tasks/' + task.id + '" class="day-task-link">' +
+                item.innerHTML = '<a href="/tasks/' + task.id + '?from=calendar&tab={{ tab }}" class="day-task-link">' +
                   '<span class="day-task-title">' + task.title + '</span>' +
                   '<span class="day-task-status ' + statusClass + '">' + statusText + '</span>' +
                   '</a>';
