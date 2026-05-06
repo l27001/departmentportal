@@ -46,6 +46,8 @@ def create_app():
 
     app.config.from_object(Config)
 
+    app.json.sort_keys = False
+
     app_version = os.getenv("APP_VERSION", "dev")
 
     swagger_template = {
