@@ -6,7 +6,8 @@ from routes.tasks import tasks_bp
 from routes.documents import documents_bp
 from routes.users import users_bp
 from routes.rating import rating_bp
-from routes.api.announcements import announcements_bp
+from routes.api.announcements import announcements_bp as api_announcements_bp
+from routes.announcements import announcements_bp as web_announcements_bp
 from routes.api.news import news_bp
 from routes.api.chat import chat_bp
 from routes.api.groups import groups_bp
@@ -257,7 +258,8 @@ def create_app():
     app.register_blueprint(users_bp)
     app.register_blueprint(rating_bp)
 
-    app.register_blueprint(announcements_bp)
+    app.register_blueprint(api_announcements_bp)
+    app.register_blueprint(web_announcements_bp)
     app.register_blueprint(news_bp)
     app.register_blueprint(chat_bp)
     app.register_blueprint(groups_bp)

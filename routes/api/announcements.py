@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from extensions import db
-from models.announcement import Announcement
+from models.announcement import Announcement, AnnouncementView
 from datetime import date
 
 announcements_bp = Blueprint("api_announcements", __name__, url_prefix="/api/announcements")
@@ -80,6 +80,8 @@ def create_announcement():
     if role not in (1, 2):
         return jsonify({"msg": "Доступ запрещён"}), 403
 
+    user_id = get_jwt_identity()
+
     data = request.json
     title = data.get("title")
     text = data.get("text")
@@ -93,7 +95,7 @@ def create_announcement():
     except ValueError:
         return jsonify({"msg": "Неверный формат даты"}), 400
 
-    announcement = Announcement(title=title, text=text, deadline=deadline)
+    announcement = Announcement(title=title, text=text, deadline=deadline, creator_id=user_id)
     db.session.add(announcement)
     db.session.commit()
 
@@ -182,3 +184,65 @@ def delete_announcement(id):
     announcement.is_deleted = True
     db.session.commit()
     return jsonify({"msg": "Объявление удалено"})
+
+
+@announcements_bp.route("/<int:id>/view", methods=["POST"])
+@jwt_required()
+def mark_viewed(id):
+    """Отметить объявление как просмотренное
+    ---
+    tags: [Announcements]
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Просмотр отмечен
+      404:
+        description: Не найдено
+    """
+    user_id = get_jwt_identity()
+    announcement = Announcement.query.filter_by(id=id, is_deleted=False).first_or_404()
+
+    existing = AnnouncementView.query.filter_by(announcement_id=id, user_id=user_id).first()
+    if not existing:
+        view = AnnouncementView(announcement_id=id, user_id=user_id)
+        db.session.add(view)
+        db.session.commit()
+
+    return jsonify({"msg": "Просмотр отмечен"})
+
+
+@announcements_bp.route("/<int:id>/views", methods=["GET"])
+@jwt_required()
+def get_views(id):
+    """Получить список просмотров объявления (только Руководитель/Документовед)
+    ---
+    tags: [Announcements]
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Список просмотров
+      403:
+        description: Доступ запрещён
+    """
+    role = get_jwt()["role"]
+    if role not in (1, 2):
+        return jsonify({"msg": "Доступ запрещён"}), 403
+
+    views = AnnouncementView.query.filter_by(announcement_id=id).order_by(AnnouncementView.viewed_at.desc()).all()
+    return jsonify([{
+        "user_id": v.user_id,
+        "user_name": v.user.name if v.user else None,
+        "viewed_at": v.viewed_at.isoformat() if v.viewed_at else None,
+    } for v in views])

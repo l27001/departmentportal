@@ -16,6 +16,7 @@ from models.user import User
 from models.role import Role
 from models.group import Group, UserGroup
 from models.attachment import Attachment
+from models.announcement import Announcement, AnnouncementView
 from decorators.roles import roles_required
 
 tasks_bp = Blueprint("tasks", __name__, url_prefix="/tasks")
@@ -71,7 +72,12 @@ def list_tasks():
     end = start + per_page
     paginated_tasks = tasks[start:end]
 
-    return render_template("tasks/list.html", tasks=paginated_tasks, role=role, users=users, groups=groups, groups_members=groups_members, user_assignments=user_assignments, assigned_task_ids=assigned_task_ids, user_id=user_id, today=date.today(), tab=tab, page=page, total=total, per_page=per_page)
+    announcements = Announcement.query.filter_by(is_deleted=False).order_by(Announcement.created_at.desc()).limit(16).all()
+    has_more = len(announcements) > 15
+    announcements = announcements[:15]
+    viewed_ids = {v.announcement_id for v in AnnouncementView.query.filter_by(user_id=user_id).all()}
+
+    return render_template("tasks/list.html", tasks=paginated_tasks, role=role, users=users, groups=groups, groups_members=groups_members, user_assignments=user_assignments, assigned_task_ids=assigned_task_ids, user_id=user_id, today=date.today(), tab=tab, page=page, total=total, per_page=per_page, announcements=announcements, viewed_ids=viewed_ids, has_more_announcements=has_more)
 
 @tasks_bp.route("/", methods=["POST"])
 @jwt_required()
@@ -255,7 +261,12 @@ def calendar():
         days_all_completed[day] = len(assigned) > 0 and all(t['status'] in ('завершена', 'на проверке') for t in assigned)
         days_has_unassigned[day] = any(t['status'] is None for t in day_tasks)
 
-    return render_template("tasks/calendar.html", tasks=events, tasks_by_deadline=tasks_by_deadline, days_all_completed=days_all_completed, days_has_unassigned=days_has_unassigned, tab=tab, role=role)
+    announcements = Announcement.query.filter_by(is_deleted=False).order_by(Announcement.created_at.desc()).limit(16).all()
+    has_more = len(announcements) > 15
+    announcements = announcements[:15]
+    viewed_ids = {v.announcement_id for v in AnnouncementView.query.filter_by(user_id=user_id).all()}
+
+    return render_template("tasks/calendar.html", tasks=events, tasks_by_deadline=tasks_by_deadline, days_all_completed=days_all_completed, days_has_unassigned=days_has_unassigned, tab=tab, role=role, announcements=announcements, viewed_ids=viewed_ids, has_more_announcements=has_more)
 
 @tasks_bp.route("/<int:task_id>", methods=["DELETE"])
 @jwt_required()

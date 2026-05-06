@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Создать анонс{% endblock %}
+
+{% block content %}
+<section class="announcement-form-section">
+    <h2>Создание анонса</h2>
+
+    <form method="POST" enctype="multipart/form-data" action="{{ url_for('announcements.create_announcement') }}">
+        <div class="input-group">
+            <label for="title">Заголовок</label>
+            <input type="text" id="title" name="title" required placeholder="Введите заголовок анонса">
+        </div>
+
+        <div class="input-group">
+            <label for="text">Текст анонса</label>
+            <textarea id="text" name="text" required placeholder="Введите текст анонса" rows="6"></textarea>
+        </div>
+
+        <div class="input-group">
+            <label for="deadline">Срок</label>
+            <input type="date" id="deadline" name="deadline" required>
+        </div>
+
+        <div class="input-group">
+            <label for="file">Файлы</label>
+            <input type="file" id="file" name="file" multiple>
+        </div>
+
+        <div class="modal-actions">
+            <button type="submit" class="btn btn-primary">Создать анонс</button>
+            <a href="{{ url_for('tasks.list_tasks') }}" class="btn btn-cancel">Отмена</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

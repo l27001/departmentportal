@@ -11,7 +11,7 @@ class Document(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     creator = db.relationship('User', backref='documents', lazy=True)
-    attachments = db.relationship('Attachment', lazy=True, cascade='all, delete-orphan')
+    attachments = db.relationship('Attachment', lazy=True, cascade='all, delete-orphan', overlaps="document")
     
     def __init__(self, title, creator_id, category=None):
         self.title = title
