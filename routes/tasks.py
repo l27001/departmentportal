@@ -110,7 +110,7 @@ def list_tasks():
 
 @tasks_bp.route("/", methods=["POST"])
 @jwt_required()
-@roles_required("Руководитель")
+@roles_required("Руководитель", "Документовед")
 def create_task():
     if request.method == 'POST':
         user_id = get_jwt_identity()

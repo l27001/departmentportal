@@ -119,7 +119,7 @@ def list_tasks():
 @api_tasks_bp.route("/", methods=["POST"])
 @jwt_required()
 def create_task():
-    """Создать задачу (только Руководитель)
+    """Создать задачу (Руководитель, Документовед)
     ---
     tags: [Tasks]
     security:
@@ -139,7 +139,7 @@ def create_task():
         description: Доступ запрещён
     """
     role = get_jwt()["role"]
-    if role != 1:
+    if role not in (1, 2):
         return jsonify({"msg": "Доступ запрещён"}), 403
 
     user_id = get_jwt_identity()
@@ -209,7 +209,7 @@ def get_task(task_id):
     user_id = get_jwt_identity()
     role = get_jwt()["role"]
 
-    if role != 1:
+    if role not in (1, 2):
         has_assignment = TaskUserAssignment.query.filter_by(task_id=task_id, user_id=user_id).first()
         if not has_assignment:
             return jsonify({"msg": "Нет доступа к задаче"}), 403
@@ -236,7 +236,7 @@ def get_task(task_id):
 @api_tasks_bp.route("/<int:task_id>", methods=["PATCH"])
 @jwt_required()
 def update_task(task_id):
-    """Обновить задачу (только Руководитель)
+    """Обновить задачу (Руководитель, Документовед)
     ---
     tags: [Tasks]
     security:
@@ -273,7 +273,7 @@ def update_task(task_id):
         description: Доступ запрещён
     """
     role = get_jwt()["role"]
-    if role != 1:
+    if role not in (1, 2):
         return jsonify({"msg": "Доступ запрещён"}), 403
 
     task = Task.query.get_or_404(task_id)
@@ -300,7 +300,7 @@ def update_task(task_id):
 @api_tasks_bp.route("/<int:task_id>", methods=["DELETE"])
 @jwt_required()
 def delete_task(task_id):
-    """Удалить задачу (только Руководитель)
+    """Удалить задачу (Руководитель, Документовед)
     ---
     tags: [Tasks]
     security:
@@ -317,7 +317,7 @@ def delete_task(task_id):
         description: Доступ запрещён
     """
     role = get_jwt()["role"]
-    if role != 1:
+    if role not in (1, 2):
         return jsonify({"msg": "Доступ запрещён"}), 403
 
     task = Task.query.get_or_404(task_id)
@@ -448,7 +448,7 @@ def approve_assignee(task_id, assignee_id):
 @api_tasks_bp.route("/<int:task_id>/assignees", methods=["POST"])
 @jwt_required()
 def add_assignees(task_id):
-    """Добавить исполнителей к задаче (только Руководитель)
+    """Добавить исполнителей к задаче (Руководитель, Документовед)
     ---
     tags: [Tasks]
     security:
@@ -476,7 +476,7 @@ def add_assignees(task_id):
         description: Доступ запрещён
     """
     role = get_jwt()["role"]
-    if role != 1:
+    if role not in (1, 2):
         return jsonify({"msg": "Доступ запрещён"}), 403
 
     Task.query.get_or_404(task_id)

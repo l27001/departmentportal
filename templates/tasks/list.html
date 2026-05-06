@@ -29,7 +29,7 @@
           <a href="{{ url_for('tasks.list_tasks', tab='my') }}" class="task-tab {% if tab == 'my' %}active{% endif %}">Мои задачи</a>
           <a href="{{ url_for('tasks.list_tasks', tab='all') }}" class="task-tab {% if tab == 'all' %}active{% endif %}">Все задачи</a>
         </div>
-        {% if role.name == 'Руководитель' %}
+        {% if role.name in ('Руководитель', 'Документовед') %}
         <button class="btn btn-primary add-task-btn" onclick="openModal('addTask')">Добавить задачу</button>
         {% endif %}
       </div>
