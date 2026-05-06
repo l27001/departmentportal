@@ -55,7 +55,7 @@
             <span class="status high">Высокий приоритет</span>
         {% endif %}
     </p>
-    <p><strong>Дата начала:</strong> {{ task.starts_at.strftime('%d.%m.%Y') }}</p>
+
     <p><strong>Дата выполнения:</strong> {{ task.deadline_at.strftime('%d.%m.%Y') }}</p>
 
     {% if user_role.name in ('Руководитель', 'Документовед') %}

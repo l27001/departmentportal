@@ -12,7 +12,6 @@ class Task(db.Model):
 
     priority = db.Column(db.String(20), default="medium")
 
-    starts_at = db.Column(db.Date, nullable=False)
     deadline_at = db.Column(db.Date, nullable=False)
 
     no_review = db.Column(db.Boolean, default=False, nullable=False)
@@ -42,7 +41,6 @@ class Task(db.Model):
             "title": self.title,
             "description": self.description,
             "priority": self.priority,
-            "starts_at": self.starts_at.isoformat(),
             "deadline_at": self.deadline_at.isoformat(),
             "no_review": self.no_review,
             "creator_id": self.creator_id

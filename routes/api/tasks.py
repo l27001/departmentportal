@@ -156,11 +156,10 @@ def create_task():
     no_review = data.get("no_review", False)
     assignees = data.get("assignees", [])
 
-    if not title or not starts_at or not deadline_at:
+    if not title or not deadline_at:
         return jsonify({"msg": "Заполните обязательные поля"}), 400
 
     try:
-        starts_at_date = date.fromisoformat(starts_at)
         deadline_at_date = date.fromisoformat(deadline_at)
     except ValueError:
         return jsonify({"msg": "Неверный формат даты"}), 400
@@ -169,7 +168,6 @@ def create_task():
         title=title,
         description=description,
         priority=priority,
-        starts_at=starts_at_date,
         deadline_at=deadline_at_date,
         no_review=no_review,
         creator_id=user_id
@@ -262,9 +260,6 @@ def update_task(task_id):
             priority:
               type: string
               enum: [low, medium, high]
-            starts_at:
-              type: string
-              format: date
             deadline_at:
               type: string
               format: date
@@ -294,8 +289,6 @@ def update_task(task_id):
         if data["priority"] not in allowed_priorities:
             return jsonify({"msg": f"Недопустимый приоритет. Разрешены: {', '.join(allowed_priorities)}"}), 400
         task.priority = data["priority"]
-    if "starts_at" in data:
-        task.starts_at = date.fromisoformat(data["starts_at"])
     if "deadline_at" in data:
         task.deadline_at = date.fromisoformat(data["deadline_at"])
     if "no_review" in data:

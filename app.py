@@ -167,7 +167,6 @@ def create_app():
                     "title": {"type": "string"},
                     "description": {"type": "string"},
                     "priority": {"type": "string", "enum": ["low", "medium", "high"]},
-                    "starts_at": {"type": "string", "format": "date"},
                     "deadline_at": {"type": "string", "format": "date"},
                     "no_review": {"type": "boolean"},
                     "creator_id": {"type": "integer"},
@@ -176,12 +175,11 @@ def create_app():
             },
             "TaskInput": {
                 "type": "object",
-                "required": ["title", "starts_at", "deadline_at"],
+                "required": ["title", "deadline_at"],
                 "properties": {
                     "title": {"type": "string"},
                     "description": {"type": "string"},
                     "priority": {"type": "string", "enum": ["low", "medium", "high"], "default": "medium"},
-                    "starts_at": {"type": "string", "format": "date", "example": "2026-06-01"},
                     "deadline_at": {"type": "string", "format": "date", "example": "2026-07-01"},
                     "no_review": {"type": "boolean", "default": False},
                     "assignees": {"type": "array", "items": {"type": "integer"}},

@@ -89,7 +89,6 @@ def create_task():
         title = request.form['title']
         description = request.form['description']
         priority = request.form['priority']
-        starts_at = request.form['starts_at']
         deadline_at = request.form['deadline_at']
         no_review = request.form.get('no_review') == 'on'
         try:
@@ -101,7 +100,6 @@ def create_task():
             title=title,
             description=description,
             priority=priority,
-            starts_at=starts_at,
             deadline_at=deadline_at,
             no_review=no_review,
             creator_id=user_id
@@ -231,7 +229,6 @@ def calendar():
             title = f'⚠ {task.title}'
         events.append({
             'title': title,
-            'start': task.starts_at.strftime('%Y-%m-%d'),
             'end': task.deadline_at.strftime('%Y-%m-%d'),
             'description': task.description,
             'color': color,
@@ -321,7 +318,7 @@ def generate_task_report(task_id):
     
     # Заголовки
     writer.writerow(['Задача', 'Описание', 'Приоритет', 'Дата начала', 'Дата выполнения'])
-    writer.writerow([task.title, task.description, task.priority, task.starts_at.strftime('%d.%m.%Y'), task.deadline_at.strftime('%d.%m.%Y')])
+    writer.writerow([task.title, task.description, task.priority, task.deadline_at.strftime('%d.%m.%Y')])
 
     writer.writerow([])
     writer.writerow(['Исполнитель', 'Прогресс'])
