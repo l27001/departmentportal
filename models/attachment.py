@@ -7,6 +7,8 @@ class Attachment(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     task_id = db.Column(db.Integer, db.ForeignKey("tasks.id", ondelete="CASCADE"), nullable=True)
+    news_id = db.Column(db.Integer, db.ForeignKey("news.id", ondelete="CASCADE"), nullable=True)
+    announcement_id = db.Column(db.Integer, db.ForeignKey("announcements.id", ondelete="CASCADE"), nullable=True)
     file_name = db.Column(db.String(255), nullable=False)
     file_path = db.Column(db.String(500), nullable=False)
     mime_type = db.Column(db.String(100), nullable=False)
@@ -14,11 +16,15 @@ class Attachment(db.Model):
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     task = db.relationship("Task", backref="attachments")
+    news = db.relationship("News", backref="attachments")
+    announcement = db.relationship("Announcement", backref="attachments")
 
     def to_dict(self):
         return {
             "id": self.id,
             "task_id": self.task_id,
+            "news_id": self.news_id,
+            "announcement_id": self.announcement_id,
             "file_name": self.file_name,
             "file_path": self.file_path,
             "mime_type": self.mime_type,

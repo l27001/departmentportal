@@ -5,6 +5,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from extensions import db, allowed_file
 from models.attachment import Attachment
 from models.task import Task
+from models.news import News
+from models.announcement import Announcement
 
 attachments_bp = Blueprint("api_attachments", __name__, url_prefix="/api")
 
@@ -150,3 +152,69 @@ def delete_attachment(id):
     db.session.delete(attachment)
     db.session.commit()
     return jsonify({"msg": "Вложение удалено"})
+
+
+def _upload_attachment(entity_model, entity_id):
+    entity = entity_model.query.get_or_404(entity_id)
+    if "file" not in request.files:
+        return jsonify({"msg": "Файл не найден"}), 400
+
+    file = request.files["file"]
+    if file.filename == "":
+        return jsonify({"msg": "Файл не выбран"}), 400
+
+    if not allowed_file(file.filename, current_app.config):
+        return jsonify({"msg": "Недопустимый тип файла"}), 400
+
+    original_name = file.filename
+    ext = os.path.splitext(original_name)[1] if '.' in original_name else ''
+    safe_filename = str(uuid.uuid4()) + ext
+    upload_dir = os.path.join(current_app.config.get("UPLOAD_FOLDER", "uploads"), "attachments", entity_model.__tablename__, str(entity_id))
+    os.makedirs(upload_dir, exist_ok=True)
+    save_path = os.path.join(upload_dir, safe_filename)
+
+    file.save(save_path)
+    file_size = os.path.getsize(save_path)
+
+    mime_type = file.content_type or "application/octet-stream"
+
+    kwargs = {entity_model.__tablename__ + "_id": entity_id}
+    attachment = Attachment(
+        **kwargs,
+        file_name=original_name,
+        file_path=save_path,
+        mime_type=mime_type,
+        size=file_size,
+    )
+    db.session.add(attachment)
+    db.session.commit()
+
+    return jsonify(attachment.to_dict()), 201
+
+
+@attachments_bp.route("/news/<int:news_id>/attachments", methods=["GET"])
+@jwt_required()
+def list_news_attachments(news_id):
+    News.query.get_or_404(news_id)
+    attachments = Attachment.query.filter_by(news_id=news_id).order_by(Attachment.uploaded_at.desc()).all()
+    return jsonify([a.to_dict() for a in attachments])
+
+
+@attachments_bp.route("/news/<int:news_id>/attachments", methods=["POST"])
+@jwt_required()
+def upload_news_attachment(news_id):
+    return _upload_attachment(News, news_id)
+
+
+@attachments_bp.route("/announcements/<int:announcement_id>/attachments", methods=["GET"])
+@jwt_required()
+def list_announcement_attachments(announcement_id):
+    Announcement.query.get_or_404(announcement_id)
+    attachments = Attachment.query.filter_by(announcement_id=announcement_id).order_by(Attachment.uploaded_at.desc()).all()
+    return jsonify([a.to_dict() for a in attachments])
+
+
+@attachments_bp.route("/announcements/<int:announcement_id>/attachments", methods=["POST"])
+@jwt_required()
+def upload_announcement_attachment(announcement_id):
+    return _upload_attachment(Announcement, announcement_id)
