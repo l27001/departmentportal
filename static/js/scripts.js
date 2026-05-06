@@ -24,18 +24,25 @@ window.onclick = function(event) {
 }
 
 function updateTaskStatus(el, id) {
+    var taskItem = el.closest('.task-item');
+    var newVal = el.value;
     fetch(`/api/tasks/${id}/status`, {
         method: "PATCH",
         headers: {
             "Content-Type": "application/json",
         },
         credentials: "include",
-        body: JSON.stringify({ status: el.value }),
+        body: JSON.stringify({ status: newVal }),
     })
     .then(function(response){
         return response.json()
     })
     .then(function(result){
         console.log(result)
+        if (newVal === 'Завершена') {
+            if (taskItem) taskItem.classList.add('task-completed');
+        } else {
+            if (taskItem) taskItem.classList.remove('task-completed');
+        }
     })
 }

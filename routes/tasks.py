@@ -65,7 +65,15 @@ def list_tasks():
             .all()
         )
 
-    tasks = sorted(tasks, key=lambda t: 1 if (user_assignments.get(t.id) and user_assignments[t.id].status in ('завершена', 'на проверке')) else 0)
+    def task_sort_key(t):
+        asgn = user_assignments.get(t.id)
+        if asgn and asgn.approved:
+            return 2
+        if asgn and asgn.status == 'на проверке':
+            return 1
+        return 0
+
+    tasks = sorted(tasks, key=task_sort_key)
 
     total = len(tasks)
     start = (page - 1) * per_page

@@ -38,24 +38,26 @@
       {% endif %}
       <div class="task-list">
         {% for task in tasks %}
-        <div class="task-item">
+        {% set is_completed = task.id in assigned_task_ids and user_assignments.get(task.id) and user_assignments.get(task.id).approved %}
+        <div class="task-item {% if is_completed %}task-completed{% endif %}">
             <div class="task-info">
                 <h3 class="task-title">{{ task.title }}</h3>
                 <p class="task-description">{{ task.description }}</p>
             </div>
             {% if task.id in assigned_task_ids %}
             <div class="task-btn">
+              {% set asgn = user_assignments.get(task.id) %}
+              {% set is_approved = asgn and asgn.approved %}
               <select autocomplete="off" onchange="updateTaskStatus(this, {{task.id}})">
-                {% if user_assignments.get(task.id) %}
-                <option {% if user_assignments.get(task.id).status == 'не начата' %}selected{% endif %}>Не начата</option>
-                <option {% if user_assignments.get(task.id).status == 'в работе' %}selected{% endif %}>В работе</option>
-                {% if task.no_review %}
-                <option {% if user_assignments.get(task.id).status == 'завершена' %}selected{% endif %}>Завершена</option>
-                {% else %}
-                <option {% if user_assignments.get(task.id).status == 'на проверке' %}selected{% endif %}>На проверке</option>
-                {% if user_assignments.get(task.id).approved %}
+                {% if is_approved %}
                 <option selected>Завершена</option>
-                {% endif %}
+                {% elif asgn %}
+                <option {% if asgn.status == 'не начата' %}selected{% endif %}>Не начата</option>
+                <option {% if asgn.status == 'в работе' %}selected{% endif %}>В работе</option>
+                {% if task.no_review %}
+                <option {% if asgn.status == 'завершена' %}selected{% endif %}>Завершена</option>
+                {% else %}
+                <option {% if asgn.status == 'на проверке' %}selected{% endif %}>На проверке</option>
                 {% endif %}
                 {% else %}
                 <option selected>Не начата</option>
