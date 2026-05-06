@@ -14,7 +14,7 @@ class Task(db.Model):
 
     deadline_at = db.Column(db.Date, nullable=False)
 
-    no_review = db.Column(db.Boolean, default=False, nullable=False)
+    no_review = db.Column(db.Boolean, default=True, nullable=False)
 
     creator_id = db.Column(
         db.Integer,
