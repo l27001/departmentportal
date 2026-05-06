@@ -1871,6 +1871,602 @@ textarea {
   margin: 0 0 24px;
 }
 
+/* ==============================
+    ЗАСЕДАНИЯ КАФЕДРЫ
+============================== */
+
+.meetings-section {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 30px;
+}
+
+.meetings-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.meetings-header h2 {
+    font-size: 22px;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.meetings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.meeting-card {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    background: #fff;
+    border-radius: 10px;
+    padding: 16px 20px;
+    border: 1px solid #e5e7eb;
+    transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.meeting-card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    border-color: #d1d5db;
+}
+
+.meeting-card-main {
+    flex: 1;
+    cursor: pointer;
+}
+
+.meeting-card-title {
+    font-size: 16px;
+    color: #2c3e50;
+    margin: 0 0 6px;
+}
+
+.meeting-card-date {
+    font-size: 13px;
+    color: #9ca3af;
+    margin: 0 0 8px;
+}
+
+.meeting-card-desc {
+    font-size: 14px;
+    color: #6c757d;
+    margin: 0 0 10px;
+    line-height: 1.5;
+}
+
+.meeting-card-badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.meeting-badge {
+    font-size: 12px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 500;
+}
+
+.badge-tasks {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+.badge-announcements {
+    background: #f0f7ff;
+    color: #007bff;
+}
+
+.badge-documents {
+    background: #f5f5f5;
+    color: #6c757d;
+}
+
+.meeting-card-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+    margin-left: 12px;
+}
+
+.btn-sm {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-edit {
+    background: #e8f0fe;
+    color: #1a56db;
+}
+
+.btn-edit:hover {
+    background: #d4e0fc;
+}
+
+.btn-delete {
+    background: #fde8e8;
+    color: #c62828;
+}
+
+.btn-delete:hover {
+    background: #fcd4d4;
+}
+
+.empty-meetings {
+    font-size: 14px;
+    color: #6c757d;
+    text-align: center;
+    padding: 40px 0;
+}
+
+.meetings-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    margin-top: 24px;
+}
+
+.meetings-pagination .page-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 34px;
+    padding: 0 8px;
+    border-radius: 6px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    color: #4b5563;
+    text-decoration: none;
+    font-size: 14px;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.meetings-pagination .page-link:hover {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+}
+
+.meetings-pagination .page-item.active {
+    background: #007bff;
+    border-color: #007bff;
+    color: #fff;
+    cursor: default;
+}
+
+.meetings-pagination .ellipsis {
+    border-color: transparent;
+    cursor: default;
+}
+
+.meeting-details-section {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 30px;
+}
+
+.meeting-details-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.meeting-details-header h2 {
+    font-size: 22px;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.meeting-details-actions {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.meeting-details-meta {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.meeting-details-description {
+    font-size: 15px;
+    line-height: 1.7;
+    color: #374151;
+    margin-bottom: 24px;
+    padding: 16px;
+    background: #f8f9fc;
+    border-radius: 8px;
+}
+
+.meeting-details-block {
+    margin-bottom: 24px;
+}
+
+.meeting-details-block h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    color: #2c3e50;
+    margin: 0 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.meeting-details-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.meeting-details-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.meeting-details-item:hover {
+    background: #f8f9fc;
+    border-color: #d1d5db;
+}
+
+.meeting-details-item .item-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.meeting-details-item .item-date {
+    font-size: 13px;
+    color: #9ca3af;
+}
+
+.meeting-details-item .item-category {
+    font-size: 13px;
+    color: #6c757d;
+}
+
+.meeting-form-section {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 30px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+.meeting-form-section h2 {
+    font-size: 22px;
+    color: #2c3e50;
+    margin: 0 0 24px;
+}
+
+/* ==============================
+    ИНФОРМАЦИЯ (НОВОСТИ)
+============================== */
+
+.news-section {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 30px;
+}
+
+.news-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.news-header h2 {
+    font-size: 22px;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.news-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.news-card {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    background: #fff;
+    border-radius: 10px;
+    padding: 16px 20px;
+    border: 1px solid #e5e7eb;
+    transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.news-card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    border-color: #d1d5db;
+}
+
+.news-card.news-pinned {
+    border-left: 3px solid #007bff;
+    background: #f8faff;
+}
+
+.news-card-main {
+    flex: 1;
+    cursor: pointer;
+}
+
+.news-card-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    color: #2c3e50;
+    margin: 0 0 6px;
+}
+
+.news-card-title svg {
+    color: #007bff;
+    flex-shrink: 0;
+}
+
+.news-card-date {
+    font-size: 13px;
+    color: #9ca3af;
+    margin: 0 0 8px;
+}
+
+.news-card-text {
+    font-size: 14px;
+    color: #6c757d;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.news-card-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+    margin-left: 12px;
+}
+
+.empty-news {
+    font-size: 14px;
+    color: #6c757d;
+    text-align: center;
+    padding: 40px 0;
+}
+
+.news-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    margin-top: 24px;
+}
+
+.news-pagination .page-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 34px;
+    padding: 0 8px;
+    border-radius: 6px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    color: #4b5563;
+    text-decoration: none;
+    font-size: 14px;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.news-pagination .page-link:hover {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+}
+
+.news-pagination .page-item.active {
+    background: #007bff;
+    border-color: #007bff;
+    color: #fff;
+    cursor: default;
+}
+
+.news-pagination .ellipsis {
+    border-color: transparent;
+    cursor: default;
+}
+
+.news-details-section {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 30px;
+}
+
+.news-details-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.news-details-header h2 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 22px;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.news-details-header h2 svg {
+    color: #007bff;
+    flex-shrink: 0;
+}
+
+.news-details-actions {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.news-details-date {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: #9ca3af;
+    margin-bottom: 24px;
+}
+
+.news-details-text {
+    font-size: 15px;
+    line-height: 1.8;
+    color: #374151;
+    margin-bottom: 32px;
+}
+
+.news-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+}
+
+.news-gallery-item {
+    position: relative;
+    aspect-ratio: 4/3;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 1px solid #e5e7eb;
+}
+
+.news-gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.2s;
+}
+
+.news-gallery-item:hover img {
+    transform: scale(1.05);
+}
+
+.gallery-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+    color: #fff;
+}
+
+.news-gallery-item:hover .gallery-overlay {
+    opacity: 1;
+}
+
+.modal-image {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-image .modal-content-img {
+    max-width: 90%;
+    max-height: 90vh;
+    object-fit: contain;
+}
+
+.modal-image .close {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    z-index: 1001;
+    font-size: 36px;
+    color: #fff;
+}
+
+.news-form-section {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 30px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+.news-form-section h2 {
+    font-size: 22px;
+    color: #2c3e50;
+    margin: 0 0 24px;
+}
+
+.checkbox-inline {
+    margin-bottom: 12px;
+}
+
+.news-edit-images {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+}
+
+.edit-image-item {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+    background: #f8f9fc;
+}
+
+.edit-image-item img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    display: block;
+}
+
+.edit-image-item .delete-checkbox {
+    padding: 6px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+}
+
+.edit-image-item input[type="checkbox"] {
+    accent-color: #dc3545;
+}
+
 @media (max-width: 992px) {
   .task-manager-layout {
     flex-direction: column;

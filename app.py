@@ -16,6 +16,9 @@ from routes.api.task_comments import task_comments_bp
 from routes.api.tasks import api_tasks_bp
 from routes.api.documents import api_documents_bp
 from routes.api.auth import api_auth_bp
+from routes.api.meetings import meetings_bp as api_meetings_bp
+from routes.meetings import meetings_bp as web_meetings_bp
+from routes.news import news_bp as web_news_bp
 from dotenv import load_dotenv
 from flask_cors import CORS
 from flasgger import Swagger
@@ -39,6 +42,7 @@ from models.chat import GeneralChatMessage
 from models.group import Group, UserGroup
 from models.attachment import Attachment
 from models.task_comment import TaskComment
+from models.meeting import DepartmentMeeting, MeetingTask, MeetingAnnouncement, MeetingDocument
 
 
 def create_app():
@@ -261,6 +265,7 @@ def create_app():
     app.register_blueprint(api_announcements_bp)
     app.register_blueprint(web_announcements_bp)
     app.register_blueprint(news_bp)
+    app.register_blueprint(web_news_bp)
     app.register_blueprint(chat_bp)
     app.register_blueprint(groups_bp)
     app.register_blueprint(attachments_bp)
@@ -268,6 +273,8 @@ def create_app():
     app.register_blueprint(api_tasks_bp)
     app.register_blueprint(api_documents_bp)
     app.register_blueprint(api_auth_bp)
+    app.register_blueprint(api_meetings_bp)
+    app.register_blueprint(web_meetings_bp)
 
     @app.route('/')
     @jwt_required()

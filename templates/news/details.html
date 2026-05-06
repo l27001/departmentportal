@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ news.title }}{% endblock %}
+
+{% block content %}
+<section class="news-details-section">
+    <div class="news-details-header">
+        <h2>
+            {% if news.is_pinned %}
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/></svg>
+            {% endif %}
+            {{ news.title }}
+        </h2>
+        <div class="news-details-actions">
+            {% if role.name in ('Руководитель', 'Документовед') %}
+            <a href="{{ url_for('web_news.edit_news', news_id=news.id) }}" class="btn btn-primary">Редактировать</a>
+            {% endif %}
+            <a href="{{ url_for('web_news.list_news') }}" class="btn btn-cancel">Назад</a>
+        </div>
+    </div>
+
+    <div class="news-details-date">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        {{ news.created_at.strftime('%d.%m.%Y') }}
+    </div>
+
+    <div class="news-details-text">
+        {{ news.text.replace('\n', '<br>') | safe }}
+    </div>
+
+    {% if news.attachments|length > 0 %}
+    <div class="news-gallery">
+        {% for att in news.attachments %}
+            {% if att.mime_type.startswith('image/') %}
+            <div class="news-gallery-item" onclick="openImageModal('{{ url_for('web_news.serve_news_image', attachment_id=att.id) }}')">
+                <img src="{{ url_for('web_news.serve_news_image', attachment_id=att.id) }}" alt="{{ att.file_name }}">
+                <div class="gallery-overlay">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                </div>
+            </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+</section>
+
+<div id="imageModal" class="modal modal-image">
+    <span class="close" onclick="closeModal('imageModal')">&times;</span>
+    <img id="modalImage" class="modal-content-img">
+</div>
+
+<script>
+function openImageModal(src) {
+    var modal = document.getElementById('imageModal');
+    var img = document.getElementById('modalImage');
+    img.src = src;
+    modal.style.display = 'block';
+}
+</script>
+{% endblock %}

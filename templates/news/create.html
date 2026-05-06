@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}Добавить новость{% endblock %}
+
+{% block content %}
+<section class="news-form-section">
+    <h2>Добавление новости</h2>
+
+    <form method="POST" enctype="multipart/form-data" action="{{ url_for('web_news.create_news') }}">
+        <div class="input-group">
+            <label for="title">Заголовок</label>
+            <input type="text" id="title" name="title" required placeholder="Введите заголовок">
+        </div>
+
+        <div class="input-group">
+            <label for="text">Текст</label>
+            <textarea id="text" name="text" required placeholder="Введите текст" rows="8"></textarea>
+        </div>
+
+        <div class="input-group checkbox-inline">
+            <label class="checkbox-label">
+                <input type="checkbox" name="is_pinned" style="width:auto;"> Закрепить новость
+            </label>
+        </div>
+
+        <div class="input-group">
+            <label for="files">Изображения</label>
+            <input type="file" id="files" name="files" multiple accept="image/*">
+        </div>
+
+        <div class="modal-actions">
+            <button type="submit" class="btn btn-primary">Создать</button>
+            <a href="{{ url_for('web_news.list_news') }}" class="btn btn-cancel">Отмена</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Редактировать новость{% endblock %}
+
+{% block content %}
+<section class="news-form-section">
+    <h2>Редактирование новости</h2>
+
+    <form method="POST" enctype="multipart/form-data" action="{{ url_for('web_news.edit_news', news_id=news.id) }}">
+        <div class="input-group">
+            <label for="title">Заголовок</label>
+            <input type="text" id="title" name="title" value="{{ news.title }}" required>
+        </div>
+
+        <div class="input-group">
+            <label for="text">Текст</label>
+            <textarea id="text" name="text" required rows="8">{{ news.text }}</textarea>
+        </div>
+
+        <div class="input-group checkbox-inline">
+            <label class="checkbox-label">
+                <input type="checkbox" name="is_pinned" style="width:auto;" {% if news.is_pinned %}checked{% endif %}> Закрепить новость
+            </label>
+        </div>
+
+        {% if news.attachments|length > 0 %}
+        <div class="input-group">
+            <label>Текущие изображения</label>
+            <div class="news-edit-images">
+                {% for att in news.attachments %}
+                    {% if att.mime_type.startswith('image/') %}
+                    <div class="edit-image-item">
+                        <img src="{{ url_for('web_news.serve_news_image', attachment_id=att.id) }}" alt="{{ att.file_name }}">
+                        <label class="delete-checkbox">
+                            <input type="checkbox" name="delete_attachments" value="{{ att.id }}"> Удалить
+                        </label>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="input-group">
+            <label for="files">Добавить изображения</label>
+            <input type="file" id="files" name="files" multiple accept="image/*">
+        </div>
+
+        <div class="modal-actions">
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+            <a href="{{ url_for('web_news.news_details', news_id=news.id) }}" class="btn btn-cancel">Отмена</a>
+        </div>
+    </form>
+</section>
+{% endblock %}
