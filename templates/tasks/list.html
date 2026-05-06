@@ -92,7 +92,7 @@
                 {% endif %}
             </div>
             <div class="task-dates">
-                <p><strong>Дата выполнения:</strong> {{ task.deadline_at.strftime('%d.%m.%Y') }}</p>
+                <p><strong>Дедлайн:</strong> {{ task.deadline_at.strftime('%d.%m.%Y') }}</p>
             </div>
             <div class="task-btn">
                 <a class="view-details-btn" href="{{url_for('tasks.task_details', task_id=task.id, tab=tab, page=page)}}">Просмотр</a>
@@ -186,13 +186,9 @@
           <option value="high">Высокий</option>
         </select>
       </div>
-        <div class="input-group">
-            <label for="taskDeadlineAt">Дедлайн</label>
-            <input type="date" id="taskDeadlineAt" name="deadline_at" required value="{{ today.isoformat() }}">
-        </div>
       <div class="input-group">
-        <label for="taskDeadlineAt">Дата выполнения:</label>
-        <input type="date" id="taskDeadlineAt" name="deadline_at" required>
+        <label for="taskDeadlineAt">Дедлайн</label>
+        <input type="date" id="taskDeadlineAt" name="deadline_at" required value="{{ today.isoformat() }}">
       </div>
       <div class="input-group">
         <label for="taskFiles">Файлы:</label>
