@@ -16,16 +16,18 @@
         </div>
       </div>
       {% if role.name in ('Руководитель', 'Документовед') %}
-      <div class="task-tabs">
-        <a href="{{ url_for('tasks.list_tasks', tab='my') }}" class="task-tab {% if tab == 'my' %}active{% endif %}">Мои задачи</a>
-        <a href="{{ url_for('tasks.list_tasks', tab='all') }}" class="task-tab {% if tab == 'all' %}active{% endif %}">Все задачи</a>
-      </div>
-      {% endif %}
-      <div class="header-btns">
+      <div class="task-controls">
+        <div class="task-tabs">
+          <a href="{{ url_for('tasks.list_tasks', tab='my') }}" class="task-tab {% if tab == 'my' %}active{% endif %}">Мои задачи</a>
+          <a href="{{ url_for('tasks.list_tasks', tab='all') }}" class="task-tab {% if tab == 'all' %}active{% endif %}">Все задачи</a>
+        </div>
         {% if role.name == 'Руководитель' %}
-        <button class="add-task-btn" onclick="openModal('addTask')">Добавить задачу</button>
+        <button class="btn btn-primary add-task-btn" onclick="openModal('addTask')">Добавить задачу</button>
         {% endif %}
       </div>
+      {% elif role.name == 'Сотрудник' %}
+      <div class="task-controls-empty"></div>
+      {% endif %}
       <div class="task-list">
         {% for task in tasks %}
         <div class="task-item">

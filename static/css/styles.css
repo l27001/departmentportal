@@ -376,10 +376,20 @@ div.view-details {
   font-size: 14px;
 }
 
+.task-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.task-controls-empty {
+  margin-bottom: 20px;
+}
+
 .task-tabs {
   display: flex;
   gap: 8px;
-  margin-bottom: 16px;
 }
 
 .task-tab {

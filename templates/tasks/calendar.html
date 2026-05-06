@@ -146,9 +146,12 @@
       </div>
     </div>
     {% if role.name in ('Руководитель', 'Документовед') %}
-    <div class="task-tabs">
-      <a href="{{ url_for('tasks.calendar', tab='my') }}" class="task-tab {% if tab == 'my' %}active{% endif %}">Мои задачи</a>
-      <a href="{{ url_for('tasks.calendar', tab='all') }}" class="task-tab {% if tab == 'all' %}active{% endif %}">Все задачи</a>
+    <div class="task-controls">
+      <div class="task-tabs">
+        <a href="{{ url_for('tasks.calendar', tab='my') }}" class="task-tab {% if tab == 'my' %}active{% endif %}">Мои задачи</a>
+        <a href="{{ url_for('tasks.calendar', tab='all') }}" class="task-tab {% if tab == 'all' %}active{% endif %}">Все задачи</a>
+      </div>
+      <div></div>
     </div>
     {% endif %}
     <div id="calendar"></div>
