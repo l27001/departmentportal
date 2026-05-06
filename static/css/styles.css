@@ -386,57 +386,145 @@ span.status.high {
   padding: 20px;
 }
 
-.document-list {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.document-item {
+.documents-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #fff;
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
 }
 
-.document-info {
-  flex: 1;
-}
-
-.document-title {
-  font-size: 18px;
+.documents-header h2 {
+  font-size: 22px;
   color: #333;
-  margin-bottom: 5px;
+  margin: 0;
+}
+
+.add-doc-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  font-size: 14px;
+}
+
+.document-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.document-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.2s;
+}
+
+.document-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.document-card-content h3 {
+  margin: 0 0 12px;
+  font-size: 17px;
+  color: #2c3e50;
+}
+
+.document-attachments {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.attachment-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f4f6fb;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.attachment-link:hover {
+  background: #e8ecf8;
+}
+
+.attachment-link svg {
+  color: #0275d8;
+  flex-shrink: 0;
+}
+
+.attachment-name {
+  flex: 1;
+  font-size: 14px;
+  color: #0275d8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachment-size {
+  font-size: 12px;
+  color: #6c757d;
+  white-space: nowrap;
 }
 
 .document-meta {
-  font-size: 14px;
-  color: #666;
-}
-
-.document-file-list {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-top: 8px;
-}
-
-.document-file-link a {
-  color: #0275d8;
-  text-decoration: none;
-  font-size: 14px;
-}
-
-.document-file-link a:hover {
-  text-decoration: underline;
-}
-
-.file-size {
-  font-size: 12px;
+  align-items: center;
+  gap: 16px;
+  font-size: 13px;
   color: #6c757d;
+}
+
+.meta-category {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.meta-category.category-нормативный { background: #d1ecf1; color: #0c5460; }
+.meta-category.category-учебный { background: #d4edda; color: #155724; }
+.meta-category.category-методический { background: #fff3cd; color: #856404; }
+.meta-category.category-прочее { background: #e2e3e5; color: #383d41; }
+
+.meta-date {
+  font-size: 13px;
+}
+
+.empty-documents {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6c757d;
+}
+
+.empty-documents svg {
+  margin-bottom: 16px;
+  opacity: 0.4;
+}
+
+.empty-documents p {
+  margin: 0;
+  font-size: 16px;
+}
+
+.documents-pagination {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.page-link.ellipsis {
+  padding: 6px 4px;
+  color: #6c757d;
+  cursor: default;
 }
 
 .document-actions {
@@ -711,6 +799,25 @@ span.status.high {
   color: black;
   text-decoration: none;
   cursor: pointer;
+}
+
+.modal-document {
+  max-width: 500px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.btn.btn-cancel {
+  background: #e9ecef;
+  color: #495057;
+}
+
+.btn.btn-cancel:hover {
+  background: #dee2e6;
 }
 
 /* ==============================

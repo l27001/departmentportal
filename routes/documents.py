@@ -76,8 +76,10 @@ def upload_document():
 @jwt_required()
 def documents():
     role = Role.query.filter_by(id=get_jwt()["role"]).first()
-    docs = Document.query.order_by(Document.created_at.desc()).all()
-    return render_template("documents/list.html", documents=docs, role=role)
+    page = request.args.get("page", 1, type=int)
+    per_page = 10
+    pagination = Document.query.order_by(Document.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    return render_template("documents/list.html", documents=pagination.items, role=role, page=page, total=pagination.total, per_page=per_page, total_pages=pagination.pages)
 
 @documents_bp.route("/<int:document_id>/<int:attachment_id>")
 @jwt_required()

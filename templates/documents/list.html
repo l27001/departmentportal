@@ -4,46 +4,75 @@
 
 {% block content %}
 <section class="documents-section">
-    <h2>Документы кафедры</h2>
-    {% if role.name in ['Руководитель', 'Документовед'] %}
-    <div class="header-btns">
-        <button class="add-task-btn" onclick="openModal('uploadDocumentModal')">Добавить документ</button>
+    <div class="documents-header">
+        <h2>Документы кафедры</h2>
+        {% if role.name in ['Руководитель', 'Документовед'] %}
+        <button class="btn btn-primary add-doc-btn" onclick="openModal('uploadDocumentModal')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Добавить документ
+        </button>
+        {% endif %}
     </div>
-    {% endif %}
 
     <div class="document-list">
         {% if documents|length > 0 %}
             {% for document in documents %}
-                <div class="document-item">
-                    <div class="document-info">
+                <div class="document-card">
+                    <div class="document-card-content">
                         <h3 class="document-title">{{ document.title }}</h3>
-                        <p class="document-meta">
-                            Тип: {{ document.category | capitalize }}<br>
-                            Дата загрузки: {{ document.created_at.strftime('%d.%m.%Y') }}
-                        </p>
                         {% if document.attachments %}
-                        <div class="document-file-list">
+                        <div class="document-attachments">
                             {% for attachment in document.attachments %}
-                            <div class="document-file-link">
-                                <a href="{{ url_for('documents.download_document', document_id=document.id, attachment_id=attachment.id) }}" target="_blank">{{ attachment.file_name }}</a>
-                                <span class="file-size">({{ "%.1f"|format(attachment.size / 1024) }} KB)</span>
-                            </div>
+                            <a href="{{ url_for('documents.download_document', document_id=document.id, attachment_id=attachment.id) }}" class="attachment-link" target="_blank">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                                <span class="attachment-name">{{ attachment.file_name }}</span>
+                                <span class="attachment-size">{{ "%.1f"|format(attachment.size / 1024) }} KB</span>
+                            </a>
                             {% endfor %}
                         </div>
                         {% endif %}
+                        <div class="document-meta">
+                            <span class="meta-category category-{{ document.category }}">{{ document.category | capitalize }}</span>
+                            <span class="meta-date">{{ document.created_at.strftime('%d.%m.%Y') }}</span>
+                        </div>
                     </div>
                 </div>
             {% endfor %}
         {% else %}
-            <p>Документы отсутствуют.</p>
+            <div class="empty-documents">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <p>Документы отсутствуют</p>
+            </div>
         {% endif %}
     </div>
+
+    {% if total_pages > 1 %}
+    <div class="documents-pagination">
+        {% if page > 1 %}
+            <a href="{{ url_for('documents.documents', page=page - 1) }}" class="page-link">&laquo;</a>
+        {% endif %}
+        {% for p in range(1, total_pages + 1) %}
+            {% if p == page %}
+                <span class="page-link page-item active">{{ p }}</span>
+            {% elif p <= 3 or p > total_pages - 3 or (p >= page - 2 and p <= page + 2) %}
+                <a href="{{ url_for('documents.documents', page=p) }}" class="page-link">{{ p }}</a>
+            {% elif p == 4 and page > 4 %}
+                <span class="page-link ellipsis">...</span>
+            {% elif p == total_pages - 3 and page < total_pages - 3 %}
+                <span class="page-link ellipsis">...</span>
+            {% endif %}
+        {% endfor %}
+        {% if page < total_pages %}
+            <a href="{{ url_for('documents.documents', page=page + 1) }}" class="page-link">&raquo;</a>
+        {% endif %}
+    </div>
+    {% endif %}
 </section>
 {% endblock %}
 
 {% block modals %}
 <div id="uploadDocumentModal" class="modal">
-    <div class="modal-content">
+    <div class="modal-content modal-document">
         <span class="close" onclick="closeModal('uploadDocumentModal')">&times;</span>
 
         <h3>Загрузка документа</h3>
@@ -71,8 +100,8 @@
             </div>
 
             <div class="modal-actions">
-                <button type="submit" class="add-task-btn">Загрузить</button>
-                <button type="button" class="view-details-btn"
+                <button type="submit" class="btn btn-primary w-100">Загрузить</button>
+                <button type="button" class="btn btn-cancel"
                         onclick="closeModal('uploadDocumentModal')">
                     Отмена
                 </button>

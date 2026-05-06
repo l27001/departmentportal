@@ -19,7 +19,7 @@ class Attachment(db.Model):
     task = db.relationship("Task", backref="attachments")
     news = db.relationship("News", backref="attachments")
     announcement = db.relationship("Announcement", backref="attachments")
-    document = db.relationship("Document", backref="attachments")
+    document = db.relationship("Document")
 
     def to_dict(self):
         return {
