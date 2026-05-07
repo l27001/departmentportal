@@ -12,7 +12,9 @@
         </a>
         {% endif %}
       </div>
-      {% if from_page == 'calendar' %}
+      {% if meeting_id %}
+      <span onclick="window.location.href='{{ url_for('web_meetings.meeting_details', meeting_id=meeting_id) }}'" style="font-size: 36px; font-weight: bold; cursor: pointer; color: #b70000;">&times;</span>
+      {% elif from_page == 'calendar' %}
       <span onclick="window.location.href='{{ url_for('tasks.calendar', tab=tab) }}'" style="font-size: 36px; font-weight: bold; cursor: pointer; color: #b70000;">&times;</span>
       {% else %}
       <span onclick="window.location.href='{{ url_for('tasks.list_tasks', tab=tab, page=page) }}'" style="font-size: 36px; font-weight: bold; cursor: pointer; color: #b70000;">&times;</span>
@@ -112,7 +114,9 @@
     {% endif %}
 
     <div class="view-details">
-      {% if from_page == 'calendar' %}
+      {% if meeting_id %}
+      <a href="{{ url_for('web_meetings.meeting_details', meeting_id=meeting_id) }}" class="view-details-btn">Назад</a>
+      {% elif from_page == 'calendar' %}
       <a href="{{ url_for('tasks.calendar', tab=tab) }}" class="view-details-btn">Назад</a>
       {% else %}
       <a href="{{ url_for('tasks.list_tasks', tab=tab, page=page) }}" class="view-details-btn">Назад</a>
