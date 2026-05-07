@@ -1134,25 +1134,30 @@ div.card {
   list-style: none;
   gap: 6px;
   padding: 0;
-  margin: 0;
+  margin: 24px auto 0;
+  justify-content: center;
 }
 
 .page-link {
   display: block;
-  padding: 6px 10px;
-  border-radius: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
   background: #f0f2f7;
   font-size: 14px;
+  color: inherit;
   transition: 0.2s;
+  text-decoration: none;
 }
 
 .page-link:hover {
   background: #e2e6f3;
 }
 
-.page-item.active .page-link {
+.page-item.active .page-link,
+.page-link.active {
   background: #007bff;
   color: #fff;
+  font-weight: 600;
 }
 
 .page-item.disabled .page-link {
