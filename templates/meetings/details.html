@@ -39,7 +39,7 @@
         </h3>
         <div class="meeting-details-list">
             {% for task in meeting.tasks %}
-            <a href="{{ url_for('tasks.task_details', task_id=task.id) }}" class="meeting-details-item">
+            <a href="{{ url_for('tasks.task_details', task_id=task.id, from_meeting=meeting.id) }}" class="meeting-details-item">
                 <span class="item-title">{{ task.title }}</span>
                 <span class="item-date">{{ task.deadline_at.strftime('%d.%m.%Y') }}</span>
             </a>

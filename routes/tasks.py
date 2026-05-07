@@ -317,6 +317,7 @@ def task_details(task_id):
     tab = request.args.get('tab', 'my')
     page = request.args.get('page', 1, type=int)
     from_page = request.args.get('from', None)
+    from_meeting = request.args.get('from_meeting', None, type=int)
 
     if role.name == 'Сотрудник':
         has_assignment = TaskUserAssignment.query.filter_by(task_id=task_id, user_id=user_id).first()
@@ -347,7 +348,7 @@ def task_details(task_id):
             meeting_id = m.id
             meeting_title = m.title
 
-    return render_template('tasks/details.html', task=task, assignees=assignees, today=date.today(), user_id=user_id, user_role=role, is_assigned=is_assigned, user_assignment=user_assignment, tab=tab, page=page, from_page=from_page, meeting_id=meeting_id, meeting_title=meeting_title)
+    return render_template('tasks/details.html', task=task, assignees=assignees, today=date.today(), user_id=user_id, user_role=role, is_assigned=is_assigned, user_assignment=user_assignment, tab=tab, page=page, from_page=from_page, meeting_id=meeting_id, meeting_title=meeting_title, from_meeting=from_meeting)
 
 @tasks_bp.route('/<int:task_id>/report', methods=['GET'])
 @jwt_required()
