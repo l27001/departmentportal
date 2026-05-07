@@ -2,7 +2,7 @@ import os
 import uuid
 from flask import Blueprint, request, render_template, flash, redirect, url_for, current_app, send_from_directory
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
-from extensions import db, allowed_file
+from extensions import db, allowed_image_file
 from models.news import News
 from models.attachment import Attachment
 from models.role import Role
@@ -36,7 +36,7 @@ def create_news():
             return render_template("news/create.html", role=role)
 
         for f in files:
-            if f.filename and not allowed_file(f.filename, current_app.config):
+            if f.filename and not allowed_image_file(f.filename, current_app.config):
                 flash(f"Недопустимый формат файла: {f.filename}", "danger")
                 return render_template("news/create.html", role=role)
 
@@ -110,7 +110,7 @@ def edit_news(news_id):
                 db.session.delete(att)
 
         for f in new_files:
-            if f.filename and allowed_file(f.filename, current_app.config):
+            if f.filename and allowed_image_file(f.filename, current_app.config):
                 upload_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "attachments", "news", str(news.id))
                 os.makedirs(upload_dir, exist_ok=True)
                 original_name = f.filename
