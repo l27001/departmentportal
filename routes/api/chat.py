@@ -1,7 +1,10 @@
-from flask import Blueprint, request, jsonify
+import os
+import uuid
+from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from extensions import db
+from extensions import db, allowed_file
 from models.chat import GeneralChatMessage
+from models.attachment import Attachment
 
 chat_bp = Blueprint("api_chat", __name__, url_prefix="/api/chat")
 
@@ -57,46 +60,87 @@ def get_messages():
 @chat_bp.route("/messages", methods=["POST"])
 @jwt_required()
 def send_message():
-    """Отправить сообщение в чат
+    """Отправить сообщение в чат (поддерживает text/plain, multipart/form-data с файлами)
     ---
     tags: [Chat]
     security:
       - BearerAuth: []
+    consumes:
+      - application/json
+      - multipart/form-data
     parameters:
-      - name: body
-        in: body
-        required: true
-        schema:
-          type: object
-          required: [text]
-          properties:
-            text:
-              type: string
+      - name: text
+        in: formData
+        type: string
+        required: false
+        description: Текст сообщения (можно пустое, если есть файл)
+      - name: file
+        in: formData
+        type: file
+        required: false
+        description: Файл для прикрепления (можно несколько)
     responses:
       201:
         description: Сообщение отправлено
         schema:
           $ref: '#/definitions/ChatMessage'
       400:
-        description: Пустое сообщение
+        description: Пустое сообщение без файла
     """
     user_id = get_jwt_identity()
-    data = request.json
-    text = data.get("text", "").strip()
-    if not text:
+
+    text = ""
+    files = []
+
+    if request.content_type and "multipart/form-data" in request.content_type:
+        text = request.form.get("text", "").strip()
+        uploaded_files = request.files.getlist("file")
+        for f in uploaded_files:
+            if f and f.filename:
+                files.append(f)
+    else:
+        data = request.json or {}
+        text = data.get("text", "").strip()
+
+    if not text and not files:
         return jsonify({"msg": "Сообщение не может быть пустым"}), 400
 
-    message = GeneralChatMessage(author_id=user_id, text=text)
+    message = GeneralChatMessage(author_id=user_id, text=text or "")
     db.session.add(message)
-    db.session.commit()
+    db.session.flush()
 
+    for f in files:
+        if not allowed_file(f.filename, current_app.config):
+            continue
+        original_name = f.filename
+        ext = os.path.splitext(original_name)[1] if '.' in original_name else ''
+        safe_filename = str(uuid.uuid4()) + ext
+        upload_dir = os.path.join(
+            current_app.config.get("UPLOAD_FOLDER", "uploads"),
+            "attachments", "chat", str(message.id)
+        )
+        os.makedirs(upload_dir, exist_ok=True)
+        save_path = os.path.join(upload_dir, safe_filename)
+        f.save(save_path)
+        file_size = os.path.getsize(save_path)
+        mime_type = f.content_type or "application/octet-stream"
+        attachment = Attachment(
+            chat_message_id=message.id,
+            file_name=original_name,
+            file_path=save_path,
+            mime_type=mime_type,
+            size=file_size,
+        )
+        db.session.add(attachment)
+
+    db.session.commit()
     return jsonify(message.to_dict()), 201
 
 
 @chat_bp.route("/messages/<int:id>", methods=["DELETE"])
 @jwt_required()
 def delete_message(id):
-    """Удалить своё сообщение из чата
+    """Удалить своё сообщение из чата (с файлами)
     ---
     tags: [Chat]
     security:
@@ -116,6 +160,11 @@ def delete_message(id):
     message = GeneralChatMessage.query.get_or_404(id)
     if message.author_id != user_id:
         return jsonify({"msg": "Можно удалять только свои сообщения"}), 403
+
+    for att in message.attachments.all():
+        if os.path.exists(att.file_path):
+            os.remove(att.file_path)
+        db.session.delete(att)
 
     db.session.delete(message)
     db.session.commit()

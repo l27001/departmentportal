@@ -8,9 +8,14 @@
     <h2>Общий чат</h2>
   </div>
   <div class="chat-messages" id="chatMessages"></div>
+  <div class="chat-file-preview" id="chatFilePreview"></div>
   <div class="chat-input-area" style="position:relative;">
     <div id="emojiPicker" class="emoji-picker" style="display:none;"></div>
     <button type="button" onclick="toggleEmojiPicker()" style="flex-shrink:0; width:42px; height:42px; padding:0; border:1px solid #ddd; border-radius:50%; background:#f8f9fa; cursor:pointer; font-size:20px; line-height:42px; text-align:center;">😊</button>
+    <label class="chat-file-btn" title="Прикрепить файл">
+      <input type="file" id="chatFileInput" multiple hidden>
+      <span>📎</span>
+    </label>
     <input type="text" id="chatInput" placeholder="Напишите сообщение..." onkeydown="if(event.key==='Enter') sendMessage()" style="flex:1;">
     <button class="chat-send-btn" id="chatSendBtn" onclick="sendMessage()">Отправить</button>
   </div>
@@ -21,6 +26,7 @@
 <script>
 var currentUserId = null;
 var pollInterval = null;
+var pendingFiles = [];
 
 function loadUserId() {
   fetch('/api/auth/me', {
@@ -63,7 +69,29 @@ function renderMessages(messages) {
     var time = date.toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
     html += '<div class="chat-message ' + (isOwn ? 'chat-message-own' : 'chat-message-other') + '">';
     html += '<div class="chat-message-author">' + m.author_name + '</div>';
-    html += '<div class="chat-message-text">' + escapeHtml(m.text) + '</div>';
+    if (m.text) {
+      html += '<div class="chat-message-text">' + escapeHtml(m.text) + '</div>';
+    }
+    if (m.attachments && m.attachments.length > 0) {
+      html += '<div class="chat-attachments">';
+      for (var j = 0; j < m.attachments.length; j++) {
+        var a = m.attachments[j];
+        var isImage = a.mime_type && a.mime_type.startsWith('image/');
+        html += '<div class="chat-attachment">';
+        if (isImage) {
+          html += '<a href="/api/attachments/' + a.id + '" target="_blank" class="chat-attach-image-link">';
+          html += '<img src="/api/attachments/' + a.id + '" class="chat-attach-image" alt="' + escapeHtml(a.file_name) + '">';
+          html += '</a>';
+        }
+        html += '<a href="/api/attachments/' + a.id + '" target="_blank" class="chat-attach-file">';
+        html += '<span class="chat-attach-icon">📄</span>';
+        html += '<span class="chat-attach-name">' + escapeHtml(a.file_name) + '</span>';
+        html += '<span class="chat-attach-size">' + formatSize(a.size) + '</span>';
+        html += '</a>';
+        html += '</div>';
+      }
+      html += '</div>';
+    }
     html += '<div class="chat-message-time">' + time + '</div>';
     if (isOwn) {
       html += '<button class="chat-delete-btn" onclick="deleteMessage(' + m.id + ')">✕</button>';
@@ -76,31 +104,63 @@ function renderMessages(messages) {
   }
 }
 
+function formatSize(bytes) {
+  if (!bytes) return '';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(1) + ' MB';
+}
+
 function sendMessage() {
   var input = document.getElementById('chatInput');
   var text = input.value.trim();
-  if (!text) return;
+  var hasFiles = pendingFiles.length > 0;
+  if (!text && !hasFiles) return;
   var btn = document.getElementById('chatSendBtn');
   btn.disabled = true;
-  fetch('/api/chat/messages', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ text: text }),
-  })
-  .then(function(r) { return r.json(); })
-  .then(function() {
-    input.value = '';
-    btn.disabled = false;
-    loadMessages();
-  })
-  .catch(function() {
-    btn.disabled = false;
-  });
+
+  if (hasFiles) {
+    var formData = new FormData();
+    if (text) formData.append('text', text);
+    for (var i = 0; i < pendingFiles.length; i++) {
+      formData.append('file', pendingFiles[i]);
+    }
+    fetch('/api/chat/messages', {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    })
+    .then(function(r) { return r.json(); })
+    .then(function() {
+      input.value = '';
+      clearPendingFiles();
+      btn.disabled = false;
+      loadMessages();
+    })
+    .catch(function() {
+      btn.disabled = false;
+    });
+  } else {
+    fetch('/api/chat/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ text: text }),
+    })
+    .then(function(r) { return r.json(); })
+    .then(function() {
+      input.value = '';
+      btn.disabled = false;
+      loadMessages();
+    })
+    .catch(function() {
+      btn.disabled = false;
+    });
+  }
 }
 
 function deleteMessage(id) {
-  if (!confirm('Удалить сообщение?')) return;
+  if (!confirm('Удалить сообщение вместе с файлами?')) return;
   fetch('/api/chat/messages/' + id, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
@@ -120,7 +180,42 @@ function escapeHtml(str) {
 document.addEventListener('DOMContentLoaded', function() {
   loadUserId();
   buildEmojiPicker();
+  document.getElementById('chatFileInput').addEventListener('change', function(e) {
+    pendingFiles = Array.from(e.target.files);
+    updateFilePreview();
+  });
 });
+
+function updateFilePreview() {
+  var preview = document.getElementById('chatFilePreview');
+  if (pendingFiles.length === 0) {
+    preview.style.display = 'none';
+    preview.innerHTML = '';
+    return;
+  }
+  preview.style.display = 'flex';
+  var html = '';
+  for (var i = 0; i < pendingFiles.length; i++) {
+    html += '<span class="chat-file-preview-item">' + escapeHtml(pendingFiles[i].name) + ' <span class="chat-file-preview-remove" onclick="removePendingFile(' + i + ')">✕</span></span>';
+  }
+  preview.innerHTML = html;
+}
+
+function clearPendingFiles() {
+  pendingFiles = [];
+  document.getElementById('chatFileInput').value = '';
+  updateFilePreview();
+}
+
+function removePendingFile(index) {
+  pendingFiles.splice(index, 1);
+  var dt = new DataTransfer();
+  for (var i = 0; i < pendingFiles.length; i++) {
+    dt.items.add(pendingFiles[i]);
+  }
+  document.getElementById('chatFileInput').files = dt.files;
+  updateFilePreview();
+}
 
 var emojis = ['😀','😁','😂','🤣','😊','😇','🙂','😉','😌','😍','🥰','😘','😗','😋','😛','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','😐','😑','😶','😏','😒','🙄','😬','😮','😯','😲','😳','🥺','😢','😭','😤','😡','🤬','😈','👍','👎','👊','✊','🤘','👌','✌','🤞','💪','🤝','🙏','❤','💔','🔥','⭐','✅','❌','🎉','🎊','🚀','💡','📌','🎯','💯','👏','🤩','🥳','💀','☠','👋','✋','🙌','🤲','🤜','🤛','🧠','👀','👅','💋'];
 

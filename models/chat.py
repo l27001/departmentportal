@@ -11,6 +11,7 @@ class GeneralChatMessage(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     author = db.relationship("User", backref="chat_messages")
+    attachments = db.relationship("Attachment", backref="chat_message", lazy="dynamic")
 
     def to_dict(self):
         return {
@@ -19,4 +20,5 @@ class GeneralChatMessage(db.Model):
             "author_name": self.author.name if self.author else None,
             "text": self.text,
             "created_at": self.created_at.isoformat() if self.created_at else None,
+            "attachments": [a.to_dict() for a in self.attachments.all()],
         }

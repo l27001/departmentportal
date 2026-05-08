@@ -111,7 +111,11 @@ def create_app():
                     "author_id": {"type": "integer"},
                     "author_name": {"type": "string"},
                     "text": {"type": "string"},
-                    "created_at": {"type": "string"}
+                    "created_at": {"type": "string"},
+                    "attachments": {
+                        "type": "array",
+                        "items": {"$ref": "#/definitions/Attachment"}
+                    }
                 }
             },
             "Group": {
@@ -135,6 +139,11 @@ def create_app():
                 "properties": {
                     "id": {"type": "integer"},
                     "task_id": {"type": "integer"},
+                    "news_id": {"type": "integer"},
+                    "announcement_id": {"type": "integer"},
+                    "document_id": {"type": "integer"},
+                    "meeting_id": {"type": "integer"},
+                    "chat_message_id": {"type": "integer"},
                     "file_name": {"type": "string"},
                     "file_path": {"type": "string"},
                     "mime_type": {"type": "string"},
