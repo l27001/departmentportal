@@ -292,7 +292,7 @@ def calendar():
     announcements = Announcement.query.filter(Announcement.is_deleted == False, Announcement.deadline >= today_date).order_by(Announcement.created_at.desc()).limit(15).all()
     viewed_ids = {v.announcement_id for v in AnnouncementView.query.filter_by(user_id=user_id).all()}
 
-    return render_template("tasks/calendar.html", tasks=events, tasks_by_deadline=tasks_by_deadline, days_all_completed=days_all_completed, days_has_unassigned=days_has_unassigned, role=role, announcements=announcements, viewed_ids=viewed_ids)
+    return render_template("tasks/calendar.html", tasks=events, tasks_by_deadline=tasks_by_deadline, days_all_completed=days_all_completed, days_has_unassigned=days_has_unassigned, role=role, announcements=announcements, viewed_ids=viewed_ids, is_leader=is_leader)
 
 @tasks_bp.route("/<int:task_id>", methods=["DELETE"])
 @jwt_required()

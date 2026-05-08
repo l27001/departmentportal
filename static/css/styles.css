@@ -2931,7 +2931,7 @@ a.status.meeting-linked:hover {
 }
 
 .read-status-section {
-  margin-top: 20px;
+  margin: 20px 16px 16px;
   padding-top: 16px;
   border-top: 1px solid #e5e7eb;
 }
