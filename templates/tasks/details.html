@@ -92,24 +92,6 @@
     </div>
     {% endif %}
 
-    {% if announcements and user_role.name in ('Руководитель', 'Документовед') %}
-    {% for ann in announcements %}
-    <h3>Анонс: {{ ann.title }}</h3>
-    <div class="assignee-grid-compact">
-      {% for u in active_users %}
-        <div class="assignee-card-mini">
-          <span class="assignee-card-name">{{ u.name }}</span>
-          {% if u.id in ann_view_map.get(ann.id, set()) %}
-            <span class="assignee-card-status status-read">Прочитано</span>
-          {% else %}
-            <span class="assignee-card-status status-unread">Не прочитано</span>
-          {% endif %}
-        </div>
-      {% endfor %}
-    </div>
-    {% endfor %}
-    {% endif %}
-
     {% if task.attachments | length > 0 %}
     <h3>Файлы:</h3>
     <div class="attachment-list">

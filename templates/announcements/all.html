@@ -63,11 +63,17 @@
         <hr class="announcement-modal-divider">
         <div id="announcementModalText" class="announcement-modal-text"></div>
         <div id="announcementModalAttachments"></div>
+        <div id="announcementReadStatus"></div>
     </div>
 </div>
 
 <script>
 function openAnnouncement(id) {
+    document.getElementById('announcementModalTitle').textContent = '';
+    document.getElementById('announcementModalMeta').innerHTML = '';
+    document.getElementById('announcementModalText').innerHTML = '';
+    document.getElementById('announcementModalAttachments').innerHTML = '';
+    document.getElementById('announcementReadStatus').innerHTML = '';
     fetch(`/api/announcements/${id}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
@@ -97,6 +103,32 @@ function openAnnouncement(id) {
             } else {
                 cont.innerHTML = '';
             }
+        });
+        fetch(`/api/announcements/${id}/read-status`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+        })
+        .then(r => {
+            if (!r.ok) {
+                document.getElementById('announcementReadStatus').innerHTML = '';
+                return null;
+            }
+            return r.json();
+        })
+        .then(data => {
+            if (!data) return;
+            var statusDiv = document.getElementById('announcementReadStatus');
+            var html = '<div class="read-status-section"><h4>Прочитано</h4><div class="read-status-grid">';
+            data.read.forEach(function(u) {
+                html += '<div class="read-status-card read"><span class="read-status-name">' + u.user_name + '</span><span class="read-status-badge">Прочитано</span></div>';
+            });
+            html += '</div><h4>Не прочитано</h4><div class="read-status-grid">';
+            data.unread.forEach(function(u) {
+                html += '<div class="read-status-card unread"><span class="read-status-name">' + u.user_name + '</span><span class="read-status-badge">Не прочитано</span></div>';
+            });
+            html += '</div></div>';
+            statusDiv.innerHTML = html;
         });
         openModal('announcementModal');
         fetch(`/api/announcements/${id}/view`, {

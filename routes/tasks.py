@@ -346,19 +346,7 @@ def task_details(task_id):
             meeting_id = m.id
             meeting_title = m.title
 
-    announcements = None
-    ann_view_map = {}
-    active_users = []
-    if role.name in ('Руководитель', 'Документовед'):
-        today_date = date.today()
-        announcements = Announcement.query.filter(Announcement.is_deleted == False, Announcement.deadline >= today_date).order_by(Announcement.created_at.desc()).all()
-        active_users = User.query.filter(User.dismissal_date.is_(None)).order_by(User.name).all()
-        views = AnnouncementView.query.join(Announcement).filter(Announcement.is_deleted == False).all()
-        ann_view_map = {}
-        for v in views:
-            ann_view_map.setdefault(v.announcement_id, set()).add(v.user_id)
-
-    return render_template('tasks/details.html', task=task, assignees=assignees, today=date.today(), user_id=user_id, user_role=role, is_assigned=is_assigned, user_assignment=user_assignment, page=page, from_page=from_page, meeting_id=meeting_id, meeting_title=meeting_title, from_meeting=from_meeting, announcements=announcements, ann_view_map=ann_view_map, active_users=active_users)
+    return render_template('tasks/details.html', task=task, assignees=assignees, today=date.today(), user_id=user_id, user_role=role, is_assigned=is_assigned, user_assignment=user_assignment, page=page, from_page=from_page, meeting_id=meeting_id, meeting_title=meeting_title, from_meeting=from_meeting)
 
 @tasks_bp.route('/<int:task_id>/report', methods=['GET'])
 @jwt_required()

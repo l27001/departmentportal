@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from extensions import db
 from models.announcement import Announcement, AnnouncementView
+from models.user import User
 from datetime import date
 
 announcements_bp = Blueprint("api_announcements", __name__, url_prefix="/api/announcements")
@@ -246,3 +247,27 @@ def get_views(id):
         "user_name": v.user.name if v.user else None,
         "viewed_at": v.viewed_at.isoformat() if v.viewed_at else None,
     } for v in views])
+
+
+@announcements_bp.route("/<int:id>/read-status", methods=["GET"])
+@jwt_required()
+def get_read_status(id):
+    role = get_jwt()["role"]
+    if role not in (1, 2):
+        return jsonify({"msg": "Доступ запрещён"}), 403
+
+    announcement = Announcement.query.filter_by(id=id, is_deleted=False).first_or_404()
+
+    viewed_ids = {v.user_id for v in AnnouncementView.query.filter_by(announcement_id=id).all()}
+    active_users = User.query.filter(User.dismissal_date.is_(None)).order_by(User.name).all()
+
+    read = []
+    unread = []
+    for u in active_users:
+        entry = {"user_id": u.id, "user_name": u.name}
+        if u.id in viewed_ids:
+            read.append(entry)
+        else:
+            unread.append(entry)
+
+    return jsonify({"read": read, "unread": unread})

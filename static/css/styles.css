@@ -2929,3 +2929,64 @@ a.status.meeting-linked:hover {
     position: static;
   }
 }
+
+.read-status-section {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.read-status-section h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin: 12px 0 8px;
+}
+
+.read-status-section h4:first-child {
+  margin-top: 0;
+}
+
+.read-status-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 8px;
+}
+
+.read-status-card {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: #f8f9fc;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.read-status-name {
+  flex: 1;
+  font-weight: 500;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.read-status-badge {
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 8px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.read-status-card.read .read-status-badge {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.read-status-card.unread .read-status-badge {
+  background: #fce4ec;
+  color: #c62828;
+}
