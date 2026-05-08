@@ -4,6 +4,26 @@
   .container {
     max-width: 1400px;
   }
+  #calendar {
+    display: none;
+    max-width: 100%;
+    margin: 0;
+  }
+  #calendar.fc-active {
+    display: block;
+  }
+  #taskListView {
+    display: block;
+  }
+  #taskListView.hidden {
+    display: none;
+  }
+  .view-switch-btn {
+    cursor: pointer;
+  }
+  .view-switch-btn.active {
+    pointer-events: none;
+  }
 </style>
 {% endblock %}
 
@@ -13,14 +33,14 @@
       <div class="task-header">
         <h2>{% block title %}Таск менеджер{% endblock %}</h2>
         <div class="task-view-switch">
-          <a href="{{ url_for('tasks.list_tasks') }}" class="view-switch-btn {% if not request.path.startswith('/tasks/calendar') %}active{% endif %}">
+          <button class="view-switch-btn active" id="btnListView" onclick="showListView()">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
             Список
-          </a>
-          <a href="{{ url_for('tasks.calendar') }}" class="view-switch-btn">
+          </button>
+          <button class="view-switch-btn" id="btnCalendarView" onclick="showCalendarView()">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             Календарь
-          </a>
+          </button>
         </div>
       </div>
       {% if is_leader %}
@@ -28,7 +48,7 @@
         <button class="btn btn-primary add-task-btn" onclick="openModal('addTask')">Добавить задачу</button>
       </div>
       {% endif %}
-      <div class="task-list">
+      <div id="taskListView" class="task-list">
         {% for task in tasks %}
         {% set tid = task.id|int %}
         {% set asgn = user_assignments.get(tid) %}
@@ -115,6 +135,18 @@
           {% endif %}
         {% endif %}
       </div>
+      <div id="calendarView" style="display: none;">
+        <div id="calendar"></div>
+        <div id="dayTasksModal" class="modal">
+          <div class="modal-content">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <h2 id="dayTasksTitle" style="margin: 10px 0;"></h2>
+              <span id="dayTasksCloseBtn" style="font-size: 36px; font-weight: bold; cursor: pointer; color: #b70000;">&times;</span>
+            </div>
+            <div id="dayTasksList"></div>
+          </div>
+        </div>
+      </div>
     </section>
 
     <section class="announcements-section task-sidebar">
@@ -153,6 +185,157 @@
       </div>
     </section>
 </div>
+
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js'></script>
+<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/interaction@6.1.19/index.global.min.js"></script>
+<script>
+var calendarInstance = null;
+
+function showListView() {
+  document.getElementById('taskListView').classList.remove('hidden');
+  document.getElementById('calendarView').style.display = 'none';
+  document.getElementById('btnListView').classList.add('active');
+  document.getElementById('btnCalendarView').classList.remove('active');
+  document.querySelector('.pagination').style.display = '';
+  if (calendarInstance) {
+    calendarInstance.render();
+  }
+}
+
+function showCalendarView() {
+  document.getElementById('taskListView').classList.add('hidden');
+  document.getElementById('calendarView').style.display = 'block';
+  document.getElementById('btnCalendarView').classList.add('active');
+  document.getElementById('btnListView').classList.remove('active');
+  document.querySelector('.pagination').style.display = 'none';
+  if (!calendarInstance) {
+    initCalendar();
+  }
+  setTimeout(function() { calendarInstance.render(); }, 50);
+}
+
+function initCalendar() {
+  var calendarEl = document.getElementById('calendar');
+  var tasksByDeadline = {{ tasks_by_deadline | tojson }};
+  var daysAllCompleted = {{ days_all_completed | tojson }};
+  var daysHasUnassigned = {{ days_has_unassigned | tojson }};
+
+  calendarInstance = new FullCalendar.Calendar(calendarEl, {
+    initialView: 'dayGridMonth',
+    events: [],
+    selectable: true,
+    headerToolbar: {
+      left: 'prev,next today',
+      center: 'title',
+      right: ''
+    },
+    dayCellDidMount: function(arg) {
+      var d = arg.date;
+      var dateStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      if (tasksByDeadline[dateStr]) {
+        var dayTasks = tasksByDeadline[dateStr];
+        var count = dayTasks.length;
+        var hasOverdue = dayTasks.some(function(t) { return t.is_overdue; });
+        var allDone = daysAllCompleted[dateStr];
+        var hasUnassigned = daysHasUnassigned[dateStr];
+        var badge = document.createElement('div');
+        badge.className = 'task-count-badge';
+        if (allDone) {
+          badge.classList.add('all-completed');
+        }
+        var suffix = 'задач';
+        if (count === 1) suffix = 'задача';
+        else if (count >= 2 && count <= 4) suffix = 'задачи';
+        badge.textContent = count + ' ' + suffix;
+        if (hasOverdue) {
+          badge.style.background = 'linear-gradient(135deg, #c62828, #e53935)';
+        } else if (allDone) {
+          badge.style.background = 'linear-gradient(135deg, #2e7d32, #43a047)';
+        } else if (hasUnassigned) {
+          badge.style.background = 'linear-gradient(135deg, #78909c, #90a4ae)';
+        } else if (count >= 3) {
+          badge.style.background = 'linear-gradient(135deg, #ef6c00, #fb8c00)';
+        } else {
+          badge.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+        }
+        var frame = arg.el.querySelector('.fc-daygrid-day-frame');
+        if (frame) {
+          frame.appendChild(badge);
+        }
+      }
+    },
+    dateClick: function(info) {
+      var dateStr = info.dateStr;
+      var dayTasks = tasksByDeadline[dateStr];
+      if (dayTasks && dayTasks.length > 0) {
+        var modal = document.getElementById('dayTasksModal');
+        var listEl = document.getElementById('dayTasksList');
+        var titleEl = document.getElementById('dayTasksTitle');
+        var formattedDate = info.date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+        titleEl.textContent = 'Задачи на ' + formattedDate;
+        listEl.innerHTML = '';
+        dayTasks.sort(function(a, b) {
+          var aDone = (a.status === 'завершена' || a.status === 'на проверке');
+          var bDone = (b.status === 'завершена' || b.status === 'на проверке');
+          if (aDone && !bDone) return 1;
+          if (!aDone && bDone) return -1;
+          return 0;
+        });
+        dayTasks.forEach(function(task) {
+          var item = document.createElement('div');
+          item.className = 'day-task-item';
+          var statusClass;
+          var statusText;
+          if (!task.status) {
+            statusText = 'Не назначена';
+            statusClass = 'unassigned';
+          } else {
+            statusText = task.status.charAt(0).toUpperCase() + task.status.slice(1);
+            if (task.is_overdue) {
+              statusClass = 'overdue';
+            } else if (task.status === 'завершена') {
+              statusClass = 'completed';
+            } else if (task.status === 'на проверке') {
+              statusClass = 'review';
+            } else {
+              statusClass = 'pending';
+            }
+          }
+          item.innerHTML = '<a href="/tasks/' + task.id + '" class="day-task-link">' +
+            '<span class="day-task-title">' + task.title + '</span>' +
+            '<span class="day-task-status ' + statusClass + '">' + statusText + '</span>' +
+            '</a>';
+          listEl.appendChild(item);
+        });
+        modal.style.display = 'block';
+      }
+    }
+  });
+  calendarInstance.render();
+  calendarInstance.setOption('locale', 'ru');
+  calendarInstance.setOption('buttonText', {
+    today:    'Сегодня',
+    month:    'Месяц',
+    week:     'Неделя',
+    day:      'День',
+    list:     'Список'
+  });
+
+  var closeBtn = document.getElementById('dayTasksCloseBtn');
+  if (closeBtn) {
+    closeBtn.onclick = function() {
+      document.getElementById('dayTasksModal').style.display = 'none';
+    };
+  }
+}
+
+window.onclick = function(event) {
+  var modal = document.getElementById('dayTasksModal');
+  if (event.target == modal) {
+    modal.style.display = 'none';
+  }
+};
+</script>
 {% endblock %}
 
 {% block modals %}

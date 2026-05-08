@@ -105,7 +105,35 @@ def list_tasks():
     announcements = Announcement.query.filter(Announcement.is_deleted == False, Announcement.deadline >= today_date).order_by(Announcement.created_at.desc()).limit(15).all()
     viewed_ids = {v.announcement_id for v in AnnouncementView.query.filter_by(user_id=user_id).all()}
 
-    return render_template("tasks/list.html", tasks=paginated_tasks, role=role, users=users, groups=groups, groups_members=groups_members, user_assignments=user_assignments, assigned_task_ids=assigned_task_ids, user_id=user_id, today=today_date, page=page, total=total, per_page=per_page, announcements=announcements, viewed_ids=viewed_ids, review_task_ids=review_task_ids, is_leader=is_leader)
+    events = []
+    tasks_by_deadline = {}
+    for task in tasks:
+        deadline_str = task.deadline_at.strftime('%Y-%m-%d')
+        if deadline_str not in tasks_by_deadline:
+            tasks_by_deadline[deadline_str] = []
+        if is_leader:
+            t_assignments = [a for aid, a in all_assignments.items() if aid == int(task.id)]
+            status = t_assignments[0].status if t_assignments else None
+        else:
+            assignment = user_assignments.get(int(task.id))
+            status = assignment.status if assignment else None
+        is_overdue = status not in ('завершена', 'на проверке') and task.deadline_at < today_date
+        tasks_by_deadline[deadline_str].append({
+            'id': task.id,
+            'title': task.title,
+            'status': status,
+            'priority': task.priority,
+            'is_overdue': is_overdue
+        })
+
+    days_all_completed = {}
+    days_has_unassigned = {}
+    for day, day_tasks in tasks_by_deadline.items():
+        assigned = [t for t in day_tasks if t['status'] is not None]
+        days_all_completed[day] = len(assigned) > 0 and all(t['status'] in ('завершена', 'на проверке') for t in assigned)
+        days_has_unassigned[day] = any(t['status'] is None for t in day_tasks)
+
+    return render_template("tasks/list.html", tasks=paginated_tasks, role=role, users=users, groups=groups, groups_members=groups_members, user_assignments=user_assignments, assigned_task_ids=assigned_task_ids, user_id=user_id, today=today_date, page=page, total=total, per_page=per_page, announcements=announcements, viewed_ids=viewed_ids, review_task_ids=review_task_ids, is_leader=is_leader, tasks_by_deadline=tasks_by_deadline, days_all_completed=days_all_completed, days_has_unassigned=days_has_unassigned)
 
 @tasks_bp.route("/", methods=["POST"])
 @jwt_required()
@@ -216,82 +244,7 @@ def filter_tasks():
 @tasks_bp.route("/calendar", methods=["GET"])
 @jwt_required()
 def calendar():
-    user_id = get_jwt_identity()
-    role = Role.query.filter_by(id=get_jwt()["role"]).first()
-    is_leader = role.name in ("Документовед", "Руководитель")
-    tasks = []
-
-    user_assignments = {
-        a.task_id: a
-        for a in TaskUserAssignment.query.filter_by(user_id=user_id).all()
-    }
-
-    task_ids_by_assignment = [r[0] for r in db.session.query(TaskUserAssignment.task_id).filter(TaskUserAssignment.user_id == user_id).all()]
-
-    if is_leader:
-        tasks = Task.query.order_by(desc(Task.deadline_at)).all()
-    else:
-        tasks = (
-            Task.query
-            .filter(Task.id.in_(task_ids_by_assignment))
-            .order_by(desc(Task.deadline_at))
-            .all()
-        )
-
-    events = []
-    today = date.today()
-    for task in tasks:
-        assignment = user_assignments.get(task.id)
-        status = assignment.status if assignment else None
-        is_overdue = status not in ('завершена', 'на проверке') and task.deadline_at < today
-        color = None
-        if is_overdue:
-            color = 'darkred'
-        elif task.priority == 'high':
-            color = 'red'
-        elif task.priority == 'medium':
-            color = 'orange'
-        else:
-            color = 'light-blue'
-        title = task.title
-        if is_overdue:
-            title = f'⚠ {task.title}'
-        events.append({
-            'title': title,
-            'end': task.deadline_at.strftime('%Y-%m-%d'),
-            'description': task.description,
-            'color': color,
-            'url': url_for('tasks.task_details', task_id=task.id),
-            'status': status
-        })
-    tasks_by_deadline = {}
-    today = date.today()
-    for task in tasks:
-        deadline_str = task.deadline_at.strftime('%Y-%m-%d')
-        if deadline_str not in tasks_by_deadline:
-            tasks_by_deadline[deadline_str] = []
-        assignment = user_assignments.get(task.id)
-        status = assignment.status if assignment else None
-        tasks_by_deadline[deadline_str].append({
-            'id': task.id,
-            'title': task.title,
-            'status': status,
-            'priority': task.priority,
-            'is_overdue': status is not None and status not in ('завершена', 'на проверке') and task.deadline_at < today
-        })
-
-    days_all_completed = {}
-    today_date = date.today()
-    days_has_unassigned = {}
-    for day, day_tasks in tasks_by_deadline.items():
-        assigned = [t for t in day_tasks if t['status'] is not None]
-        days_all_completed[day] = len(assigned) > 0 and all(t['status'] in ('завершена', 'на проверке') for t in assigned)
-        days_has_unassigned[day] = any(t['status'] is None for t in day_tasks)
-
-    announcements = Announcement.query.filter(Announcement.is_deleted == False, Announcement.deadline >= today_date).order_by(Announcement.created_at.desc()).limit(15).all()
-    viewed_ids = {v.announcement_id for v in AnnouncementView.query.filter_by(user_id=user_id).all()}
-
-    return render_template("tasks/calendar.html", tasks=events, tasks_by_deadline=tasks_by_deadline, days_all_completed=days_all_completed, days_has_unassigned=days_has_unassigned, role=role, announcements=announcements, viewed_ids=viewed_ids, is_leader=is_leader)
+    return redirect(url_for('tasks.list_tasks'))
 
 @tasks_bp.route("/<int:task_id>", methods=["DELETE"])
 @jwt_required()
