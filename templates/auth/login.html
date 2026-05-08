@@ -147,9 +147,9 @@
       </div>
       <div class="input-group" style="position: relative;">
         <label for="password">Пароль</label>
-        <div style="display:flex; gap:0;">
-          <input type="password" id="password" name="password" required placeholder="Введите ваш пароль" style="flex:1; border-radius:5px 0 0 5px; border-right:none;">
-          <button type="button" onclick="togglePw('password', this)" style="flex-shrink:0; padding:10px 12px; background:#e9ecef; color:#333; border:1px solid #ccc; border-radius:0 5px 5px 0; cursor:pointer; font-size:14px; line-height:1;">👁</button>
+        <div class="pw-toggle-wrapper">
+          <input type="password" id="password" name="password" required placeholder="Введите ваш пароль" class="pw-toggle-input">
+          <button type="button" onclick="togglePw('password', this)" class="pw-toggle-btn">👁</button>
         </div>
       </div>
       <div class="input-group">

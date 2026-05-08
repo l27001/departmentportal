@@ -3151,6 +3151,29 @@ a.status.meeting-linked:hover {
   color: #fff;
 }
 
+.pw-toggle-wrapper {
+  display: flex;
+  gap: 0;
+}
+
+.pw-toggle-input {
+  flex: 1;
+  border-radius: 5px 0 0 5px;
+  border-right: none;
+}
+
+.pw-toggle-btn {
+  flex-shrink: 0;
+  padding: 10px 12px;
+  background: #e9ecef;
+  color: #333;
+  border: 1px solid #ccc;
+  border-radius: 0 5px 5px 0;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+
 /* ==============================
    REPORT
  ============================== */
