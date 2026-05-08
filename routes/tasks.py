@@ -350,29 +350,41 @@ def task_details(task_id):
 
 @tasks_bp.route('/<int:task_id>/report', methods=['GET'])
 @jwt_required()
-@roles_required("Руководитель")
+@roles_required("Руководитель", "Документовед")
 def generate_task_report(task_id):
-    # Получаем задачу по ID
     task = Task.query.get_or_404(task_id)
-    assignees = TaskUserAssignment.query.filter_by(task_id=task_id).all()  # Исполнители задачи
+    assignees = TaskUserAssignment.query.filter_by(task_id=task_id).all()
 
-    output = StringIO()
-    writer = csv.writer(output, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-    
-    # Заголовки
-    writer.writerow(['Задача', 'Описание', 'Приоритет', 'Дата начала', 'Дата выполнения'])
-    writer.writerow([task.title, task.description, task.priority, task.deadline_at.strftime('%d.%m.%Y')])
+    completed = []
+    in_progress = []
+    on_review = []
 
-    writer.writerow([])
-    writer.writerow(['Исполнитель', 'Прогресс'])
+    for a in assignees:
+        entry = {"user_name": a.user.name, "status": a.status}
+        if a.status == 'завершена':
+            completed.append(entry)
+        elif a.status == 'на проверке':
+            on_review.append(entry)
+        else:
+            in_progress.append(entry)
 
-    # Исполнители
-    for assignment in assignees:
-        writer.writerow([assignment.user.name, assignment.status])
+    priority_labels = {
+        'low': 'Низкий',
+        'medium': 'Средний',
+        'high': 'Высокий',
+    }
 
-    output.seek(0)
-    bytes_io = BytesIO()
-    bytes_io.write(output.getvalue().encode('cp1251'))
-    bytes_io.seek(0)
+    total = len(assignees)
+    done_count = len(completed)
+    pct = round(done_count / total * 100) if total > 0 else 0
 
-    return send_file(bytes_io, mimetype='text/csv', as_attachment=True, download_name='report.csv')
+    return render_template('tasks/report.html',
+        task=task,
+        priority_label=priority_labels.get(task.priority, task.priority),
+        completed=completed,
+        in_progress=in_progress,
+        on_review=on_review,
+        total=total,
+        done_count=done_count,
+        pct=pct,
+    )

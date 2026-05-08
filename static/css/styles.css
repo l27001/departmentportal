@@ -3067,3 +3067,130 @@ a.status.meeting-linked:hover {
   padding-top: 16px;
   border-top: 1px solid #e5e7eb;
 }
+
+/* ==============================
+   REPORT
+ ============================== */
+.report-section {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.report-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.report-header h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.report-header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.report-meta {
+  background: #f8f9fc;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+}
+
+.report-meta-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 4px 0;
+  font-size: 14px;
+}
+
+.report-meta-row:not(:last-child) {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.report-progress-bar {
+  width: 100%;
+  height: 10px;
+  background: #e5e7eb;
+  border-radius: 5px;
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+
+.report-progress-fill {
+  height: 100%;
+  background: #10b981;
+  border-radius: 5px;
+  transition: width 0.3s;
+}
+
+.report-tables {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.report-table-group {
+  background: #f8f9fc;
+  border-radius: 8px;
+  padding: 16px 20px;
+}
+
+.report-table-title {
+  margin: 0 0 12px;
+  font-size: 15px;
+}
+
+.report-table-title-done { color: #059669; }
+.report-table-title-review { color: #d97706; }
+.report-table-title-pending { color: #dc2626; }
+
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.report-table th {
+  text-align: left;
+  padding: 6px 10px;
+  border-bottom: 2px solid #d1d5db;
+  font-weight: 600;
+  color: #6b7280;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.report-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.report-row-done td { background: #ecfdf5; }
+.report-row-review td { background: #fffbeb; }
+.report-row-pending td { background: #fef2f2; }
+
+.report-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-done { background: #d1fae5; color: #065f46; }
+.badge-review { background: #fef3c7; color: #92400e; }
+.badge-pending { background: #fee2e2; color: #991b1b; }
+
+@media print {
+  .report-header-actions,
+  .site-header,
+  .sidebar { display: none !important; }
+  .report-section { max-width: 100%; padding: 0; }
+  .report-table-group { break-inside: avoid; }
+}

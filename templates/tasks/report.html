@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="report-section">
+  <div class="report-header">
+    <h2>Отчёт по задаче</h2>
+    <div class="report-header-actions">
+      <button onclick="window.print()" class="view-details-btn">Печать / PDF</button>
+      <a href="{{ url_for('tasks.task_details', task_id=task.id) }}" class="view-details-btn">Назад</a>
+    </div>
+  </div>
+
+  <div class="report-meta">
+    <div class="report-meta-row">
+      <span><strong>Задача:</strong> {{ task.title }}</span>
+      <span><strong>Приоритет:</strong> {{ priority_label }}</span>
+    </div>
+    <div class="report-meta-row">
+      <span><strong>Дедлайн:</strong> {{ task.deadline_at.strftime('%d.%m.%Y') }}</span>
+      <span><strong>Прогресс:</strong> {{ done_count }}/{{ total }} ({{ pct }}%)</span>
+    </div>
+    {% if task.description %}
+    <div class="report-meta-row">
+      <span><strong>Описание:</strong> {{ task.description }}</span>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="report-progress-bar">
+    <div class="report-progress-fill" style="width: {{ pct }}%"></div>
+  </div>
+
+  <div class="report-tables">
+    {% if completed|length > 0 %}
+    <div class="report-table-group">
+      <h3 class="report-table-title report-table-title-done">Выполнено — {{ completed|length }}</h3>
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th>№</th>
+            <th>Исполнитель</th>
+            <th>Статус</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for entry in completed %}
+          <tr class="report-row-done">
+            <td>{{ loop.index }}</td>
+            <td>{{ entry.user_name }}</td>
+            <td><span class="report-badge badge-done">Выполнено</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    {% if on_review|length > 0 %}
+    <div class="report-table-group">
+      <h3 class="report-table-title report-table-title-review">На проверке — {{ on_review|length }}</h3>
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th>№</th>
+            <th>Исполнитель</th>
+            <th>Статус</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for entry in on_review %}
+          <tr class="report-row-review">
+            <td>{{ loop.index }}</td>
+            <td>{{ entry.user_name }}</td>
+            <td><span class="report-badge badge-review">На проверке</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    {% if in_progress|length > 0 %}
+    <div class="report-table-group">
+      <h3 class="report-table-title report-table-title-pending">Не выполнено — {{ in_progress|length }}</h3>
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th>№</th>
+            <th>Исполнитель</th>
+            <th>Статус</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for entry in in_progress %}
+          <tr class="report-row-pending">
+            <td>{{ loop.index }}</td>
+            <td>{{ entry.user_name }}</td>
+            <td><span class="report-badge badge-pending">{{ entry.status }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
