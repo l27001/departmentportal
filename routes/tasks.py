@@ -31,7 +31,6 @@ def list_tasks():
     users = []
     groups = []
     groups_members = {}
-    tab = request.args.get("tab", "my")
     page = request.args.get("page", 1, type=int)
     per_page = 10
 
@@ -41,10 +40,11 @@ def list_tasks():
     }
 
     task_ids_by_assignment = [int(r[0]) for r in db.session.query(TaskUserAssignment.task_id).filter(TaskUserAssignment.user_id == user_id).all()]
-    my_task_ids = task_ids_by_assignment
-    assigned_task_ids = set(my_task_ids)
+    assigned_task_ids = set(task_ids_by_assignment)
 
-    if role.name in ("Документовед", "Руководитель"):
+    is_leader = role.name in ("Документовед", "Руководитель")
+
+    if is_leader:
         users = User.query.filter(User.dismissal_date.is_(None)).all()
         groups = Group.query.all()
         for group in groups:
@@ -56,12 +56,12 @@ def list_tasks():
             )
             groups_members[group.id] = [{"id": m.id, "name": m.name} for m in members]
 
-    if role.name in ("Документовед", "Руководитель") and tab == "all":
+    if is_leader:
         tasks = Task.query.order_by(asc(Task.deadline_at)).all()
     else:
         tasks = (
             Task.query
-            .filter(Task.id.in_(my_task_ids))
+            .filter(Task.id.in_(task_ids_by_assignment))
             .order_by(asc(Task.deadline_at))
             .all()
         )
@@ -77,7 +77,7 @@ def list_tasks():
             review_task_ids.add(tid)
 
     def task_sort_key(t):
-        if tab == 'all':
+        if is_leader:
             has_review = int(t.id) in review_task_ids
             has_completed = any(a.approved for aid, a in all_assignments.items() if aid == int(t.id))
             has_incomplete = any(not a.approved for aid, a in all_assignments.items() if aid == int(t.id))
@@ -107,7 +107,7 @@ def list_tasks():
     announcements = announcements[:15]
     viewed_ids = {v.announcement_id for v in AnnouncementView.query.filter_by(user_id=user_id).all()}
 
-    return render_template("tasks/list.html", tasks=paginated_tasks, role=role, users=users, groups=groups, groups_members=groups_members, user_assignments=user_assignments, assigned_task_ids=assigned_task_ids, user_id=user_id, today=date.today(), tab=tab, page=page, total=total, per_page=per_page, announcements=announcements, viewed_ids=viewed_ids, has_more_announcements=has_more, review_task_ids=review_task_ids)
+    return render_template("tasks/list.html", tasks=paginated_tasks, role=role, users=users, groups=groups, groups_members=groups_members, user_assignments=user_assignments, assigned_task_ids=assigned_task_ids, user_id=user_id, today=date.today(), page=page, total=total, per_page=per_page, announcements=announcements, viewed_ids=viewed_ids, has_more_announcements=has_more, review_task_ids=review_task_ids, is_leader=is_leader)
 
 @tasks_bp.route("/", methods=["POST"])
 @jwt_required()
@@ -126,7 +126,7 @@ def create_task():
 
         if not assignees:
             flash('Укажите исполнителей для задачи', 'danger')
-            return redirect(url_for('tasks.list_tasks', tab=request.args.get('tab', 'my')))
+            return redirect(url_for('tasks.list_tasks'))
 
         new_task = Task(
             title=title,
@@ -173,8 +173,7 @@ def create_task():
         db.session.commit()
 
         flash('Задача успешно создана!', 'success')
-        tab = request.args.get('tab', 'my')
-        return redirect(url_for('tasks.list_tasks', tab=tab))
+        return redirect(url_for('tasks.list_tasks'))
 
 @tasks_bp.route("/filter", methods=["GET"])
 @jwt_required()
@@ -221,8 +220,8 @@ def filter_tasks():
 def calendar():
     user_id = get_jwt_identity()
     role = Role.query.filter_by(id=get_jwt()["role"]).first()
+    is_leader = role.name in ("Документовед", "Руководитель")
     tasks = []
-    tab = request.args.get("tab", "my")
 
     user_assignments = {
         a.task_id: a
@@ -231,7 +230,7 @@ def calendar():
 
     task_ids_by_assignment = [r[0] for r in db.session.query(TaskUserAssignment.task_id).filter(TaskUserAssignment.user_id == user_id).all()]
 
-    if role.name in ("Документовед", "Руководитель") and tab == "all":
+    if is_leader:
         tasks = Task.query.order_by(desc(Task.deadline_at)).all()
     else:
         tasks = (
@@ -295,7 +294,7 @@ def calendar():
     announcements = announcements[:15]
     viewed_ids = {v.announcement_id for v in AnnouncementView.query.filter_by(user_id=user_id).all()}
 
-    return render_template("tasks/calendar.html", tasks=events, tasks_by_deadline=tasks_by_deadline, days_all_completed=days_all_completed, days_has_unassigned=days_has_unassigned, tab=tab, role=role, announcements=announcements, viewed_ids=viewed_ids, has_more_announcements=has_more)
+    return render_template("tasks/calendar.html", tasks=events, tasks_by_deadline=tasks_by_deadline, days_all_completed=days_all_completed, days_has_unassigned=days_has_unassigned, role=role, announcements=announcements, viewed_ids=viewed_ids, has_more_announcements=has_more)
 
 @tasks_bp.route("/<int:task_id>", methods=["DELETE"])
 @jwt_required()
@@ -314,7 +313,6 @@ def delete_task(task_id):
 def task_details(task_id):
     user_id = get_jwt_identity()
     role = Role.query.filter_by(id=get_jwt()["role"]).first()
-    tab = request.args.get('tab', 'my')
     page = request.args.get('page', 1, type=int)
     from_page = request.args.get('from', None)
     from_meeting = request.args.get('from_meeting', None, type=int)
@@ -348,7 +346,7 @@ def task_details(task_id):
             meeting_id = m.id
             meeting_title = m.title
 
-    return render_template('tasks/details.html', task=task, assignees=assignees, today=date.today(), user_id=user_id, user_role=role, is_assigned=is_assigned, user_assignment=user_assignment, tab=tab, page=page, from_page=from_page, meeting_id=meeting_id, meeting_title=meeting_title, from_meeting=from_meeting)
+    return render_template('tasks/details.html', task=task, assignees=assignees, today=date.today(), user_id=user_id, user_role=role, is_assigned=is_assigned, user_assignment=user_assignment, page=page, from_page=from_page, meeting_id=meeting_id, meeting_title=meeting_title, from_meeting=from_meeting)
 
 @tasks_bp.route('/<int:task_id>/report', methods=['GET'])
 @jwt_required()

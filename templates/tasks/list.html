@@ -13,28 +13,20 @@
       <div class="task-header">
         <h2>{% block title %}Таск менеджер{% endblock %}</h2>
         <div class="task-view-switch">
-          <a href="{{ url_for('tasks.list_tasks', tab=tab) }}" class="view-switch-btn {% if not request.path.startswith('/tasks/calendar') %}active{% endif %}">
+          <a href="{{ url_for('tasks.list_tasks') }}" class="view-switch-btn {% if not request.path.startswith('/tasks/calendar') %}active{% endif %}">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
             Список
           </a>
-          <a href="{{ url_for('tasks.calendar', tab=tab) }}" class="view-switch-btn">
+          <a href="{{ url_for('tasks.calendar') }}" class="view-switch-btn">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             Календарь
           </a>
         </div>
       </div>
-      {% if role.name in ('Руководитель', 'Документовед') %}
+      {% if is_leader %}
       <div class="task-controls">
-        <div class="task-tabs">
-          <a href="{{ url_for('tasks.list_tasks', tab='my') }}" class="task-tab {% if tab == 'my' %}active{% endif %}">Мои задачи</a>
-          <a href="{{ url_for('tasks.list_tasks', tab='all') }}" class="task-tab {% if tab == 'all' %}active{% endif %}">Все задачи</a>
-        </div>
-        {% if role.name in ('Руководитель', 'Документовед') %}
         <button class="btn btn-primary add-task-btn" onclick="openModal('addTask')">Добавить задачу</button>
-        {% endif %}
       </div>
-      {% elif role.name == 'Сотрудник' %}
-      <div class="task-controls-empty"></div>
       {% endif %}
       <div class="task-list">
         {% for task in tasks %}
@@ -42,7 +34,7 @@
         {% set asgn = user_assignments.get(tid) %}
         {% set is_completed = asgn and asgn.approved %}
         {% set is_review = asgn and asgn.status == 'на проверке' %}
-        <div class="task-item {% if tab == 'my' %}{% if is_completed %}task-completed{% endif %} {% if is_review and tab != 'all' %}task-review{% endif %}{% endif %}">
+        <div class="task-item {% if is_completed %}task-completed{% endif %} {% if is_review %}task-review{% endif %}">
             <div class="task-info">
                 <h3 class="task-title">{{ task.title }}</h3>
                 <p class="task-description">{{ task.description }}</p>
@@ -84,7 +76,7 @@
                 {% else %}
                     <span class="status high">Высокий приоритет</span>
                 {% endif %}
-                {% if tab == 'all' and tid in review_task_ids %}
+                {% if is_leader and tid in review_task_ids %}
                     <span class="status awaiting-review">Ожидает проверки</span>
                 {% endif %}
                 {% if task.deadline_at < today and (tid in assigned_task_ids and asgn and asgn.status not in ('завершена', 'на проверке')) %}
@@ -95,7 +87,7 @@
                 <p><strong>Дедлайн:</strong> {{ task.deadline_at.strftime('%d.%m.%Y') }}</p>
             </div>
             <div class="task-btn">
-                <a class="view-details-btn" href="{{url_for('tasks.task_details', task_id=task.id, tab=tab, page=page)}}">Просмотр</a>
+                <a class="view-details-btn" href="{{url_for('tasks.task_details', task_id=task.id, page=page)}}">Просмотр</a>
             </div>
         </div>
         {% else %}
@@ -106,13 +98,13 @@
         {% set total_pages = (total + per_page - 1) // per_page %}
         {% if total_pages > 1 %}
           {% if page > 1 %}
-            <a href="{{ url_for('tasks.list_tasks', tab=tab, page=page - 1) }}" class="page-link">&laquo;</a>
+            <a href="{{ url_for('tasks.list_tasks', page=page - 1) }}" class="page-link">&laquo;</a>
           {% endif %}
           {% for p in range(1, total_pages + 1) %}
             {% if p == page %}
               <span class="page-link page-item active">{{ p }}</span>
             {% elif p <= 3 or p > total_pages - 3 or (p >= page - 2 and p <= page + 2) %}
-              <a href="{{ url_for('tasks.list_tasks', tab=tab, page=p) }}" class="page-link">{{ p }}</a>
+              <a href="{{ url_for('tasks.list_tasks', page=p) }}" class="page-link">{{ p }}</a>
             {% elif p == 4 and page > 4 %}
               <span class="page-link">...</span>
             {% elif p == total_pages - 3 and page < total_pages - 3 %}
@@ -120,7 +112,7 @@
             {% endif %}
           {% endfor %}
           {% if page < total_pages %}
-            <a href="{{ url_for('tasks.list_tasks', tab=tab, page=page + 1) }}" class="page-link">&raquo;</a>
+            <a href="{{ url_for('tasks.list_tasks', page=page + 1) }}" class="page-link">&raquo;</a>
           {% endif %}
         {% endif %}
       </div>
@@ -169,7 +161,7 @@
   <div class="modal-content">
     <span class="close" onclick="closeModal('addTask')">&times;</span>
     <h2>Создание задачи</h2>
-    <form method="POST" action="{{ url_for('tasks.create_task', tab=tab) }}" enctype="multipart/form-data">
+    <form method="POST" action="{{ url_for('tasks.create_task') }}" enctype="multipart/form-data">
       <div class="input-group">
         <label for="taskTitle">Название задачи:</label>
         <input type="text" id="taskTitle" name="title" required placeholder="Введите название задачи">
