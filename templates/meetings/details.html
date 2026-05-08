@@ -10,9 +10,9 @@
             {% if role.name in ('Руководитель', 'Документовед') %}
             <a href="{{ url_for('web_meetings.edit_meeting', meeting_id=meeting.id) }}" class="btn btn-primary">Редактировать</a>
             {% endif %}
-            {% if request.args.get('from_task') %}
-            <a href="{{ url_for('tasks.task_details', task_id=request.args.get('from_task')) }}" class="btn btn-cancel">Назад</a>
-            {% else %}
+        {% if request.args.get('from_task') %}
+        <a href="{{ url_for('tasks.list_tasks') }}" class="btn btn-cancel">Назад</a>
+        {% else %}
             <a href="{{ url_for('web_meetings.list_meetings') }}" class="btn btn-cancel">Назад</a>
             {% endif %}
         </div>
@@ -31,23 +31,6 @@
     </div>
     {% endif %}
 
-    {% if visible_tasks|length > 0 %}
-    <div class="meeting-details-block">
-        <h3>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-            Задачи
-        </h3>
-        <div class="meeting-details-list">
-            {% for task in visible_tasks %}
-            <a href="{{ url_for('tasks.task_details', task_id=task.id, from_meeting=meeting.id) }}" class="meeting-details-item">
-                <span class="item-title">{{ task.description }}</span>
-                <span class="item-date">{{ task.deadline_at.strftime('%d.%m.%Y') }}</span>
-            </a>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
-
     {% if meeting.attachments|length > 0 %}
     <div class="meeting-details-block">
         <h3>
@@ -59,6 +42,23 @@
             <a href="{{ url_for('web_meetings.serve_meeting_file', attachment_id=att.id) }}" class="meeting-details-item" download>
                 <span class="item-title">{{ att.file_name }}</span>
                 <span class="item-date">{% if att.size %}{{ (att.size / 1024)|round(1) }} КБ{% endif %}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if visible_tasks|length > 0 %}
+    <div class="meeting-details-block">
+        <h3>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            Задачи
+        </h3>
+        <div class="meeting-details-list">
+            {% for task in visible_tasks %}
+            <a href="{{ url_for('tasks.list_tasks') }}" class="meeting-details-item">
+                <span class="item-title">{{ task.description }}</span>
+                <span class="item-date">{{ task.deadline_at.strftime('%d.%m.%Y') }}</span>
             </a>
             {% endfor %}
         </div>

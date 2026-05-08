@@ -16,7 +16,6 @@ from models.role import Role
 from models.group import Group, UserGroup
 from models.attachment import Attachment
 from models.announcement import Announcement, AnnouncementView
-from models.meeting import MeetingTask, DepartmentMeeting
 from decorators.roles import roles_required
 
 tasks_bp = Blueprint("tasks", __name__, url_prefix="/tasks")
@@ -172,7 +171,7 @@ def create_task():
                 if file.filename:
                     if not allowed_file(file.filename, current_app.config):
                         flash(f'Недопустимый формат файла: {file.filename}', 'danger')
-                        return redirect(url_for('tasks.task_details', task_id=new_task.id))
+                        return redirect(url_for('tasks.list_tasks'))
 
                     original_name = file.filename
                     ext = os.path.splitext(original_name)[1].lower()
@@ -256,49 +255,6 @@ def delete_task(task_id):
     db.session.commit()
 
     return jsonify({"msg": "Task deleted"})
-
-@tasks_bp.route('/get/<int:task_id>', methods=['GET'])
-@tasks_bp.route('/<int:task_id>', methods=['GET'])
-@jwt_required()
-def task_details(task_id):
-    user_id = get_jwt_identity()
-    role = Role.query.filter_by(id=get_jwt()["role"]).first()
-    page = request.args.get('page', 1, type=int)
-    from_page = request.args.get('from', None)
-    from_meeting = request.args.get('from_meeting', None, type=int)
-
-    if role.name == 'Сотрудник':
-        has_assignment = TaskUserAssignment.query.filter_by(task_id=task_id, user_id=user_id).first()
-        if not has_assignment:
-            return abort(404)
-        task = Task.query.filter_by(id=task_id).first_or_404()
-    else:
-        task = Task.query.filter_by(id=task_id).first_or_404()
-
-    assignees = []
-    is_assigned = False
-    user_assignment = TaskUserAssignment.query.filter_by(task_id=task_id, user_id=user_id).first()
-    if role.name != 'Сотрудник':
-        assignees = TaskUserAssignment.query.filter_by(task_id=task_id).all()
-        status_order = {'завершена': 0, 'на проверке': 1, 'в работе': 2, 'не начата': 3}
-        assignees.sort(key=lambda a: (status_order.get(a.status, 4), a.user.name))
-
-    if user_assignment:
-        is_assigned = True
-
-    if role.name == 'Сотрудник':
-        assignees = [user_assignment] if user_assignment else []
-
-    mt = MeetingTask.query.filter_by(task_id=task_id).first()
-    meeting_id = None
-    meeting_title = None
-    if mt:
-        m = DepartmentMeeting.query.get(mt.meeting_id)
-        if m:
-            meeting_id = m.id
-            meeting_title = m.title
-
-    return render_template('tasks/details.html', task=task, assignees=assignees, today=date.today(), user_id=user_id, user_role=role, is_assigned=is_assigned, user_assignment=user_assignment, page=page, from_page=from_page, meeting_id=meeting_id, meeting_title=meeting_title, from_meeting=from_meeting)
 
 @tasks_bp.route('/<int:task_id>/report', methods=['GET'])
 @jwt_required()
