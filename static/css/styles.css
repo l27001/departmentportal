@@ -199,6 +199,7 @@ footer {
   border-radius: 5px;
   cursor: pointer;
   margin: 0 10px;
+  font-size: 14px;
 }
 
 .view-details-btn:hover {
@@ -3081,7 +3082,8 @@ a.status.meeting-linked:hover {
   line-height: 1;
 }
 
-#taskDetailsBody {
+#taskDetailsBody,
+#meetingTaskDetailsBody {
   padding: 18px 24px 24px;
 }
 
