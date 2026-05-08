@@ -28,7 +28,7 @@ def list_tasks():
       - name: status
         in: query
         type: string
-        enum: [не начата, в работе, завершена]
+        enum: [не начата, завершена]
       - name: date_from
         in: query
         type: string
@@ -350,7 +350,7 @@ def update_status(task_id):
           properties:
             status:
               type: string
-              enum: [не начата, в работе, завершена]
+              enum: [не начата, завершена]
     responses:
       200:
         description: Статус обновлён
@@ -363,7 +363,7 @@ def update_status(task_id):
     role = Role.query.get(role_id)
     data = request.json
 
-    allowed_statuses = ["не начата", "в работе", "завершена", "на проверке"]
+    allowed_statuses = ["не начата", "завершена", "на проверке"]
     new_status = data.get("status", "").strip().lower()
 
     if new_status not in allowed_statuses:
@@ -440,7 +440,7 @@ def approve_assignee(task_id, assignee_id):
         assignment.status = "завершена"
     else:
         assignment.approved = False
-        assignment.status = "в работе"
+        assignment.status = "не начата"
         assignment.marked_complete = False
 
     db.session.commit()
@@ -558,7 +558,7 @@ def task_details_modal(task_id):
     assignees = []
     if role.name in ('Руководитель', 'Документовед'):
         assignees_raw = TaskUserAssignment.query.filter_by(task_id=task_id).all()
-        status_order = {'завершена': 0, 'на проверке': 1, 'в работе': 2, 'не начата': 3}
+        status_order = {'завершена': 0, 'на проверке': 1, 'не начата': 2}
         assignees_raw.sort(key=lambda a: (status_order.get(a.status, 4), a.user.name))
         assignees = [
             {

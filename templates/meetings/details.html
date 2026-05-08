@@ -56,7 +56,7 @@
         </h3>
         <div class="meeting-details-list">
             {% for task in visible_tasks %}
-            <a href="{{ url_for('tasks.list_tasks') }}" class="meeting-details-item">
+            <a href="#" class="meeting-details-item" onclick="openMeetingTaskDetails({{ task.id }}); return false;">
                 <span class="item-title">{{ task.description }}</span>
                 <span class="item-date">{{ task.deadline_at.strftime('%d.%m.%Y') }}</span>
             </a>
@@ -65,4 +65,114 @@
     </div>
     {% endif %}
 </section>
+{% endblock %}
+
+{% block modals %}
+<div id="meetingTaskDetailsModal" class="modal">
+  <div class="modal-content modal-task-details">
+    <div class="modal-task-header">
+      <h3 id="meetingTaskDetailsTitle"></h3>
+      <span class="close close-task" onclick="closeModal('meetingTaskDetailsModal')">&times;</span>
+    </div>
+    <div id="meetingTaskDetailsBody"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extrajs %}
+<script>
+function openMeetingTaskDetails(taskId) {
+  document.getElementById('meetingTaskDetailsTitle').textContent = '';
+  document.getElementById('meetingTaskDetailsBody').innerHTML = '';
+  fetch(`/api/tasks/${taskId}/details`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  })
+  .then(r => r.json())
+  .then(data => {
+    document.getElementById('meetingTaskDetailsTitle').textContent = data.task.title;
+    var body = document.getElementById('meetingTaskDetailsBody');
+    var html = '';
+    html += '<div class="td-description"><strong>Описание:</strong> ' + (data.task.description || '—').replace(/\n/g, '<br>') + '</div>';
+    if (data.is_assigned && data.user_assignment) {
+      html += '<div class="td-section"><strong>Статус:</strong> <select id="mtdStatusSelect" onchange="updateMeetingTaskStatus(this, ' + taskId + ')">';
+      var ua = data.user_assignment;
+      if (ua.approved) {
+        html += '<option selected>Завершена</option>';
+      } else {
+        html += '<option' + (ua.status === 'не начата' ? ' selected' : '') + '>Не начата</option>';
+        if (data.task.no_review || data.is_leader) {
+          html += '<option' + (ua.status === 'завершена' ? ' selected' : '') + '>Завершена</option>';
+        }
+        if (!data.task.no_review && !data.is_leader) {
+          html += '<option' + (ua.status === 'на проверке' ? ' selected' : '') + '>На проверке</option>';
+        }
+      }
+      html += '</select></div>';
+    }
+    if (data.is_overdue) {
+      html += '<div class="td-section"><strong>Приоритет:</strong> <span class="status expired">Дедлайн просрочен</span></div>';
+    }
+    var priorityLabels = { low: 'Низкий приоритет', medium: 'Средний приоритет', high: 'Высокий приоритет' };
+    html += '<div class="td-section"><strong>Приоритет:</strong> <span class="status ' + data.task.priority + '">' + priorityLabels[data.task.priority] + '</span></div>';
+    var parts = data.task.deadline_at.split('T')[0].split('-');
+    html += '<div class="td-section"><strong>Дедлайн:</strong> ' + parts[2] + '.' + parts[1] + '.' + parts[0] + '</div>';
+    if (data.attachments && data.attachments.length > 0) {
+      html += '<h3 class="td-heading">Файлы:</h3><div class="attachment-list">';
+      data.attachments.forEach(function(a) {
+        html += '<div class="attachment-card"><a href="/api/attachments/' + a.id + '" class="attachment-name" target="_blank">' + a.file_name + '</a><span class="attachment-size">' + a.size + ' KB</span></div>';
+      });
+      html += '</div>';
+    }
+    if (data.is_leader && data.assignees.length > 0) {
+      html += '<h3 class="td-heading">Исполнители:</h3><div class="assignee-grid-compact">';
+      data.assignees.forEach(function(a) {
+        var statusClass = '';
+        var statusLabel = '';
+        if (a.status === 'не начата') { statusClass = 'status-not-done'; statusLabel = 'Не выполнена'; }
+        else if (a.status === 'завершена') { statusClass = 'status-done'; statusLabel = 'Выполнена'; }
+        else { statusClass = 'status-on-review'; statusLabel = 'На проверке'; }
+        html += '<div class="assignee-card-mini"><span class="assignee-card-name">' + a.user_name + '</span><span class="assignee-card-status ' + statusClass + '">' + statusLabel + '</span>';
+        if (a.status === 'на проверке') {
+          html += '<div class="card-review-actions"><button class="btn-ck" onclick="reviewMeetingAssignment(' + taskId + ', ' + a.user_id + ', true)">✓</button><button class="btn-ck btn-ck-reject" onclick="reviewMeetingAssignment(' + taskId + ', ' + a.user_id + ', false)">✕</button></div>';
+        }
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+    html += '<div class="td-actions"><button class="view-details-btn" onclick="closeModal(\'meetingTaskDetailsModal\')">Закрыть</button></div>';
+    body.innerHTML = html;
+    openModal('meetingTaskDetailsModal');
+  });
+}
+
+function updateMeetingTaskStatus(el, id) {
+  fetch(`/api/tasks/${id}/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ status: el.value }),
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(result) {
+    console.log(result);
+    openMeetingTaskDetails(id);
+  });
+}
+
+function reviewMeetingAssignment(taskId, assigneeId, approved) {
+  fetch(`/api/tasks/${taskId}/assignees/${assigneeId}/approve`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ approved: approved }),
+  })
+  .then(function(response) {
+    if (response.ok) {
+      openMeetingTaskDetails(taskId);
+    }
+  });
+}
+</script>
 {% endblock %}

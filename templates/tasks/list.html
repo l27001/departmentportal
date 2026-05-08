@@ -44,7 +44,6 @@
                 <option selected>Завершена</option>
                 {% elif asgn %}
                 <option {% if asgn.status == 'не начата' %}selected{% endif %}>Не начата</option>
-                <option {% if asgn.status == 'в работе' %}selected{% endif %}>В работе</option>
                 {% if task.no_review or is_leader %}
                 <option {% if asgn.status == 'завершена' %}selected{% endif %}>Завершена</option>
                 {% endif %}
@@ -53,7 +52,6 @@
                 {% endif %}
                 {% else %}
                 <option selected>Не начата</option>
-                <option>В работе</option>
                 {% if task.no_review or is_leader %}
                 <option>Завершена</option>
                 {% endif %}
@@ -563,7 +561,6 @@ function openTaskDetails(taskId) {
         html += '<option selected>Завершена</option>';
       } else {
         html += '<option' + (ua.status === 'не начата' ? ' selected' : '') + '>Не начата</option>';
-        html += '<option' + (ua.status === 'в работе' ? ' selected' : '') + '>В работе</option>';
         if (data.task.no_review || data.is_leader) {
           html += '<option' + (ua.status === 'завершена' ? ' selected' : '') + '>Завершена</option>';
         }
@@ -603,7 +600,7 @@ function openTaskDetails(taskId) {
       data.assignees.forEach(function(a) {
         var statusClass = '';
         var statusLabel = '';
-        if (a.status === 'не начата' || a.status === 'в работе') {
+        if (a.status === 'не начата') {
           statusClass = 'status-not-done';
           statusLabel = 'Не выполнена';
         } else if (a.status === 'завершена') {
