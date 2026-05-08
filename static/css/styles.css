@@ -1352,7 +1352,11 @@ input {
   border-radius: 8px;
   font-size: 14px;
   transition: box-shadow 0.2s, border-color 0.2s;
-  min-width: 0;
+}
+
+.assignee-chip-review {
+  flex-wrap: wrap;
+  padding: 6px 8px;
 }
 
 .assignee-chip-review {
@@ -1399,6 +1403,14 @@ input {
   display: flex;
   gap: 4px;
   flex-shrink: 0;
+}
+
+.assignee-chip-review .review-actions {
+  flex-basis: 100%;
+  justify-content: flex-end;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid #f59e0b40;
 }
 
 .assignee-chip .review-actions .btn-sm {
