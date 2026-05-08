@@ -269,12 +269,15 @@ select:focus {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .task-header h2 {
   font-size: 22px;
   color: #333;
   margin: 0;
+  line-height: 1;
 }
 
 .task-view-switch {
@@ -1241,13 +1244,13 @@ input {
 
 .task-count-badge {
   position: absolute;
-  top: 28px;
+  top: 22px;
   left: 4px;
   right: 4px;
   color: white;
   border-radius: 12px;
   padding: 3px 10px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   z-index: 10;
   text-align: center;
@@ -2951,6 +2954,31 @@ a.status.meeting-linked:hover {
 
 .delete-checkbox input[type="checkbox"] {
     accent-color: #dc3545;
+}
+
+.meetings-tab-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 3px 12px rgba(102, 126, 234, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.meetings-tab-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.45);
+  color: #fff;
+}
+
+.meetings-tab-link svg {
+  flex-shrink: 0;
 }
 
 @media (max-width: 992px) {

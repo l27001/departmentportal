@@ -15,6 +15,10 @@
   <section id="tasks" class="task-section task-main">
       <div class="task-header">
         <h2>{% block title %}Таск менеджер{% endblock %}</h2>
+        <a href="{{ url_for('web_meetings.list_meetings') }}" class="meetings-tab-link">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Заседания
+        </a>
       </div>
       {% if is_leader %}
       <div class="task-controls">
@@ -253,7 +257,7 @@ function initCalendar() {
               statusClass = 'pending';
             }
           }
-          item.innerHTML = '<a href="/tasks/' + task.id + '" class="day-task-link">' +
+          item.innerHTML = '<a href="#" class="day-task-link" onclick="openTaskDetails(' + task.id + '); closeModal(\'dayTasksModal\'); return false;">' +
             '<span class="day-task-title">' + task.title + '</span>' +
             '<span class="day-task-status ' + statusClass + '">' + statusText + '</span>' +
             '</a>';
@@ -581,6 +585,18 @@ function openTaskDetails(taskId) {
     var parts = data.task.deadline_at.split('T')[0].split('-');
     html += '<div class="td-section"><strong>Дедлайн:</strong> ' + parts[2] + '.' + parts[1] + '.' + parts[0] + '</div>';
 
+    if (data.attachments && data.attachments.length > 0) {
+      html += '<h3 class="td-heading">Файлы:</h3>';
+      html += '<div class="attachment-list">';
+      data.attachments.forEach(function(a) {
+        html += '<div class="attachment-card">';
+        html += '<a href="/api/attachments/' + a.id + '" class="attachment-name" target="_blank">' + a.file_name + '</a>';
+        html += '<span class="attachment-size">' + a.size + ' KB</span>';
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+
     if (data.is_leader && data.assignees.length > 0) {
       html += '<h3 class="td-heading">Исполнители:</h3>';
       html += '<div class="assignee-grid-compact">';
@@ -606,18 +622,6 @@ function openTaskDetails(taskId) {
           html += '<button class="btn-ck btn-ck-reject" onclick="reviewAssignment(' + taskId + ', ' + a.user_id + ', false)">✕</button>';
           html += '</div>';
         }
-        html += '</div>';
-      });
-      html += '</div>';
-    }
-
-    if (data.attachments && data.attachments.length > 0) {
-      html += '<h3 class="td-heading">Файлы:</h3>';
-      html += '<div class="attachment-list">';
-      data.attachments.forEach(function(a) {
-        html += '<div class="attachment-card">';
-        html += '<a href="/api/attachments/' + a.id + '" class="attachment-name" target="_blank">' + a.file_name + '</a>';
-        html += '<span class="attachment-size">' + a.size + ' KB</span>';
         html += '</div>';
       });
       html += '</div>';
