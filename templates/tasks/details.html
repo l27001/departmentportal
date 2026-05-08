@@ -14,8 +14,6 @@
       </div>
       {% if from_meeting %}
       <span onclick="window.location.href='{{ url_for('web_meetings.meeting_details', meeting_id=from_meeting) }}'" style="font-size: 36px; font-weight: bold; cursor: pointer; color: #b70000;">&times;</span>
-      {% elif from_page == 'calendar' %}
-      <span onclick="window.location.href='{{ url_for('tasks.calendar') }}'" style="font-size: 36px; font-weight: bold; cursor: pointer; color: #b70000;">&times;</span>
       {% else %}
       <span onclick="window.location.href='{{ url_for('tasks.list_tasks', page=page) }}'" style="font-size: 36px; font-weight: bold; cursor: pointer; color: #b70000;">&times;</span>
       {% endif %}
@@ -107,8 +105,6 @@
     <div class="view-details">
       {% if from_meeting %}
       <a href="{{ url_for('web_meetings.meeting_details', meeting_id=from_meeting) }}" class="view-details-btn">Назад</a>
-      {% elif from_page == 'calendar' %}
-      <a href="{{ url_for('tasks.calendar') }}" class="view-details-btn">Назад</a>
       {% else %}
       <a href="{{ url_for('tasks.list_tasks', page=page) }}" class="view-details-btn">Назад</a>
       {% endif %}
