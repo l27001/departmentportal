@@ -1,6 +1,5 @@
 from flask import Blueprint, request, jsonify, render_template, flash, url_for, redirect, abort, current_app, send_file
-from io import StringIO, BytesIO
-import csv
+from io import BytesIO
 import os
 import uuid
 from flask_jwt_extended import (
@@ -352,6 +351,10 @@ def task_details(task_id):
 @jwt_required()
 @roles_required("Руководитель", "Документовед")
 def generate_task_report(task_id):
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.utils import get_column_letter
+
     task = Task.query.get_or_404(task_id)
     assignees = TaskUserAssignment.query.filter_by(task_id=task_id).all()
 
@@ -368,23 +371,100 @@ def generate_task_report(task_id):
         else:
             in_progress.append(entry)
 
-    priority_labels = {
-        'low': 'Низкий',
-        'medium': 'Средний',
-        'high': 'Высокий',
-    }
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Отчёт по задаче"
 
+    header_font = Font(name='Calibri', size=16, bold=True)
+    label_font = Font(name='Calibri', size=11, bold=True)
+    value_font = Font(name='Calibri', size=11)
+    section_font = Font(name='Calibri', size=13, bold=True)
+    header_row_font = Font(name='Calibri', size=11, bold=True, color='FFFFFF')
+    cell_font = Font(name='Calibri', size=11)
+
+    green_fill = PatternFill(start_color='D4EDDA', end_color='D4EDDA', fill_type='solid')
+    yellow_fill = PatternFill(start_color='FFF3CD', end_color='FFF3CD', fill_type='solid')
+    red_fill = PatternFill(start_color='F8D7DA', end_color='F8D7DA', fill_type='solid')
+    header_fill = PatternFill(start_color='4472C4', end_color='4472C4', fill_type='solid')
+    light_bg = PatternFill(start_color='F2F2F2', end_color='F2F2F2', fill_type='solid')
+
+    thin_border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin'),
+    )
+
+    row = 1
+    ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=3)
+    cell = ws.cell(row=row, column=1, value=f"Отчёт по задаче: {task.title}")
+    cell.font = header_font
+
+    row = 2
+    ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=3)
+    ws.cell(row=row, column=1, value=f"Приоритет: {task.priority}").font = value_font
+    row = 3
+    ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=3)
+    ws.cell(row=row, column=1, value=f"Дедлайн: {task.deadline_at.strftime('%d.%m.%Y')}").font = value_font
+    if task.description:
+        row = 4
+        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=3)
+        ws.cell(row=row, column=1, value=f"Описание: {task.description}").font = value_font
+
+    row += 1
     total = len(assignees)
     done_count = len(completed)
     pct = round(done_count / total * 100) if total > 0 else 0
+    ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=3)
+    ws.cell(row=row, column=1, value=f"Прогресс: {done_count}/{total} ({pct}%)").font = Font(name='Calibri', size=12, bold=True, color='006100')
 
-    return render_template('tasks/report.html',
-        task=task,
-        priority_label=priority_labels.get(task.priority, task.priority),
-        completed=completed,
-        in_progress=in_progress,
-        on_review=on_review,
-        total=total,
-        done_count=done_count,
-        pct=pct,
-    )
+    row += 2
+
+    def write_section(title, items, fill_color):
+        nonlocal row
+        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=3)
+        cell = ws.cell(row=row, column=1, value=title)
+        cell.font = section_font
+        row += 1
+
+        for col_idx, col_name in enumerate(['№', 'Исполнитель', 'Статус'], 1):
+            cell = ws.cell(row=row, column=col_idx, value=col_name)
+            cell.font = header_row_font
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal='center')
+            cell.border = thin_border
+        row += 1
+
+        for i, entry in enumerate(items, 1):
+            ws.cell(row=row, column=1, value=i).font = cell_font
+            ws.cell(row=row, column=1).alignment = Alignment(horizontal='center')
+            ws.cell(row=row, column=1).border = thin_border
+
+            ws.cell(row=row, column=2, value=entry["user_name"]).font = cell_font
+            ws.cell(row=row, column=2).border = thin_border
+
+            ws.cell(row=row, column=3, value=entry["status"]).font = cell_font
+            ws.cell(row=row, column=3).alignment = Alignment(horizontal='center')
+            ws.cell(row=row, column=3).border = thin_border
+
+            for col in range(1, 4):
+                ws.cell(row=row, column=col).fill = fill_color
+            row += 1
+        row += 1
+
+    if completed:
+        write_section(f"Выполнено — {len(completed)}", completed, green_fill)
+    if on_review:
+        write_section(f"На проверке — {len(on_review)}", on_review, yellow_fill)
+    if in_progress:
+        write_section(f"Не выполнено — {len(in_progress)}", in_progress, red_fill)
+
+    ws.column_dimensions['A'].width = 6
+    ws.column_dimensions['B'].width = 35
+    ws.column_dimensions['C'].width = 20
+
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    return send_file(output, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', as_attachment=True, download_name=f'report_{task.id}.xlsx')
