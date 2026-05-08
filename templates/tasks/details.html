@@ -68,35 +68,20 @@
 
     {% if user_role.name in ('Руководитель', 'Документовед') %}
     <h3>Исполнители:</h3>
-    <div class="assignee-list">
+    <div class="assignee-grid">
       {% for assignment in assignees %}
-        <div class="assignee-card">
-          <div class="assignee-name">{{ assignment.user.name }}</div>
-          <div class="assignee-status {{ assignment.status.replace(' ', '-') }}">
-            {{ assignment.status | capitalize }}
-          </div>
-          {% if assignment.status == 'на проверке' %}
-          <div class="review-actions">
-            <button class="btn-approve" onclick="reviewAssignment({{task.id}}, {{assignment.user_id}}, true)">Принять</button>
-            <button class="btn-reject" onclick="reviewAssignment({{task.id}}, {{assignment.user_id}}, false)">На доработку</button>
-          </div>
-          {% endif %}
-          {% if assignment.completed_at %}
-            <div class="assignee-date">
-              {% if assignment.status == 'на проверке' %}
-                Отправлено на проверку: {{ assignment.completed_at.strftime('%d.%m.%Y') }}
-              {% elif assignment.approved %}
-                Завершено: {{ assignment.completed_at.strftime('%d.%m.%Y') }}
-              {% else %}
-                Завершено: {{ assignment.completed_at.strftime('%d.%m.%Y') }}
-              {% endif %}
-            </div>
-          {% endif %}
+        <div class="assignee-chip">
+          <span class="assignee-name">{{ assignment.user.name }}</span>
+          <span class="assignee-badge status-{{ assignment.status.replace(' ', '-') }}">{{ assignment.status }}</span>
         </div>
+        {% if assignment.status == 'на проверке' %}
+        <div class="review-actions-inline">
+          <button class="btn-approve btn-sm" onclick="reviewAssignment({{task.id}}, {{assignment.user_id}}, true)">Принять</button>
+          <button class="btn-reject btn-sm" onclick="reviewAssignment({{task.id}}, {{assignment.user_id}}, false)">На доработку</button>
+        </div>
+        {% endif %}
       {% else %}
-        <div class="assignee-card">
-          <p>У этой задачи нет исполнителей.</p>
-        </div>
+        <p class="no-assignees">Нет исполнителей</p>
       {% endfor %}
     </div>
     {% endif %}

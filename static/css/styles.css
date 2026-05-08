@@ -1335,6 +1335,67 @@ input {
 .assignee-status.завершена { background: #e8f5e9; color: #2e7d32; }
 .assignee-status.на.проверке { background: #fff8e1; color: #f57f17; }
 
+.assignee-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 6px 16px;
+  margin: 8px 0 16px;
+}
+
+.assignee-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 10px;
+  background: #f8f9fc;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.assignee-chip .assignee-name {
+  font-weight: 500;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.assignee-badge {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.assignee-badge.status-не-начата { background: #fff3e0; color: #ef6c00; }
+.assignee-badge.status-в-работе { background: #e3f2fd; color: #1565c0; }
+.assignee-badge.status-завершена { background: #e8f5e9; color: #2e7d32; }
+.assignee-badge.status-на.проверке { background: #fff8e1; color: #f57f17; }
+
+.review-actions-inline {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 6px;
+  margin-top: 2px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #eee;
+}
+
+.no-assignees {
+  color: #9ca3af;
+  font-size: 14px;
+  margin: 4px 0 16px;
+}
+
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
 .review-actions {
   display: flex;
   gap: 6px;

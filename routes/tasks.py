@@ -328,6 +328,8 @@ def task_details(task_id):
     user_assignment = TaskUserAssignment.query.filter_by(task_id=task_id, user_id=user_id).first()
     if role.name != 'Сотрудник':
         assignees = TaskUserAssignment.query.filter_by(task_id=task_id).all()
+        status_order = {'завершена': 0, 'на проверке': 1, 'в работе': 2, 'не начата': 3}
+        assignees.sort(key=lambda a: (status_order.get(a.status, 4), a.user.name))
 
     if user_assignment:
         is_assigned = True
