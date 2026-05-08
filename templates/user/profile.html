@@ -150,21 +150,30 @@
     <h2><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Сменить пароль</h2>
     <div class="profile-edit-form" id="changePasswordForm">
       <div class="form-row">
-        <div class="input-group">
+        <div class="input-group" style="position:relative;">
           <label for="old_password">Текущий пароль</label>
-          <input type="password" id="old_password" placeholder="Введите текущий пароль">
+          <div style="display:flex; gap:6px;">
+            <input type="password" id="old_password" placeholder="Введите текущий пароль" style="flex:1;">
+            <button type="button" onclick="togglePw('old_password', this)" style="flex-shrink:0; background:#e9ecef; color:#333; border:1px solid #ccc; border-radius:5px; cursor:pointer; font-size:13px; padding:8px 10px;">👁</button>
+          </div>
         </div>
       </div>
       <div class="form-row">
-        <div class="input-group">
+        <div class="input-group" style="position:relative;">
           <label for="new_password">Новый пароль</label>
-          <input type="password" id="new_password" placeholder="Введите новый пароль">
+          <div style="display:flex; gap:6px;">
+            <input type="password" id="new_password" placeholder="Введите новый пароль" style="flex:1;">
+            <button type="button" onclick="togglePw('new_password', this)" style="flex-shrink:0; background:#e9ecef; color:#333; border:1px solid #ccc; border-radius:5px; cursor:pointer; font-size:13px; padding:8px 10px;">👁</button>
+          </div>
         </div>
       </div>
       <div class="form-row">
-        <div class="input-group">
+        <div class="input-group" style="position:relative;">
           <label for="new_password_confirm">Подтверждение</label>
-          <input type="password" id="new_password_confirm" placeholder="Повторите новый пароль">
+          <div style="display:flex; gap:6px;">
+            <input type="password" id="new_password_confirm" placeholder="Повторите новый пароль" style="flex:1;">
+            <button type="button" onclick="togglePw('new_password_confirm', this)" style="flex-shrink:0; background:#e9ecef; color:#333; border:1px solid #ccc; border-radius:5px; cursor:pointer; font-size:13px; padding:8px 10px;">👁</button>
+          </div>
         </div>
       </div>
       <div id="changePasswordMsg" class="flash-message" style="display:none;"></div>
@@ -178,6 +187,17 @@
 
 {% block extrajs %}
 <script>
+function togglePw(id, btn) {
+  var input = document.getElementById(id);
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = '🙈';
+  } else {
+    input.type = 'password';
+    btn.textContent = '👁';
+  }
+}
+
 function changePassword() {
   var oldPass = document.getElementById('old_password').value;
   var newPass = document.getElementById('new_password').value;
