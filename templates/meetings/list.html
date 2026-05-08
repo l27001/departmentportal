@@ -22,8 +22,8 @@
                 <p class="meeting-card-desc">{{ meeting.description[:150] }}{% if meeting.description|length > 150 %}...{% endif %}</p>
                 {% endif %}
                 <div class="meeting-card-badges">
-                    {% if meeting.tasks|length > 0 %}
-                    <span class="meeting-badge badge-tasks">{{ meeting.tasks|length }} задач</span>
+                    {% if meeting_task_counts[meeting.id] > 0 %}
+                    <span class="meeting-badge badge-tasks">{{ meeting_task_counts[meeting.id] }} задач</span>
                     {% endif %}
                     {% if meeting.attachments|length > 0 %}
                     <span class="meeting-badge badge-attachments">{{ meeting.attachments|length }} файлов</span>

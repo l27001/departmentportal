@@ -30,11 +30,23 @@ def _get_groups_data():
 @meetings_bp.route("/", methods=["GET"])
 @jwt_required()
 def list_meetings():
+    user_id = get_jwt_identity()
     role = Role.query.filter_by(id=get_jwt()["role"]).first()
     page = request.args.get("page", 1, type=int)
     per_page = 15
     pagination = DepartmentMeeting.query.order_by(DepartmentMeeting.date.desc()).paginate(page=page, per_page=per_page, error_out=False)
-    return render_template("meetings/list.html", meetings=pagination.items, page=page, total=pagination.total, per_page=per_page, total_pages=pagination.pages, role=role)
+
+    if role.name == 'Сотрудник':
+        user_task_ids = set(
+            a.task_id for a in TaskUserAssignment.query.filter_by(user_id=user_id).all()
+        )
+        meeting_task_counts = {}
+        for meeting in pagination.items:
+            meeting_task_counts[meeting.id] = len([t for t in meeting.tasks if t.id in user_task_ids])
+    else:
+        meeting_task_counts = {m.id: len(m.tasks) for m in pagination.items}
+
+    return render_template("meetings/list.html", meetings=pagination.items, page=page, total=pagination.total, per_page=per_page, total_pages=pagination.pages, role=role, meeting_task_counts=meeting_task_counts)
 
 
 def _process_new_tasks(meeting, meeting_date):
@@ -168,9 +180,19 @@ def create_meeting():
 @meetings_bp.route("/<int:meeting_id>", methods=["GET"])
 @jwt_required()
 def meeting_details(meeting_id):
+    user_id = get_jwt_identity()
     role = Role.query.filter_by(id=get_jwt()["role"]).first()
     meeting = DepartmentMeeting.query.get_or_404(meeting_id)
-    return render_template("meetings/details.html", meeting=meeting, role=role)
+
+    if role.name == 'Сотрудник':
+        user_task_ids = set(
+            a.task_id for a in TaskUserAssignment.query.filter_by(user_id=user_id).all()
+        )
+        visible_tasks = [t for t in meeting.tasks if t.id in user_task_ids]
+    else:
+        visible_tasks = meeting.tasks
+
+    return render_template("meetings/details.html", meeting=meeting, role=role, visible_tasks=visible_tasks)
 
 
 def _render_edit(meeting, role):
