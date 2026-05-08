@@ -8,8 +8,10 @@
     <h2>Общий чат</h2>
   </div>
   <div class="chat-messages" id="chatMessages"></div>
-  <div class="chat-input-area">
-    <input type="text" id="chatInput" placeholder="Напишите сообщение..." onkeydown="if(event.key==='Enter') sendMessage()">
+  <div class="chat-input-area" style="position:relative;">
+    <div id="emojiPicker" class="emoji-picker" style="display:none;"></div>
+    <button type="button" onclick="toggleEmojiPicker()" style="flex-shrink:0; width:42px; height:42px; padding:0; border:1px solid #ddd; border-radius:50%; background:#f8f9fa; cursor:pointer; font-size:20px; line-height:42px; text-align:center;">😊</button>
+    <input type="text" id="chatInput" placeholder="Напишите сообщение..." onkeydown="if(event.key==='Enter') sendMessage()" style="flex:1;">
     <button class="chat-send-btn" id="chatSendBtn" onclick="sendMessage()">Отправить</button>
   </div>
 </div>
@@ -115,6 +117,41 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-document.addEventListener('DOMContentLoaded', loadUserId);
+document.addEventListener('DOMContentLoaded', function() {
+  loadUserId();
+  buildEmojiPicker();
+});
+
+var emojis = ['😀','😁','😂','🤣','😊','😇','🙂','😉','😌','😍','🥰','😘','😗','😋','😛','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','😐','😑','😶','😏','😒','🙄','😬','😮','😯','😲','😳','🥺','😢','😭','😤','😡','🤬','😈','👍','👎','👊','✊','🤘','👌','✌','🤞','💪','🤝','🙏','❤','💔','🔥','⭐','✅','❌','🎉','🎊','🚀','💡','📌','🎯','💯','👏','🤩','🥳','💀','☠','👋','✋','🙌','🤲','🤜','🤛','🧠','👀','👅','💋'];
+
+function buildEmojiPicker() {
+  var picker = document.getElementById('emojiPicker');
+  for (var i = 0; i < emojis.length; i++) {
+    var span = document.createElement('span');
+    span.textContent = emojis[i];
+    span.onclick = function() { insertEmoji(this.textContent); };
+    picker.appendChild(span);
+  }
+}
+
+function toggleEmojiPicker() {
+  var picker = document.getElementById('emojiPicker');
+  picker.style.display = picker.style.display === 'none' ? 'grid' : 'none';
+}
+
+function insertEmoji(emoji) {
+  var input = document.getElementById('chatInput');
+  input.value += emoji;
+  input.focus();
+  document.getElementById('emojiPicker').style.display = 'none';
+}
+
+document.addEventListener('click', function(e) {
+  var picker = document.getElementById('emojiPicker');
+  var btn = document.querySelector('.chat-input-area button:first-child');
+  if (picker.style.display !== 'none' && !picker.contains(e.target) && !btn.contains(e.target)) {
+    picker.style.display = 'none';
+  }
+});
 </script>
 {% endblock %}
