@@ -102,12 +102,11 @@ def list_tasks():
     end = start + per_page
     paginated_tasks = tasks[start:end]
 
-    announcements = Announcement.query.filter_by(is_deleted=False).order_by(Announcement.created_at.desc()).limit(16).all()
-    has_more = len(announcements) > 15
-    announcements = announcements[:15]
+    today_date = date.today()
+    announcements = Announcement.query.filter(Announcement.is_deleted == False, Announcement.deadline >= today_date).order_by(Announcement.created_at.desc()).limit(15).all()
     viewed_ids = {v.announcement_id for v in AnnouncementView.query.filter_by(user_id=user_id).all()}
 
-    return render_template("tasks/list.html", tasks=paginated_tasks, role=role, users=users, groups=groups, groups_members=groups_members, user_assignments=user_assignments, assigned_task_ids=assigned_task_ids, user_id=user_id, today=date.today(), page=page, total=total, per_page=per_page, announcements=announcements, viewed_ids=viewed_ids, has_more_announcements=has_more, review_task_ids=review_task_ids, is_leader=is_leader)
+    return render_template("tasks/list.html", tasks=paginated_tasks, role=role, users=users, groups=groups, groups_members=groups_members, user_assignments=user_assignments, assigned_task_ids=assigned_task_ids, user_id=user_id, today=today_date, page=page, total=total, per_page=per_page, announcements=announcements, viewed_ids=viewed_ids, review_task_ids=review_task_ids, is_leader=is_leader)
 
 @tasks_bp.route("/", methods=["POST"])
 @jwt_required()
@@ -283,18 +282,17 @@ def calendar():
         })
 
     days_all_completed = {}
+    today_date = date.today()
     days_has_unassigned = {}
     for day, day_tasks in tasks_by_deadline.items():
         assigned = [t for t in day_tasks if t['status'] is not None]
         days_all_completed[day] = len(assigned) > 0 and all(t['status'] in ('завершена', 'на проверке') for t in assigned)
         days_has_unassigned[day] = any(t['status'] is None for t in day_tasks)
 
-    announcements = Announcement.query.filter_by(is_deleted=False).order_by(Announcement.created_at.desc()).limit(16).all()
-    has_more = len(announcements) > 15
-    announcements = announcements[:15]
+    announcements = Announcement.query.filter(Announcement.is_deleted == False, Announcement.deadline >= today_date).order_by(Announcement.created_at.desc()).limit(15).all()
     viewed_ids = {v.announcement_id for v in AnnouncementView.query.filter_by(user_id=user_id).all()}
 
-    return render_template("tasks/calendar.html", tasks=events, tasks_by_deadline=tasks_by_deadline, days_all_completed=days_all_completed, days_has_unassigned=days_has_unassigned, role=role, announcements=announcements, viewed_ids=viewed_ids, has_more_announcements=has_more)
+    return render_template("tasks/calendar.html", tasks=events, tasks_by_deadline=tasks_by_deadline, days_all_completed=days_all_completed, days_has_unassigned=days_has_unassigned, role=role, announcements=announcements, viewed_ids=viewed_ids)
 
 @tasks_bp.route("/<int:task_id>", methods=["DELETE"])
 @jwt_required()

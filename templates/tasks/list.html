@@ -147,11 +147,9 @@
       {% else %}
       <p class="empty-announcements">Нет анонсов</p>
       {% endif %}
-      {% if has_more_announcements %}
       <div class="all-announcements-link">
         <a href="{{ url_for('announcements.all_announcements') }}">Все анонсы →</a>
       </div>
-      {% endif %}
     </section>
 </div>
 {% endblock %}
