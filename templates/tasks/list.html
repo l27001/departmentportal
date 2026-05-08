@@ -37,7 +37,6 @@
         <div class="task-item {% if is_completed %}task-completed{% endif %} {% if is_review %}task-review{% endif %}">
             <div class="task-info">
                 <h3 class="task-title">{{ task.title }}</h3>
-                <p class="task-description">{{ task.description }}</p>
             </div>
             {% if tid in assigned_task_ids %}
             <div class="task-btn">
