@@ -120,6 +120,9 @@ def change_password():
     if old_password == new_password:
         return jsonify({"msg": "Новый пароль совпадает с текущим"}), 400
 
+    if len(new_password) < 6:
+        return jsonify({"msg": "Минимальная длина пароля — 6 символов"}), 400
+
     if not check_password_hash(user.password, old_password):
         return jsonify({"msg": "Неверный текущий пароль"}), 401
 

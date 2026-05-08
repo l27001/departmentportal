@@ -198,6 +198,13 @@ function changePassword() {
     return;
   }
 
+  if (newPass.length < 6) {
+    msgEl.className = 'flash-message danger';
+    msgEl.textContent = 'Минимальная длина пароля — 6 символов';
+    msgEl.style.display = 'block';
+    return;
+  }
+
   fetch('/api/auth/changepass', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
