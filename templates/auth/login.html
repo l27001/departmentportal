@@ -147,15 +147,16 @@
       </div>
       <div class="input-group" style="position: relative;">
         <label for="password">Пароль</label>
-        <div class="pw-toggle-wrapper">
-          <input type="password" id="password" name="password" required placeholder="Введите ваш пароль" class="pw-toggle-input">
-          <button type="button" onclick="togglePw('password', this)" class="pw-toggle-btn">👁</button>
+        <div style="display:flex; gap:0;">
+          <input type="password" id="password" name="password" required placeholder="Введите ваш пароль" style="flex:1; height:42px; box-sizing:border-box; border-radius:5px 0 0 5px; border-right:none;">
+          <button type="button" onclick="togglePw('password', this)" style="flex-shrink:0; width:46px; height:42px; padding:0; background:#e9ecef; color:#333; border:1px solid #ccc; border-left:none; border-radius:0 5px 5px 0; cursor:pointer; font-size:18px; line-height:42px; text-align:center;">👁</button>
         </div>
       </div>
       <div class="input-group">
         <button type="submit" class="login-btn">Войти</button>
       </div>
-    </form>
-  </div>
+  </form>
+  <script src="/static/js/scripts.js"></script>
 </body>
+<script src="/static/js/scripts.js"></script>
 </html>

@@ -20,6 +20,7 @@ window.onclick = function(event) {
     if (event.target == modals[i]) {
       modals[i].style.display = "none";
     }
+  }
 }
 
 function togglePw(id, btn) {
@@ -31,7 +32,6 @@ function togglePw(id, btn) {
     input.type = 'password';
     btn.textContent = '👁';
   }
-}
 }
 
 function updateTaskStatus(el, id) {

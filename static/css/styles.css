@@ -3160,18 +3160,24 @@ a.status.meeting-linked:hover {
   flex: 1;
   border-radius: 5px 0 0 5px;
   border-right: none;
+  box-sizing: border-box;
+  height: 42px;
 }
 
 .pw-toggle-btn {
   flex-shrink: 0;
-  padding: 10px 12px;
+  width: 46px;
+  height: 42px;
+  padding: 0;
   background: #e9ecef;
   color: #333;
   border: 1px solid #ccc;
+  border-left: none;
   border-radius: 0 5px 5px 0;
   cursor: pointer;
-  font-size: 14px;
-  line-height: 1;
+  font-size: 18px;
+  line-height: 42px;
+  text-align: center;
 }
 
 /* ==============================
