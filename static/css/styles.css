@@ -1346,12 +1346,13 @@ input {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
+  gap: 8px;
   padding: 5px 8px 5px 12px;
   background: #f8f9fc;
   border-radius: 8px;
   font-size: 14px;
   transition: box-shadow 0.2s, border-color 0.2s;
+  min-width: 0;
 }
 
 .assignee-chip-review {
@@ -1370,7 +1371,6 @@ input {
   align-items: center;
   gap: 8px;
   min-width: 0;
-  flex: 1;
 }
 
 .assignee-chip .assignee-name {
