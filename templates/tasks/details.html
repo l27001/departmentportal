@@ -68,21 +68,15 @@
 
     {% if user_role.name in ('Руководитель', 'Документовед') %}
     <h3>Исполнители:</h3>
-    <div class="assignee-grid">
+    <div class="assignee-grid-compact">
       {% for assignment in assignees %}
-        <div class="assignee-chip {% if assignment.status == 'на проверке' %}assignee-chip-review{% endif %}">
-          <div class="assignee-chip-info">
-            <span class="assignee-name">{{ assignment.user.name }}</span>
-            <span class="assignee-badge status-{{ assignment.status.replace(' ', '-') }}">{{ assignment.status }}</span>
-          </div>
+        <div class="assignee-card-mini">
+          <span class="assignee-card-name">{{ assignment.user.name }}</span>
+          <span class="assignee-card-status status-{{ assignment.status.replace(' ', '-') }}">{{ assignment.status }}</span>
           {% if assignment.status == 'на проверке' %}
-          <div class="review-actions">
-            <button class="btn-approve btn-sm" onclick="reviewAssignment({{task.id}}, {{assignment.user_id}}, true)">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </button>
-            <button class="btn-reject btn-sm" onclick="reviewAssignment({{task.id}}, {{assignment.user_id}}, false)">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
+          <div class="card-review-actions">
+            <button class="btn-ck" onclick="reviewAssignment({{task.id}}, {{assignment.user_id}}, true)" title="Принять">✓</button>
+            <button class="btn-ck btn-ck-reject" onclick="reviewAssignment({{task.id}}, {{assignment.user_id}}, false)" title="На доработку">✕</button>
           </div>
           {% endif %}
         </div>

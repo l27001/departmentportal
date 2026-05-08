@@ -1335,12 +1335,73 @@ input {
 .assignee-status.завершена { background: #e8f5e9; color: #2e7d32; }
 .assignee-status.на.проверке { background: #fff8e1; color: #f57f17; }
 
-.assignee-grid {
+.assignee-grid-compact {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 6px 16px;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 8px;
   margin: 8px 0 16px;
 }
+
+.assignee-card-mini {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: #f8f9fc;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.assignee-card-name {
+  flex: 1;
+  font-weight: 500;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.assignee-card-status {
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 8px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.assignee-card-status.status-не-начата { background: #fff3e0; color: #ef6c00; }
+.assignee-card-status.status-в-работе { background: #e3f2fd; color: #1565c0; }
+.assignee-card-status.status-завершена { background: #e8f5e9; color: #2e7d32; }
+.assignee-card-status.status-на.проверке { background: #fff8e1; color: #f57f17; }
+
+.card-review-actions {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.btn-ck {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  background: #10b98118;
+  color: #059669;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.btn-ck:hover { background: #10b98130; transform: scale(1.1); }
+.btn-ck-reject { background: #ef444418; color: #dc2626; }
+.btn-ck-reject:hover { background: #ef444430; }
 
 .assignee-chip {
   display: flex;
