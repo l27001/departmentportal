@@ -8,6 +8,7 @@ from models.user import User
 from models.group import Group, UserGroup
 from models.attachment import Attachment
 from models.role import Role
+from models.meeting import MeetingTask, DepartmentMeeting
 
 api_tasks_bp = Blueprint("api_tasks", __name__, url_prefix="/api/tasks")
 
@@ -359,8 +360,6 @@ def update_status(task_id):
     """
     user_id = get_jwt_identity()
     role_id = get_jwt()["role"]
-from models.role import Role
-from models.meeting import MeetingTask, DepartmentMeeting
     role = Role.query.get(role_id)
     data = request.json
 
