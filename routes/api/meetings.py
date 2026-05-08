@@ -12,7 +12,42 @@ meetings_bp = Blueprint("api_meetings", __name__, url_prefix="/api/meetings")
 @meetings_bp.route("/", methods=["GET"])
 @jwt_required()
 def list_meetings():
-    """Список заседаний кафедры"""
+    """Список заседаний кафедры
+    ---
+    tags: [Meetings]
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: page
+        in: query
+        type: integer
+        description: Номер страницы
+      - name: per_page
+        in: query
+        type: integer
+        description: Количество на странице
+    responses:
+      200:
+        description: Список заседаний с пагинацией
+        schema:
+          type: object
+          properties:
+            meetings:
+              type: array
+              items:
+                $ref: '#/definitions/DepartmentMeeting'
+            pagination:
+              type: object
+              properties:
+                page:
+                  type: integer
+                per_page:
+                  type: integer
+                total:
+                  type: integer
+                total_pages:
+                  type: integer
+    """
     user_id = get_jwt_identity()
     role = get_jwt()["role"]
 
@@ -38,7 +73,42 @@ def list_meetings():
 @meetings_bp.route("/", methods=["POST"])
 @jwt_required()
 def create_meeting():
-    """Создать заседание кафедры (Руководитель, Документовед)"""
+    """Создать заседание кафедры (Руководитель, Документовед)
+    ---
+    tags: [Meetings]
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - title
+            - date
+          properties:
+            title:
+              type: string
+            description:
+              type: string
+            date:
+              type: string
+              format: date
+            task_ids:
+              type: array
+              items:
+                type: integer
+    responses:
+      201:
+        description: Заседание создано
+        schema:
+          $ref: '#/definitions/DepartmentMeeting'
+      400:
+        description: Ошибка валидации
+      403:
+        description: Доступ запрещён
+    """
     role = get_jwt()["role"]
     if role not in (1, 2):
         return jsonify({"msg": "Доступ запрещён"}), 403
@@ -80,7 +150,24 @@ def create_meeting():
 @meetings_bp.route("/<int:meeting_id>", methods=["GET"])
 @jwt_required()
 def get_meeting(meeting_id):
-    """Получить заседание по ID"""
+    """Получить заседание по ID
+    ---
+    tags: [Meetings]
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: meeting_id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Заседание с задачами и вложениями
+        schema:
+          $ref: '#/definitions/DepartmentMeeting'
+      404:
+        description: Не найдено
+    """
     meeting = DepartmentMeeting.query.get_or_404(meeting_id)
 
     result = meeting.to_dict()
@@ -108,7 +195,45 @@ def get_meeting(meeting_id):
 @meetings_bp.route("/<int:meeting_id>", methods=["PATCH"])
 @jwt_required()
 def update_meeting(meeting_id):
-    """Обновить заседание кафедры (Руководитель, Документовед)"""
+    """Обновить заседание кафедры (Руководитель, Документовед)
+    ---
+    tags: [Meetings]
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: meeting_id
+        in: path
+        type: integer
+        required: true
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            title:
+              type: string
+            description:
+              type: string
+            date:
+              type: string
+              format: date
+            task_ids:
+              type: array
+              items:
+                type: integer
+    responses:
+      200:
+        description: Заседание обновлено
+        schema:
+          $ref: '#/definitions/DepartmentMeeting'
+      400:
+        description: Ошибка валидации
+      403:
+        description: Доступ запрещён
+      404:
+        description: Не найдено
+    """
     role = get_jwt()["role"]
     if role not in (1, 2):
         return jsonify({"msg": "Доступ запрещён"}), 403
@@ -140,7 +265,24 @@ def update_meeting(meeting_id):
 @meetings_bp.route("/<int:meeting_id>", methods=["DELETE"])
 @jwt_required()
 def delete_meeting(meeting_id):
-    """Удалить заседание кафедры (Руководитель, Документовед)"""
+    """Удалить заседание кафедры (Руководитель, Документовед)
+    ---
+    tags: [Meetings]
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: meeting_id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Заседание удалено
+      403:
+        description: Доступ запрещён
+      404:
+        description: Не найдено
+    """
     role = get_jwt()["role"]
     if role not in (1, 2):
         return jsonify({"msg": "Доступ запрещён"}), 403

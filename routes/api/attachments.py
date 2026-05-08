@@ -197,6 +197,24 @@ def _upload_attachment(entity_model, entity_id):
 @attachments_bp.route("/news/<int:news_id>/attachments", methods=["GET"])
 @jwt_required()
 def list_news_attachments(news_id):
+    """Получить вложения новости
+    ---
+    tags: [Attachments]
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: news_id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Список вложений
+        schema:
+          type: array
+          items:
+            $ref: '#/definitions/Attachment'
+    """
     News.query.get_or_404(news_id)
     attachments = Attachment.query.filter_by(news_id=news_id).order_by(Attachment.uploaded_at.desc()).all()
     return jsonify([a.to_dict() for a in attachments])
@@ -205,6 +223,30 @@ def list_news_attachments(news_id):
 @attachments_bp.route("/news/<int:news_id>/attachments", methods=["POST"])
 @jwt_required()
 def upload_news_attachment(news_id):
+    """Загрузить вложение к новости
+    ---
+    tags: [Attachments]
+    security:
+      - BearerAuth: []
+    consumes:
+      - multipart/form-data
+    parameters:
+      - name: news_id
+        in: path
+        type: integer
+        required: true
+      - name: file
+        in: formData
+        type: file
+        required: true
+    responses:
+      201:
+        description: Вложение загружено
+        schema:
+          $ref: '#/definitions/Attachment'
+      400:
+        description: Ошибка загрузки файла
+    """
     news = News.query.get_or_404(news_id)
     if "file" not in request.files:
         return jsonify({"msg": "Файл не найден"}), 400
@@ -243,6 +285,24 @@ def upload_news_attachment(news_id):
 @attachments_bp.route("/announcements/<int:announcement_id>/attachments", methods=["GET"])
 @jwt_required()
 def list_announcement_attachments(announcement_id):
+    """Получить вложения анонса
+    ---
+    tags: [Attachments]
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: announcement_id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Список вложений
+        schema:
+          type: array
+          items:
+            $ref: '#/definitions/Attachment'
+    """
     Announcement.query.get_or_404(announcement_id)
     attachments = Attachment.query.filter_by(announcement_id=announcement_id).order_by(Attachment.uploaded_at.desc()).all()
     return jsonify([a.to_dict() for a in attachments])
@@ -251,12 +311,54 @@ def list_announcement_attachments(announcement_id):
 @attachments_bp.route("/announcements/<int:announcement_id>/attachments", methods=["POST"])
 @jwt_required()
 def upload_announcement_attachment(announcement_id):
+    """Загрузить вложение к анонсу
+    ---
+    tags: [Attachments]
+    security:
+      - BearerAuth: []
+    consumes:
+      - multipart/form-data
+    parameters:
+      - name: announcement_id
+        in: path
+        type: integer
+        required: true
+      - name: file
+        in: formData
+        type: file
+        required: true
+    responses:
+      201:
+        description: Вложение загружено
+        schema:
+          $ref: '#/definitions/Attachment'
+      400:
+        description: Ошибка загрузки файла
+    """
     return _upload_attachment(Announcement, announcement_id)
 
 
 @attachments_bp.route("/documents/<int:document_id>/attachments", methods=["GET"])
 @jwt_required()
 def list_document_attachments(document_id):
+    """Получить вложения документа
+    ---
+    tags: [Attachments]
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: document_id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Список вложений
+        schema:
+          type: array
+          items:
+            $ref: '#/definitions/Attachment'
+    """
     Document.query.get_or_404(document_id)
     attachments = Attachment.query.filter_by(document_id=document_id).order_by(Attachment.uploaded_at.desc()).all()
     return jsonify([a.to_dict() for a in attachments])
@@ -265,12 +367,54 @@ def list_document_attachments(document_id):
 @attachments_bp.route("/documents/<int:document_id>/attachments", methods=["POST"])
 @jwt_required()
 def upload_document_attachment(document_id):
+    """Загрузить вложение к документу
+    ---
+    tags: [Attachments]
+    security:
+      - BearerAuth: []
+    consumes:
+      - multipart/form-data
+    parameters:
+      - name: document_id
+        in: path
+        type: integer
+        required: true
+      - name: file
+        in: formData
+        type: file
+        required: true
+    responses:
+      201:
+        description: Вложение загружено
+        schema:
+          $ref: '#/definitions/Attachment'
+      400:
+        description: Ошибка загрузки файла
+    """
     return _upload_attachment(Document, document_id)
 
 
 @attachments_bp.route("/meetings/<int:meeting_id>/attachments", methods=["GET"])
 @jwt_required()
 def list_meeting_attachments(meeting_id):
+    """Получить вложения заседания
+    ---
+    tags: [Attachments]
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: meeting_id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Список вложений
+        schema:
+          type: array
+          items:
+            $ref: '#/definitions/Attachment'
+    """
     DepartmentMeeting.query.get_or_404(meeting_id)
     attachments = Attachment.query.filter_by(meeting_id=meeting_id).order_by(Attachment.uploaded_at.desc()).all()
     return jsonify([a.to_dict() for a in attachments])
@@ -279,4 +423,28 @@ def list_meeting_attachments(meeting_id):
 @attachments_bp.route("/meetings/<int:meeting_id>/attachments", methods=["POST"])
 @jwt_required()
 def upload_meeting_attachment(meeting_id):
+    """Загрузить вложение к заседанию
+    ---
+    tags: [Attachments]
+    security:
+      - BearerAuth: []
+    consumes:
+      - multipart/form-data
+    parameters:
+      - name: meeting_id
+        in: path
+        type: integer
+        required: true
+      - name: file
+        in: formData
+        type: file
+        required: true
+    responses:
+      201:
+        description: Вложение загружено
+        schema:
+          $ref: '#/definitions/Attachment'
+      400:
+        description: Ошибка загрузки файла
+    """
     return _upload_attachment(DepartmentMeeting, meeting_id)

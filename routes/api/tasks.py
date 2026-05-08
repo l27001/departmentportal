@@ -498,6 +498,50 @@ def add_assignees(task_id):
 @api_tasks_bp.route("/<int:task_id>/details", methods=["GET"])
 @jwt_required()
 def task_details_modal(task_id):
+    """Полная информация о задаче для модального окна
+    ---
+    tags: [Tasks]
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: task_id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Детали задачи с исполнителями и вложениями
+        schema:
+          type: object
+          properties:
+            task:
+              $ref: '#/definitions/Task'
+            is_assigned:
+              type: boolean
+            user_assignment:
+              type: object
+              properties:
+                status:
+                  type: string
+                approved:
+                  type: boolean
+            assignees:
+              type: array
+              items:
+                type: object
+            is_leader:
+              type: boolean
+            is_overdue:
+              type: boolean
+            attachments:
+              type: array
+              items:
+                type: object
+      403:
+        description: Доступ запрещён
+      404:
+        description: Не найдено
+    """
     user_id = get_jwt_identity()
     role = Role.query.filter_by(id=get_jwt()["role"]).first()
 

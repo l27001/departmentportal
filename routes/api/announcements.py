@@ -252,6 +252,45 @@ def get_views(id):
 @announcements_bp.route("/<int:id>/read-status", methods=["GET"])
 @jwt_required()
 def get_read_status(id):
+    """Получить статус прочтения анонса (Руководитель, Документовед)
+    ---
+    tags: [Announcements]
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Статус прочтения по пользователям
+        schema:
+          type: object
+          properties:
+            read:
+              type: array
+              items:
+                type: object
+                properties:
+                  user_id:
+                    type: integer
+                  user_name:
+                    type: string
+            unread:
+              type: array
+              items:
+                type: object
+                properties:
+                  user_id:
+                    type: integer
+                  user_name:
+                    type: string
+      403:
+        description: Доступ запрещён
+      404:
+        description: Не найдено
+    """
     role = get_jwt()["role"]
     if role not in (1, 2):
         return jsonify({"msg": "Доступ запрещён"}), 403
