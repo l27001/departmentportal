@@ -3154,14 +3154,18 @@ a.status.meeting-linked:hover {
 .pw-toggle-wrapper {
   display: flex;
   gap: 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  overflow: hidden;
 }
 
 .pw-toggle-input {
   flex: 1;
-  border-radius: 5px 0 0 5px;
-  border-right: none;
-  box-sizing: border-box;
+  border: none;
   height: 42px;
+  padding: 0 10px;
+  box-sizing: border-box;
+  outline: none;
 }
 
 .pw-toggle-btn {
@@ -3171,9 +3175,8 @@ a.status.meeting-linked:hover {
   padding: 0;
   background: #e9ecef;
   color: #333;
-  border: 1px solid #ccc;
-  border-left: none;
-  border-radius: 0 5px 5px 0;
+  border: none;
+  border-left: 1px solid #ccc;
   cursor: pointer;
   font-size: 18px;
   line-height: 42px;
