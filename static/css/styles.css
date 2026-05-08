@@ -1346,11 +1346,31 @@ input {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  padding: 4px 10px;
+  gap: 6px;
+  padding: 5px 8px 5px 12px;
   background: #f8f9fc;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 14px;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.assignee-chip-review {
+  background: #fffef5;
+  border: 1px solid #f59e0b;
+  animation: pulse-review 2s ease-in-out infinite;
+}
+
+@keyframes pulse-review {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.2); }
+  50% { box-shadow: 0 0 0 4px rgba(245, 158, 11, 0); }
+}
+
+.assignee-chip-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
 }
 
 .assignee-chip .assignee-name {
@@ -1359,7 +1379,6 @@ input {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  min-width: 0;
 }
 
 .assignee-badge {
@@ -1376,24 +1395,37 @@ input {
 .assignee-badge.status-завершена { background: #e8f5e9; color: #2e7d32; }
 .assignee-badge.status-на.проверке { background: #fff8e1; color: #f57f17; }
 
-.review-actions-inline {
-  grid-column: 1 / -1;
+.assignee-chip .review-actions {
   display: flex;
-  gap: 6px;
-  margin-top: 2px;
-  padding-bottom: 4px;
-  border-bottom: 1px solid #eee;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.assignee-chip .review-actions .btn-sm {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.assignee-chip .review-actions .btn-sm:hover {
+  transform: scale(1.1);
+}
+
+.assignee-chip .review-actions .btn-sm:active {
+  transform: scale(0.95);
 }
 
 .no-assignees {
   color: #9ca3af;
   font-size: 14px;
   margin: 4px 0 16px;
-}
-
-.btn-sm {
-  padding: 4px 10px;
-  font-size: 12px;
 }
 
 .review-actions {

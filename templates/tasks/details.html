@@ -70,16 +70,22 @@
     <h3>Исполнители:</h3>
     <div class="assignee-grid">
       {% for assignment in assignees %}
-        <div class="assignee-chip">
-          <span class="assignee-name">{{ assignment.user.name }}</span>
-          <span class="assignee-badge status-{{ assignment.status.replace(' ', '-') }}">{{ assignment.status }}</span>
+        <div class="assignee-chip {% if assignment.status == 'на проверке' %}assignee-chip-review{% endif %}">
+          <div class="assignee-chip-info">
+            <span class="assignee-name">{{ assignment.user.name }}</span>
+            <span class="assignee-badge status-{{ assignment.status.replace(' ', '-') }}">{{ assignment.status }}</span>
+          </div>
+          {% if assignment.status == 'на проверке' %}
+          <div class="review-actions">
+            <button class="btn-approve btn-sm" onclick="reviewAssignment({{task.id}}, {{assignment.user_id}}, true)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+            <button class="btn-reject btn-sm" onclick="reviewAssignment({{task.id}}, {{assignment.user_id}}, false)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          {% endif %}
         </div>
-        {% if assignment.status == 'на проверке' %}
-        <div class="review-actions-inline">
-          <button class="btn-approve btn-sm" onclick="reviewAssignment({{task.id}}, {{assignment.user_id}}, true)">Принять</button>
-          <button class="btn-reject btn-sm" onclick="reviewAssignment({{task.id}}, {{assignment.user_id}}, false)">На доработку</button>
-        </div>
-        {% endif %}
       {% else %}
         <p class="no-assignees">Нет исполнителей</p>
       {% endfor %}
