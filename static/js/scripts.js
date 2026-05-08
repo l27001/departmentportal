@@ -26,6 +26,7 @@ window.onclick = function(event) {
 function updateTaskStatus(el, id) {
     var taskItem = el.closest('.task-item');
     var newVal = el.value;
+    var fromModal = !taskItem;
     fetch(`/api/tasks/${id}/status`, {
         method: "PATCH",
         headers: {
@@ -39,6 +40,9 @@ function updateTaskStatus(el, id) {
     })
     .then(function(result){
         console.log(result)
+        if (!taskItem) {
+            taskItem = document.querySelector('.task-item[data-task-id="' + id + '"]');
+        }
         if (newVal === 'Завершена') {
             if (taskItem) {
                 taskItem.classList.add('task-completed');
@@ -54,6 +58,16 @@ function updateTaskStatus(el, id) {
                 taskItem.classList.remove('task-completed');
                 taskItem.classList.remove('task-review');
             }
+        }
+        if (taskItem) {
+            taskItem.querySelectorAll('select').forEach(function(s) {
+                for (var i = 0; i < s.options.length; i++) {
+                    if (s.options[i].text === newVal) {
+                        s.selectedIndex = i;
+                        break;
+                    }
+                }
+            });
         }
         var modal = document.getElementById('taskDetailsModal');
         if (modal && modal.style.display === 'block') {

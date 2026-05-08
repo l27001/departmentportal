@@ -3002,19 +3002,19 @@ a.status.meeting-linked:hover {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  padding: 16px 20px 12px;
+  padding: 18px 24px 14px;
   border-bottom: 1px solid #e5e7eb;
 }
 
 .modal-task-header h3 {
-  font-size: 18px;
+  font-size: 20px;
   margin: 0;
   flex: 1;
   padding-right: 16px;
 }
 
 .close-task {
-  font-size: 28px;
+  font-size: 30px;
   font-weight: bold;
   cursor: pointer;
   color: #b70000;
@@ -3022,32 +3022,48 @@ a.status.meeting-linked:hover {
 }
 
 #taskDetailsBody {
-  padding: 16px 20px 20px;
+  padding: 18px 24px 24px;
 }
 
 .td-description {
-  margin-bottom: 14px;
-  font-size: 14px;
+  margin-bottom: 16px;
+  font-size: 16px;
   line-height: 1.6;
   color: #374151;
 }
 
 .td-section {
-  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 15px;
+}
+
+.td-section strong {
+  white-space: nowrap;
+}
+
+.td-section select {
+  margin: 0;
+  width: auto;
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
   font-size: 14px;
 }
 
 .td-heading {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
-  margin: 16px 0 8px;
+  margin: 18px 0 10px;
   color: #374151;
 }
 
 .td-actions {
   display: flex;
   gap: 8px;
-  margin-top: 18px;
-  padding-top: 14px;
+  margin-top: 20px;
+  padding-top: 16px;
   border-top: 1px solid #e5e7eb;
 }
