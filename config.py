@@ -33,3 +33,11 @@ class Config:
         "zip", "rar"
     }
     MAX_CONTENT_LENGTH = 20 * 1024 * 1024  # 20 MB
+
+    # SMTP
+    SMTP_HOST = os.getenv("SMTP_HOST", "localhost")
+    SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USER = os.getenv("SMTP_USER", "")
+    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
+    SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "true").lower() == "true"
+    MAIL_FROM = os.getenv("MAIL_FROM", "noreply@department.local")
