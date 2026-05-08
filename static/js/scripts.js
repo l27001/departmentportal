@@ -20,7 +20,18 @@ window.onclick = function(event) {
     if (event.target == modals[i]) {
       modals[i].style.display = "none";
     }
+}
+
+function togglePw(id, btn) {
+  var input = document.getElementById(id);
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = '🙈';
+  } else {
+    input.type = 'password';
+    btn.textContent = '👁';
   }
+}
 }
 
 function updateTaskStatus(el, id) {

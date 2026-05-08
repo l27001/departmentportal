@@ -152,27 +152,27 @@
       <div class="form-row">
         <div class="input-group" style="position:relative;">
           <label for="old_password">Текущий пароль</label>
-          <div style="display:flex; gap:6px;">
-            <input type="password" id="old_password" placeholder="Введите текущий пароль" style="flex:1;">
-            <button type="button" onclick="togglePw('old_password', this)" style="flex-shrink:0; background:#e9ecef; color:#333; border:1px solid #ccc; border-radius:5px; cursor:pointer; font-size:13px; padding:8px 10px;">👁</button>
+          <div style="display:flex; gap:0;">
+            <input type="password" id="old_password" placeholder="Введите текущий пароль" style="flex:1; border-radius:5px 0 0 5px; border-right:none;">
+            <button type="button" onclick="togglePw('old_password', this)" style="flex-shrink:0; padding:10px 12px; background:#e9ecef; color:#333; border:1px solid #ccc; border-radius:0 5px 5px 0; cursor:pointer; font-size:13px; line-height:1;">👁</button>
           </div>
         </div>
       </div>
       <div class="form-row">
         <div class="input-group" style="position:relative;">
           <label for="new_password">Новый пароль</label>
-          <div style="display:flex; gap:6px;">
-            <input type="password" id="new_password" placeholder="Введите новый пароль" style="flex:1;">
-            <button type="button" onclick="togglePw('new_password', this)" style="flex-shrink:0; background:#e9ecef; color:#333; border:1px solid #ccc; border-radius:5px; cursor:pointer; font-size:13px; padding:8px 10px;">👁</button>
+          <div style="display:flex; gap:0;">
+            <input type="password" id="new_password" placeholder="Введите новый пароль" style="flex:1; border-radius:5px 0 0 5px; border-right:none;">
+            <button type="button" onclick="togglePw('new_password', this)" style="flex-shrink:0; padding:10px 12px; background:#e9ecef; color:#333; border:1px solid #ccc; border-radius:0 5px 5px 0; cursor:pointer; font-size:13px; line-height:1;">👁</button>
           </div>
         </div>
       </div>
       <div class="form-row">
         <div class="input-group" style="position:relative;">
           <label for="new_password_confirm">Подтверждение</label>
-          <div style="display:flex; gap:6px;">
-            <input type="password" id="new_password_confirm" placeholder="Повторите новый пароль" style="flex:1;">
-            <button type="button" onclick="togglePw('new_password_confirm', this)" style="flex-shrink:0; background:#e9ecef; color:#333; border:1px solid #ccc; border-radius:5px; cursor:pointer; font-size:13px; padding:8px 10px;">👁</button>
+          <div style="display:flex; gap:0;">
+            <input type="password" id="new_password_confirm" placeholder="Повторите новый пароль" style="flex:1; border-radius:5px 0 0 5px; border-right:none;">
+            <button type="button" onclick="togglePw('new_password_confirm', this)" style="flex-shrink:0; padding:10px 12px; background:#e9ecef; color:#333; border:1px solid #ccc; border-radius:0 5px 5px 0; cursor:pointer; font-size:13px; line-height:1;">👁</button>
           </div>
         </div>
       </div>
@@ -187,17 +187,6 @@
 
 {% block extrajs %}
 <script>
-function togglePw(id, btn) {
-  var input = document.getElementById(id);
-  if (input.type === 'password') {
-    input.type = 'text';
-    btn.textContent = '🙈';
-  } else {
-    input.type = 'password';
-    btn.textContent = '👁';
-  }
-}
-
 function changePassword() {
   var oldPass = document.getElementById('old_password').value;
   var newPass = document.getElementById('new_password').value;
