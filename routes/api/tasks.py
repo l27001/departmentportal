@@ -6,6 +6,8 @@ from extensions import db
 from models.task import Task, TaskUserAssignment
 from models.user import User
 from models.group import Group, UserGroup
+from models.attachment import Attachment
+from models.role import Role
 
 api_tasks_bp = Blueprint("api_tasks", __name__, url_prefix="/api/tasks")
 
@@ -491,4 +493,65 @@ def add_assignees(task_id):
 
     db.session.commit()
     return jsonify({"msg": "Assignees added"})
+
+
+@api_tasks_bp.route("/<int:task_id>/details", methods=["GET"])
+@jwt_required()
+def task_details_modal(task_id):
+    user_id = get_jwt_identity()
+    role = Role.query.filter_by(id=get_jwt()["role"]).first()
+
+    if role.name == 'Сотрудник':
+        has_assignment = TaskUserAssignment.query.filter_by(task_id=task_id, user_id=user_id).first()
+        if not has_assignment:
+            return jsonify({"msg": "Нет доступа к задаче"}), 403
+        task = Task.query.get_or_404(task_id)
+    else:
+        task = Task.query.get_or_404(task_id)
+
+    user_assignment = TaskUserAssignment.query.filter_by(task_id=task_id, user_id=user_id).first()
+
+    assignees = []
+    if role.name in ('Руководитель', 'Документовед'):
+        assignees_raw = TaskUserAssignment.query.filter_by(task_id=task_id).all()
+        status_order = {'завершена': 0, 'на проверке': 1, 'в работе': 2, 'не начата': 3}
+        assignees_raw.sort(key=lambda a: (status_order.get(a.status, 4), a.user.name))
+        assignees = [
+            {
+                "user_id": a.user_id,
+                "user_name": a.user.name,
+                "status": a.status,
+                "approved": a.approved,
+            }
+            for a in assignees_raw
+        ]
+
+    attachments = Attachment.query.filter_by(task_id=task_id).order_by(Attachment.uploaded_at.desc()).all()
+
+    today = date.today()
+    is_overdue = (
+        user_assignment
+        and user_assignment.status not in ('завершена', 'на проверке')
+        and task.deadline_at < today
+    )
+
+    return jsonify({
+        "task": task.to_dict(),
+        "is_assigned": user_assignment is not None,
+        "user_assignment": {
+            "status": user_assignment.status,
+            "approved": user_assignment.approved,
+        } if user_assignment else None,
+        "assignees": assignees,
+        "is_leader": role.name in ('Руководитель', 'Документовед'),
+        "is_overdue": is_overdue,
+        "attachments": [
+            {
+                "id": a.id,
+                "file_name": a.file_name,
+                "size": round(a.size / 1024, 1),
+            }
+            for a in attachments
+        ],
+    })
 

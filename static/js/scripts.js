@@ -55,5 +55,9 @@ function updateTaskStatus(el, id) {
                 taskItem.classList.remove('task-review');
             }
         }
+        var modal = document.getElementById('taskDetailsModal');
+        if (modal && modal.style.display === 'block') {
+            openTaskDetails(id);
+        }
     })
 }
