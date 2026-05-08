@@ -43,7 +43,7 @@ def get_messages():
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 50, type=int)
     pagination = GeneralChatMessage.query.order_by(
-        GeneralChatMessage.created_at.desc()
+        GeneralChatMessage.created_at.asc()
     ).paginate(page=page, per_page=per_page, error_out=False)
     return jsonify({
         "messages": [m.to_dict() for m in pagination.items],
