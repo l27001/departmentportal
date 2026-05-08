@@ -359,7 +359,8 @@ def update_status(task_id):
     """
     user_id = get_jwt_identity()
     role_id = get_jwt()["role"]
-    from models.role import Role
+from models.role import Role
+from models.meeting import MeetingTask, DepartmentMeeting
     role = Role.query.get(role_id)
     data = request.json
 
@@ -572,6 +573,13 @@ def task_details_modal(task_id):
 
     attachments = Attachment.query.filter_by(task_id=task_id).order_by(Attachment.uploaded_at.desc()).all()
 
+    meeting_info = None
+    mt = MeetingTask.query.filter_by(task_id=task_id).first()
+    if mt:
+        m = DepartmentMeeting.query.get(mt.meeting_id)
+        if m:
+            meeting_info = {"id": m.id, "title": m.title}
+
     today = date.today()
     is_overdue = (
         user_assignment
@@ -589,6 +597,7 @@ def task_details_modal(task_id):
         "assignees": assignees,
         "is_leader": role.name in ('Руководитель', 'Документовед'),
         "is_overdue": is_overdue,
+        "meeting": meeting_info,
         "attachments": [
             {
                 "id": a.id,

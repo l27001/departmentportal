@@ -118,6 +118,9 @@ function openMeetingTaskDetails(taskId) {
     html += '<div class="td-section"><strong>Приоритет:</strong> <span class="status ' + data.task.priority + '">' + priorityLabels[data.task.priority] + '</span></div>';
     var parts = data.task.deadline_at.split('T')[0].split('-');
     html += '<div class="td-section"><strong>Дедлайн:</strong> ' + parts[2] + '.' + parts[1] + '.' + parts[0] + '</div>';
+    if (data.meeting) {
+      html += '<div class="td-section"><strong>Заседание:</strong> <a href="/meetings/' + data.meeting.id + '" class="meeting-link-badge">' + data.meeting.title + '</a></div>';
+    }
     if (data.attachments && data.attachments.length > 0) {
       html += '<h3 class="td-heading">Файлы:</h3><div class="attachment-list">';
       data.attachments.forEach(function(a) {
