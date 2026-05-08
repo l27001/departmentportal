@@ -53,7 +53,7 @@
     {% endif %}
     <p><strong>Приоритет:</strong>
         {% if task.deadline_at < today and (is_assigned and user_assignment.status not in ('завершена', 'на проверке')) %}
-            <span class="status high">Дедлайн просрочен</span>
+            <span class="status expired">Дедлайн просрочен</span>
         {% endif %}
         {% if task.priority == 'low' %}
             <span class="status low">Низкий приоритет</span>
