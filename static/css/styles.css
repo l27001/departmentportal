@@ -1691,6 +1691,11 @@ input {
   display: block;
 }
 
+.announcement-read-check {
+  color: #22c55e;
+  flex-shrink: 0;
+}
+
 .announcement-all-text {
   font-size: 14px;
   color: #6c757d;
