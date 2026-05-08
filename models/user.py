@@ -21,6 +21,8 @@ class User(db.Model):
     rate_count = db.Column(db.Float, nullable=False, default=1.0)
     avatar_url = db.Column(db.String(500), nullable=True)
     is_active = db.Column(db.Boolean, nullable=False, default=True)
+    hire_date = db.Column(db.Date, nullable=True)
+    dismissal_date = db.Column(db.Date, nullable=True)
 
     role_id = db.Column(
         db.Integer,
@@ -57,6 +59,8 @@ class User(db.Model):
             "rate_count": self.rate_count,
             "avatar_url": self.avatar_url,
             "is_active": self.is_active,
+            "hire_date": self.hire_date.isoformat() if self.hire_date else None,
+            "dismissal_date": self.dismissal_date.isoformat() if self.dismissal_date else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }

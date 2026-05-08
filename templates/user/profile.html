@@ -66,9 +66,19 @@
           <span class="detail-value">{{ user.created_at.strftime('%d.%m.%Y') if user.created_at else '—' }}</span>
         </div>
         <div class="detail-row">
+          <span class="detail-label">Дата приёма</span>
+          <span class="detail-value">{{ user.hire_date.strftime('%d.%m.%Y') if user.hire_date else '—' }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Дата увольнения</span>
+          <span class="detail-value">{{ user.dismissal_date.strftime('%d.%m.%Y') if user.dismissal_date else 'Не уволен' }}</span>
+        </div>
+        <div class="detail-row">
           <span class="detail-label">Статус</span>
           <span class="detail-value">
-            {% if user.is_active %}
+            {% if user.dismissal_date %}
+              <span class="status-inactive">Уволен</span>
+            {% elif user.is_active %}
               <span class="status-active">Активен</span>
             {% else %}
               <span class="status-inactive">Неактивен</span>
@@ -118,6 +128,18 @@
           <input type="text" id="academic_title" name="academic_title" value="{{ user.academic_title | default('', true) }}">
         </div>
       </div>
+      {% if user.role.name == 'Руководитель' %}
+      <div class="form-row">
+        <div class="input-group">
+          <label for="hire_date">Дата приёма</label>
+          <input type="date" id="hire_date" name="hire_date" value="{{ user.hire_date.isoformat() if user.hire_date else '' }}">
+        </div>
+        <div class="input-group">
+          <label for="dismissal_date">Дата увольнения</label>
+          <input type="date" id="dismissal_date" name="dismissal_date" value="{{ user.dismissal_date.isoformat() if user.dismissal_date else '' }}">
+        </div>
+      </div>
+      {% endif %}
       <div class="form-actions">
         <button type="submit" class="btn btn-primary">Сохранить изменения</button>
       </div>

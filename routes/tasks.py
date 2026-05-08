@@ -45,13 +45,13 @@ def list_tasks():
     assigned_task_ids = set(my_task_ids)
 
     if role.name in ("Документовед", "Руководитель"):
-        users = User.query.all()
+        users = User.query.filter(User.dismissal_date.is_(None)).all()
         groups = Group.query.all()
         for group in groups:
             members = (
                 db.session.query(User)
                 .join(UserGroup, UserGroup.user_id == User.id)
-                .filter(UserGroup.group_id == group.id)
+                .filter(UserGroup.group_id == group.id, User.dismissal_date.is_(None))
                 .all()
             )
             groups_members[group.id] = [{"id": m.id, "name": m.name} for m in members]

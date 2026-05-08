@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt
 from extensions import db
 from models.group import Group, UserGroup
+from models.user import User
 
 groups_bp = Blueprint("api_groups", __name__, url_prefix="/api/groups")
 
@@ -162,7 +163,7 @@ def get_group_users(id):
             $ref: '#/definitions/User'
     """
     group = Group.query.get_or_404(id)
-    users = [ug.user.to_dict() for ug in UserGroup.query.filter_by(group_id=id).all()]
+    users = [ug.user.to_dict() for ug in UserGroup.query.filter_by(group_id=id).join(User).filter(User.dismissal_date.is_(None)).all()]
     return jsonify(users)
 
 
