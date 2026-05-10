@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from extensions import db
-from models.announcement import Announcement, AnnouncementView
+from models.announcement import Announcement, AnnouncementView, AnnouncementRsvp
 from models.user import User
 from datetime import date
 
@@ -87,6 +87,7 @@ def create_announcement():
     title = data.get("title")
     text = data.get("text")
     deadline_str = data.get("deadline")
+    require_rsvp = data.get("require_rsvp", False)
 
     if not title or not text or not deadline_str:
         return jsonify({"msg": "Заполните все поля"}), 400
@@ -96,7 +97,7 @@ def create_announcement():
     except ValueError:
         return jsonify({"msg": "Неверный формат даты"}), 400
 
-    announcement = Announcement(title=title, text=text, deadline=deadline, creator_id=user_id)
+    announcement = Announcement(title=title, text=text, deadline=deadline, creator_id=user_id, require_rsvp=require_rsvp)
     db.session.add(announcement)
     db.session.commit()
 
@@ -153,6 +154,8 @@ def update_announcement(id):
             announcement.deadline = date.fromisoformat(data["deadline"])
         except ValueError:
             return jsonify({"msg": "Неверный формат даты"}), 400
+    if "require_rsvp" in data:
+        announcement.require_rsvp = data["require_rsvp"]
 
     db.session.commit()
     return jsonify(announcement.to_dict())
@@ -185,6 +188,122 @@ def delete_announcement(id):
     announcement.is_deleted = True
     db.session.commit()
     return jsonify({"msg": "Объявление удалено"})
+
+
+@announcements_bp.route("/<int:id>/rsvp", methods=["POST"])
+@jwt_required()
+def toggle_rsvp(id):
+    """Отметить / снять отметку об участии в мероприятии
+    ---
+    tags: [Announcements]
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Отметка изменена
+        schema:
+          type: object
+          properties:
+            rsvped:
+              type: boolean
+            rsvp_count:
+              type: integer
+      404:
+        description: Не найдено
+    """
+    user_id = get_jwt_identity()
+    announcement = Announcement.query.filter_by(id=id, is_deleted=False).first_or_404()
+
+    existing = AnnouncementRsvp.query.filter_by(announcement_id=id, user_id=user_id).first()
+    if existing:
+        db.session.delete(existing)
+        db.session.commit()
+        return jsonify({"rsvped": False, "rsvp_count": len(announcement.rsvps)})
+
+    rsvp = AnnouncementRsvp(announcement_id=id, user_id=user_id)
+    db.session.add(rsvp)
+    db.session.commit()
+    return jsonify({"rsvped": True, "rsvp_count": len(announcement.rsvps)})
+
+
+@announcements_bp.route("/<int:id>/rsvp", methods=["GET"])
+@jwt_required()
+def get_rsvp_status(id):
+    """Получить статус отметки текущего пользователя
+    ---
+    tags: [Announcements]
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Статус отметки
+        schema:
+          type: object
+          properties:
+            rsvped:
+              type: boolean
+            rsvp_count:
+              type: integer
+    """
+    user_id = get_jwt_identity()
+    announcement = Announcement.query.filter_by(id=id, is_deleted=False).first_or_404()
+    existing = AnnouncementRsvp.query.filter_by(announcement_id=id, user_id=user_id).first()
+    return jsonify({
+        "rsvped": existing is not None,
+        "rsvp_count": len(announcement.rsvps),
+    })
+
+
+@announcements_bp.route("/<int:id>/rsvps", methods=["GET"])
+@jwt_required()
+def get_rsvp_list(id):
+    """Получить список отметившихся (только Руководитель/Документовед)
+    ---
+    tags: [Announcements]
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Список отметившихся
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              user_id:
+                type: integer
+              user_name:
+                type: string
+              created_at:
+                type: string
+      403:
+        description: Доступ запрещён
+    """
+    role = get_jwt()["role"]
+    if role not in (1, 2):
+        return jsonify({"msg": "Доступ запрещён"}), 403
+
+    rsvps = AnnouncementRsvp.query.filter_by(announcement_id=id).order_by(AnnouncementRsvp.created_at.asc()).all()
+    return jsonify([{
+        "user_id": r.user_id,
+        "user_name": r.user.name if r.user else None,
+        "created_at": r.created_at.isoformat() if r.created_at else None,
+    } for r in rsvps])
 
 
 @announcements_bp.route("/<int:id>/view", methods=["POST"])

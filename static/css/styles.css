@@ -1912,7 +1912,9 @@ input {
 }
 
 .modal-attachments-section {
-  padding: 0 28px 24px;
+  margin: 0px 16px 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
 }
 
 .modal-attachments-section h4 {
@@ -1921,7 +1923,6 @@ input {
   gap: 6px;
   margin: 0 0 10px;
   font-size: 14px;
-  color: #6b7280;
   font-weight: 600;
 }
 
@@ -2993,7 +2994,7 @@ a.status.meeting-linked:hover {
 }
 
 .read-status-section {
-  margin: 20px 16px 16px;
+  margin: 0px 16px 16px;
   padding-top: 16px;
   border-top: 1px solid #e5e7eb;
 }
@@ -3049,8 +3050,114 @@ a.status.meeting-linked:hover {
 }
 
 .read-status-card.unread .read-status-badge {
-  background: #fce4ec;
-  color: #c62828;
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+/* ==============================
+   RSVP / ОТМЕТКА ОБ УЧАСТИИ
+============================== */
+
+.rsvp-section {
+  margin: 0px 16px 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.rsvp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.rsvp-header h4 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.rsvp-count {
+  font-size: 13px;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.rsvp-actions {
+  margin-bottom: 12px;
+}
+
+.rsvp-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  border: 2px solid #667eea;
+  border-radius: 20px;
+  background: transparent;
+  color: #667eea;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.rsvp-btn:hover {
+  background: #eef2ff;
+}
+
+.rsvp-btn.active {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  border-color: transparent;
+}
+
+.rsvp-btn.active:hover {
+  opacity: 0.9;
+}
+
+.rsvp-user-list {
+  margin-top: 8px;
+}
+
+.rsvp-user-list h5 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.rsvp-user-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: #f3f4f6;
+  border-radius: 12px;
+  font-size: 13px;
+  color: #374151;
+  margin-right: 6px;
+  margin-bottom: 6px;
+}
+
+/* checkbox стиль для create формы */
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #374151;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #667eea;
+  cursor: pointer;
 }
 
 .modal-task-details {

@@ -69,9 +69,14 @@ def create_app():
                     "title": {"type": "string"},
                     "text": {"type": "string"},
                     "deadline": {"type": "string", "format": "date"},
+                    "creator_id": {"type": "integer"},
+                    "creator_name": {"type": "string"},
                     "created_at": {"type": "string"},
                     "updated_at": {"type": "string"},
-                    "is_deleted": {"type": "boolean"}
+                    "is_deleted": {"type": "boolean"},
+                    "view_count": {"type": "integer"},
+                    "require_rsvp": {"type": "boolean"},
+                    "rsvp_count": {"type": "integer"}
                 }
             },
             "AnnouncementInput": {
@@ -80,7 +85,8 @@ def create_app():
                 "properties": {
                     "title": {"type": "string"},
                     "text": {"type": "string"},
-                    "deadline": {"type": "string", "format": "date", "example": "2026-06-01"}
+                    "deadline": {"type": "string", "format": "date", "example": "2026-06-01"},
+                    "require_rsvp": {"type": "boolean"}
                 }
             },
             "News": {
