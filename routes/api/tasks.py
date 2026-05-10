@@ -61,7 +61,7 @@ def list_tasks():
                     properties:
                        assignments:
                          type: array
-                         description: Только для Руководитель/Документовед
+                         description: Все исполнители для руководителя/документоведа, только текущий пользователь для сотрудника
                          items:
                            type: object
                            properties:
@@ -137,6 +137,16 @@ def list_tasks():
                     "approved": a.approved,
                 }
                 for a in task.assignments
+            ]
+        else:
+            d["assignments"] = [
+                {
+                    "user_id": a.user_id,
+                    "user_name": a.user.name if a.user else None,
+                    "status": a.status,
+                    "approved": a.approved,
+                }
+                for a in task.assignments if a.user_id == user_id
             ]
         tasks_data.append(d)
 
