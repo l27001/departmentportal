@@ -71,6 +71,8 @@ def list_tasks():
                                type: string
                              status:
                                type: string
+                             marked_complete:
+                               type: boolean
                              approved:
                                type: boolean
             pagination:
@@ -134,6 +136,7 @@ def list_tasks():
                     "user_id": a.user_id,
                     "user_name": a.user.name if a.user else None,
                     "status": a.status,
+                    "marked_complete": a.marked_complete,
                     "approved": a.approved,
                 }
                 for a in task.assignments
@@ -144,6 +147,7 @@ def list_tasks():
                     "user_id": a.user_id,
                     "user_name": a.user.name if a.user else None,
                     "status": a.status,
+                    "marked_complete": a.marked_complete,
                     "approved": a.approved,
                 }
                 for a in task.assignments if a.user_id == user_id
