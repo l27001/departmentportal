@@ -1,234 +1,160 @@
-# app/utils.py
 from datetime import datetime
 
 def format_authors(authors_str, max_count=3):
-    """Форматирует список авторов по ГОСТ (макс 3, потом [и др.])"""
     if not authors_str:
         return ""
-    
     authors_list = [a.strip() for a in authors_str.split(',')]
-    
     if len(authors_list) <= max_count:
         return ', '.join(authors_list)
     else:
         return ', '.join(authors_list[:max_count]) + ' [и др.]'
 
 def normalize_city(city_str):
-    """Преобразует город в ГОСТ-формат"""
     if not city_str:
         return ""
-    
     cities_short = {
-        'москва': 'М.',
         'москва': 'М.',
         'санкт-петербург': 'СПб.',
         'спб': 'СПб.',
         'питер': 'СПб.',
         'ленинград': 'СПб.',
     }
-    
     city_lower = city_str.lower().strip('.')
     short = cities_short.get(city_lower, city_str)
-    
     return short
 
-def generate_gost_string(publication):
-    """
-    Генерирует ГОСТ-строку на основе типа публикации
-    ГОСТ Р 7.0.5-2008
-    """
-    
-    pub_type = publication.publication_type.lower()
-    
-    if pub_type == 'book':
-        return generate_gost_book(publication)
-    elif pub_type == 'journal_article':
-        return generate_gost_journal(publication)
-    elif pub_type == 'collection_article':
-        return generate_gost_collection(publication)
-    elif pub_type == 'dissertation':
-        return generate_gost_dissertation(publication)
-    elif pub_type == 'abstract':
-        return generate_gost_abstract(publication)
-    elif pub_type == 'internet':
-        return generate_gost_internet(publication)
+def generate_gost_string(pub):
+    pub_type = pub.__tablename__
+    if pub_type == 'publication_books':
+        return generate_gost_book(pub)
+    elif pub_type == 'publication_journal_articles':
+        return generate_gost_journal(pub)
+    elif pub_type == 'publication_collection_articles':
+        return generate_gost_collection(pub)
+    elif pub_type == 'publication_dissertations':
+        return generate_gost_dissertation(pub)
+    elif pub_type == 'publication_abstracts':
+        return generate_gost_abstract(pub)
+    elif pub_type == 'publication_internets':
+        return generate_gost_internet(pub)
+    elif pub_type == 'publication_newspaper_articles':
+        return generate_gost_newspaper(pub)
     else:
-        return f"{publication.title}. – {publication.year}."
+        return f"{pub.title}. \u2013 {pub.year}."
 
-# ========== КНИГА ==========
 def generate_gost_book(pub):
-    """
-    Иванов И.М., Петров С.Н. Наука как искусство. – 3-е изд. – М. : Просвещение, 2020. – 999 с.
-    """
     authors = format_authors(pub.authors) if pub.authors else ""
     title = pub.title or ""
-    edition = f"{pub.edition} изд. – " if pub.edition else ""
+    edition = f"{pub.edition} \u0438\u0437\u0434. \u2013 " if pub.edition else ""
     city = normalize_city(pub.city) if pub.city else ""
     publisher = pub.publisher or ""
     year = pub.year or ""
-    pages = f"{pub.pages} с." if pub.pages else ""
-    
+    pages = f"{pub.pages} \u0441." if pub.pages else ""
     result = f"{authors}. {title}" if authors else title
-    result += f". – {edition}" if edition else ". – "
+    result += f". \u2013 {edition}" if edition else ". \u2013 "
     result += f"{city} : {publisher}, {year}"
     if pages:
-        result += f". – {pages}"
-    result += "."
-    
-    return result.replace('. – .', '.')
+        result += f". \u2013 {pages}"
+    return result.replace('. \u2013 .', '.')
 
-# ========== СТАТЬЯ ИЗ ЖУРНАЛА ==========
 def generate_gost_journal(pub):
-    print(f"DEBUG generate_gost_journal called:")
-    print(f"  authors: {pub.authors}")
-    print(f"  title: {pub.title}")
-    print(f"  journal_name: {pub.journal_name}")
-    print(f"  year: {pub.year}")
-    print(f"  issue: {pub.issue}")
-    print(f"  pages: {pub.pages}")
-    """
-    Статья из журнала по ГОСТ
-    Формат: Авторы. Название // Журнал. – Год. – № Выпуск. – С. Страницы.
-    Пример: Иванов И.М. Статья // Наука. – 2026. – № 5. – С. 10-20.
-    """
-    # Авторы
-    if pub.authors:
-        authors = pub.authors.strip()
-    else:
-        authors = ""
-    
-    # Название
-    title = pub.title if pub.title else ""
-    
-    # Журнал
-    journal = pub.journal_name if pub.journal_name else ""
-    
-    # Год
+    authors = format_authors(pub.authors) if pub.authors else ""
+    title = pub.title or ""
+    journal = pub.journal_name or ""
     year = str(pub.year) if pub.year else ""
-    
-    # Номер выпуска
-    if pub.issue:
-        issue = f"№ {pub.issue}"
-    else:
-        issue = ""
-    
-    # Страницы
-    if pub.pages:
-        pages = f"С. {pub.pages}"
-    else:
-        pages = ""
-    
-    # СОБИРАЕМ СТРОКУ
+    issue = f"\u2116{pub.issue}" if pub.issue else ""
+    pages = f"\u0421. {pub.pages}" if pub.pages else ""
     parts = []
-    
-    # Авторы и название
     if authors:
-        parts.append(f"{authors}. {title}")
+        parts.append(f"{authors} {title}")
     else:
         parts.append(title)
-    
-    # Журнал
     parts.append(f"// {journal}")
-    
-    # Год
-    parts.append(f"– {year}")
-    
-    # Номер
+    if year:
+        parts.append(f"\u2013 {year}")
     if issue:
-        parts.append(f"– {issue}")
-    
-    # Страницы
+        parts.append(f"\u2013 {issue}")
     if pages:
-        parts.append(f"– {pages}")
-    
-    # Объединяем с точками
+        parts.append(f"\u2013 {pages}")
     result = ". ".join(parts) + "."
-    
-    # Заменяем ". –" на " –"
-    result = result.replace(". –", " –")
-    
+    result = result.replace(". \u2013", " \u2013")
     return result
 
-
-
-# ========== СТАТЬЯ ИЗ СБОРНИКА ==========
 def generate_gost_collection(pub):
-    """
-    Иванов И.М., Петров С.Н. Наука как искусство // Сборник научных трудов. – М. : АСТ, 2020. – С. 25-30.
-    """
     authors = format_authors(pub.authors) if pub.authors else ""
-    article_title = pub.article_title or pub.title or ""
+    title = pub.title or ""
     collection = pub.collection_title or ""
     city = normalize_city(pub.city) if pub.city else ""
     publisher = pub.publisher or ""
     year = pub.year or ""
-    pages = f"С. {pub.pages}" if pub.pages else ""
-    
-    result = f"{authors}. {article_title}" if authors else article_title
-    result += f" // {collection}. – {city} : {publisher}, {year}."
+    pages = f"\u0421. {pub.pages}" if pub.pages else ""
+    result = f"{authors} {title}" if authors else title
+    result += f" // {collection}. \u2013 {city}: {publisher}, {year}."
     if pages:
-        result += f" – {pages}."
-    
-    return result.replace(".. –", ".").replace(". –", " –").replace(" – .", ".")
+        result += f" \u2013 {pages}."
+    return result.replace(".. \u2013", ".").replace(". \u2013", " \u2013").replace(" \u2013 .", ".")
 
-# ========== ДИССЕРТАЦИЯ ==========
 def generate_gost_dissertation(pub):
-    """
-    Иванов И.М. Наука как искусство : дис. ... д-р. экон. наук : 01.01.01. – М., 2020. – 199 с.
-    """
     author = pub.author_single or ""
     title = pub.title or ""
-    degree = pub.degree or "д-р."
-    field = pub.field or "наук"
+    degree = pub.degree or ""
+    field = pub.field or ""
     spec_code = pub.specialty_code or ""
     city = normalize_city(pub.city) if pub.city else ""
     year = pub.year or ""
-    pages = f"{pub.pages} с." if pub.pages else ""
-    
-    result = f"{author}. {title} : дис. ... {degree}. {field} наук : {spec_code}. – {city}, {year}."
+    pages = f"{pub.pages} \u0441." if pub.pages else ""
+    result = f"{author} {title}: \u0434\u0438\u0441. {degree} {field} \u043d\u0430\u0443\u043a: {spec_code}. \u2013 {city}, {year}."
     if pages:
-        result += f" – {pages}."
-    
-    return result.replace(".. –", ".").replace(" – .", ".")
+        result += f" \u2013 {pages}"
+    return result.replace(".. \u2013", ".").replace(" \u2013 .", ".")
 
-# ========== АВТОРЕФЕРАТ ==========
 def generate_gost_abstract(pub):
-    """
-    Иванов И.М. Наука как искусство : автореф. дис. ... канд. экон. наук : 01.01.01. – М., 2020. – 99 с.
-    """
     author = pub.author_single or ""
     title = pub.title or ""
-    degree = pub.degree or "канд."
-    field = pub.field or "наук"
+    degree = pub.degree or ""
+    field = pub.field or ""
     spec_code = pub.specialty_code or ""
     city = normalize_city(pub.city) if pub.city else ""
     year = pub.year or ""
-    pages = f"{pub.pages} с." if pub.pages else ""
-    
-    result = f"{author}. {title} : автореф. дис. ... {degree}. {field} наук : {spec_code}. – {city}, {year}."
+    pages = f"{pub.pages} \u0441." if pub.pages else ""
+    result = f"{author} {title}: \u0430\u0432\u0442\u043e\u0440\u0435\u0444. \u0434\u0438\u0441. {degree} {field} \u043d\u0430\u0443\u043a: {spec_code}. \u2013 {city}, {year}."
     if pages:
-        result += f" – {pages}."
-    
-    return result.replace(".. –", ".").replace(" – .", ".")
+        result += f" \u2013 {pages}"
+    return result.replace(".. \u2013", ".").replace(" \u2013 .", ".")
 
-# ========== ИНТЕРНЕТ-РЕСУРС ==========
 def generate_gost_internet(pub):
-    """
-    Иванов И.М. Наука как искусство : статья // Ведомости : веб-сайт. – URL: https://... (дата обращения: 01.01.2021).
-    """
-    authors = format_authors(pub.authors) if pub.authors else ""
     title = pub.title or ""
     site = pub.site_name or ""
     url = pub.url or ""
     access_date = pub.access_date or ""
-    
-    result = f"{authors}. {title}" if authors else title
-    result += f" : статья // {site} : веб-сайт." if site else " : электронный ресурс."
+    result = f"{title} // {site}" if site else title
     if url:
-        result += f" – URL: {url}"
+        result += f" URL: {url}"
     if access_date:
-        result += f" (дата обращения: {access_date})."
+        result += f" (\u0434\u0430\u0442\u0430 \u043e\u0431\u0440\u0430\u0449\u0435\u043d\u0438\u044f: {access_date})."
     elif url:
         result += "."
-    
-    return result.strip()
+    return result
+
+def generate_gost_newspaper(pub):
+    authors = format_authors(pub.authors) if pub.authors else ""
+    title = pub.title or ""
+    newspaper = pub.newspaper_name or ""
+    year = str(pub.year) if pub.year else ""
+    np_date = pub.newspaper_date or ""
+    issue = f"\u0421\u0442. {pub.issue}" if pub.issue else ""
+    parts = []
+    if authors:
+        parts.append(f"{authors}. {title}")
+    else:
+        parts.append(title)
+    parts.append(f"// {newspaper}")
+    if year:
+        parts.append(f"\u2013 {year}")
+    if np_date:
+        parts.append(f"\u2013 {np_date}")
+    if issue:
+        parts.append(f"\u2013 {issue}")
+    result = ". ".join(parts) + "."
+    result = result.replace(". \u2013", " \u2013")
+    return result

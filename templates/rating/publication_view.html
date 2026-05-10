@@ -1,490 +1,302 @@
 {% extends "base.html" %}
-
-{% block title %}Публикация — {{ publication.title }}{% endblock %}
-{% block extracss %}
-<style>
-    h5 {
-        color: white;
-    }
-    
-    /* Общий контейнер */
-    .container.mt-4 {
-        animation: fadeIn 0.3s ease-in-out;
-    }
-
-    /* Заголовок страницы */
-    h2 {
-        font-weight: 600;
-        letter-spacing: 0.5px;
-    }
-
-    /* Карточки */
-    .card {
-        border: none;
-        border-radius: 14px;
-        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
-        transition: all 0.2s ease-in-out;
-    }
-
-    .card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
-    }
-
-    /* Заголовки карточек */
-    .card-header {
-        border-radius: 14px 14px 0 0 !important;
-        font-weight: 600;
-        letter-spacing: 0.4px;
-        padding: 12px 18px;
-    }
-
-    /* Кастомные цвета */
-    .card-header.bg-success {
-        background: linear-gradient(135deg, #28a745, #218838);
-    }
-
-    .card-header.bg-primary {
-        background: linear-gradient(135deg, #007bff, #0056b3);
-    }
-
-    .card-header.bg-info {
-        background: linear-gradient(135deg, #17a2b8, #117a8b);
-    }
-
-    .card-header.bg-warning {
-        background: linear-gradient(135deg, #ffc107, #e0a800);
-        color: #212529;
-    }
-
-    /* Тело карточек */
-    .card-body {
-        padding: 20px 24px;
-        font-size: 15px;
-    }
-
-    /* ГОСТ блок */
-    .card-body p[style*="Courier"] {
-        font-family: "Courier New", monospace !important;
-        background: #f4f6f9 !important;
-        border-left: 4px solid #28a745;
-        padding: 16px !important;
-        border-radius: 8px !important;
-        font-size: 14px !important;
-        line-height: 1.7 !important;
-        word-break: break-word;
-    }
-
-    /* Разделители */
-    hr {
-        border-top: 1px solid #e9ecef;
-        margin: 20px 0;
-    }
-
-    /* Подписи */
-    strong {
-        color: #495057;
-    }
-
-    /* Бейджи */
-    .badge {
-        padding: 6px 10px;
-        font-size: 13px;
-        border-radius: 8px;
-        font-weight: 500;
-        letter-spacing: 0.3px;
-    }
-
-    /* DOI */
-    code {
-        background: #f1f3f5;
-        padding: 4px 8px;
-        border-radius: 6px;
-        font-size: 13px;
-    }
-
-    /* Ссылки */
-    a {
-        transition: all 0.2s ease;
-    }
-
-    a:hover {
-        text-decoration: underline !important;
-    }
-
-    /* Метаданные */
-    .card.text-muted {
-        background: #f8f9fa;
-        border-left: 4px solid #ced4da;
-        border-radius: 12px;
-    }
-
-    /* Кнопки */
-    .btn {
-        border-radius: 10px;
-        padding: 8px 14px;
-        font-weight: 500;
-        transition: all 0.2s ease;
-    }
-
-    .btn-warning {
-        background: linear-gradient(135deg, #ffc107, #e0a800);
-        border: none;
-        color: #212529;
-    }
-
-    .btn-danger {
-        background: linear-gradient(135deg, #dc3545, #b02a37);
-        border: none;
-    }
-
-    .btn-secondary {
-        background: linear-gradient(135deg, #6c757d, #5a6268);
-        border: none;
-    }
-
-    .btn:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
-
-    /* Блок действий */
-    .d-flex.gap-2.mb-4 {
-        padding-top: 10px;
-        border-top: 1px solid #e9ecef;
-    }
-
-    /* Анимация */
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(5px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    /* Адаптивность */
-    @media (max-width: 768px) {
-        .card-body {
-            padding: 16px;
-        }
-
-        .btn {
-            width: 100%;
-        }
-
-        .d-flex.gap-2.mb-4 {
-            flex-direction: column;
-        }
-    }
-</style>
-{% endblock %}
+{% block title %}Просмотр публикации{% endblock %}
 
 {% block content %}
-<div class="container form-background">
-    <div class="">
-        <div class="col-lg-10 mx-auto">
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 30px;">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>📖 Просмотр публикации</h2>
-                <a href="{{ url_for('rating.publications_list') }}" class="btn btn-secondary">← Вернуться к списку</a>
+                <h3 style="color: #4a2c7a; margin-bottom: 0;">Просмотр публикации</h3>
+                <a href="{{ url_for('rating.publications_list') }}" class="btn btn-secondary">Вернуться к списку</a>
             </div>
-            
-            <!-- ГОСТ-СТРОКА (ГЛАВНОЕ) -->
-            <div class="card mb-4 border-success">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">ГОСТ-строка</h5>
-                </div>
-                <div class="card-body">
-                    <p style="font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.8; background: #f8f9fa; padding: 15px; border-radius: 4px;">
-                        {{ publication.gost_string or publication.title }}
+
+            <div class="mb-4" style="background: #f0f4ff; border: 1px solid #c5d5f0; border-radius: 8px; border-left: 4px solid #4a2c7a; padding: 15px;">
+                <h6 style="color: #4a2c7a; margin-bottom: 10px; font-weight: 600;">ГОСТ-строка</h6>
+                <p style="font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.8; margin: 0; color: #1a1a2e;">
+                    {{ publication.gost_string or publication.title }}
+                </p>
+            </div>
+
+            <h5 style="color: #4a2c7a; margin-bottom: 20px;">Основная информация</h5>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <p><strong>Тип публикации:</strong></p>
+                    <p>
+                        <span class="badge bg-info">
+                            {% if pub_type_key == 'book' %}Книга
+                            {% elif pub_type_key == 'journal_article' %}Статья из журнала
+                            {% elif pub_type_key == 'collection_article' %}Статья из сборника
+                            {% elif pub_type_key == 'dissertation' %}Диссертация
+                            {% elif pub_type_key == 'abstract' %}Автореферат
+                            {% elif pub_type_key == 'internet' %}Интернет-ресурс
+                            {% elif pub_type_key == 'newspaper_article' %}Статья из газеты
+                            {% else %}{{ pub_type_key }}{% endif %}
+                        </span>
                     </p>
                 </div>
-            </div>
-            
-            <!-- ОСНОВНАЯ ИНФОРМАЦИЯ -->
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Основная информация</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <p><strong>Тип публикации:</strong></p>
-                            <p>
-                                <span class="badge bg-info">
-                                    {% if publication.publication_type == 'book' %}Книга
-                                    {% elif publication.publication_type == 'journal_article' %}Статья из журнала
-                                    {% elif publication.publication_type == 'collection_article' %}Статья из сборника
-                                    {% elif publication.publication_type == 'dissertation' %}Диссертация -
-                                    {% elif publication.publication_type == 'abstract' %}Автореферат -
-                                    {% elif publication.publication_type == 'internet' %}Интернет-ресурс
-                                    {% else %}{{ publication.publication_type }}{% endif %}
-                                </span>
-                            </p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Год публикации:</strong></p>
-                            <p>{{ publication.year }}</p>
-                        </div>
-                    </div>
-                    
-                    <hr>
-                    
-                    <!-- НАЗВАНИЕ -->
-                    <div class="mb-3">
-                        <p><strong>Название:</strong></p>
-                        <p>{{ publication.title }}</p>
-                    </div>
-                    
-                    <!-- АВТОРЫ (общее и для диссертаций) -->
-                    {% if publication.authors %}
-                    <div class="mb-3">
-                        <p><strong>Авторы:</strong></p>
-                        <p>{{ publication.authors }}</p>
-                    </div>
-                    {% endif %}
-                    
-                    {% if publication.author_single %}
-                    <div class="mb-3">
-                        <p><strong>Автор:</strong></p>
-                        <p>{{ publication.author_single }}</p>
-                    </div>
-                    {% endif %}
+                <div class="col-md-6">
+                    <p><strong>Год:</strong></p>
+                    <p>{{ publication.year }}</p>
                 </div>
             </div>
-            
-            <!-- ДЕТАЛИ ПО ТИПУ -->
-            {% if publication.publication_type == 'book' %}
-            <div class="card mb-4">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">📚 Информация о книге</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        {% if publication.edition %}
-                        <div class="col-md-6 mb-3">
-                            <p><strong>Номер издания:</strong></p>
-                            <p>{{ publication.edition }}</p>
-                        </div>
-                        {% endif %}
-                        {% if publication.city %}
-                        <div class="col-md-6 mb-3">
-                            <p><strong>Город издания:</strong></p>
-                            <p>{{ publication.city }}</p>
-                        </div>
-                        {% endif %}
-                    </div>
-                    <div class="row">
-                        {% if publication.publisher %}
-                        <div class="col-md-6 mb-3">
-                            <p><strong>Издательство:</strong></p>
-                            <p>{{ publication.publisher }}</p>
-                        </div>
-                        {% endif %}
-                        {% if publication.pages %}
-                        <div class="col-md-6 mb-3">
-                            <p><strong>Количество страниц:</strong></p>
-                            <p>{{ publication.pages }}</p>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            
-            {% elif publication.publication_type == 'journal_article' %}
-            <div class="card mb-4">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">📰 Информация о журналах</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        {% if publication.journal_name %}
-                        <div class="col-md-8 mb-3">
-                            <p><strong>Название журнала:</strong></p>
-                            <p>{{ publication.journal_name }}</p>
-                        </div>
-                        {% endif %}
-                        {% if publication.issue %}
-                        <div class="col-md-4 mb-3">
-                            <p><strong>Номер выпуска:</strong></p>
-                            <p>{{ publication.issue }}</p>
-                        </div>
-                        {% endif %}
-                    </div>
-                    {% if publication.pages %}
-                    <div class="mb-3">
-                        <p><strong>Страницы:</strong></p>
-                        <p>{{ publication.pages }}</p>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-            
-            {% elif publication.publication_type == 'collection_article' %}
-            <div class="card mb-4">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">📕 Информация о сборнике</h5>
-                </div>
-                <div class="card-body">
-                    {% if publication.article_title %}
-                    <div class="mb-3">
-                        <p><strong>Название статьи:</strong></p>
-                        <p>{{ publication.article_title }}</p>
-                    </div>
-                    {% endif %}
-                    {% if publication.collection_title %}
-                    <div class="mb-3">
-                        <p><strong>Название сборника:</strong></p>
-                        <p>{{ publication.collection_title }}</p>
-                    </div>
-                    {% endif %}
-                    <div class="row">
-                        {% if publication.city %}
-                        <div class="col-md-6 mb-3">
-                            <p><strong>Город издания:</strong></p>
-                            <p>{{ publication.city }}</p>
-                        </div>
-                        {% endif %}
-                        {% if publication.publisher %}
-                        <div class="col-md-6 mb-3">
-                            <p><strong>Издательство:</strong></p>
-                            <p>{{ publication.publisher }}</p>
-                        </div>
-                        {% endif %}
-                    </div>
-                    {% if publication.pages %}
-                    <div class="mb-3">
-                        <p><strong>Страницы:</strong></p>
-                        <p>{{ publication.pages }}</p>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-            
-            {% elif publication.publication_type == 'dissertation' or publication.publication_type == 'abstract' %}
-            <div class="card mb-4">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">🎓 Информация о диссертации</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        {% if publication.degree %}
-                        <div class="col-md-4 mb-3">
-                            <p><strong>Учёная степень:</strong></p>
-                            <p>{{ publication.degree }}</p>
-                        </div>
-                        {% endif %}
-                        {% if publication.field %}
-                        <div class="col-md-4 mb-3">
-                            <p><strong>Отрасль наук:</strong></p>
-                            <p>{{ publication.field }}</p>
-                        </div>
-                        {% endif %}
-                        {% if publication.specialty_code %}
-                        <div class="col-md-4 mb-3">
-                            <p><strong>Код специальности:</strong></p>
-                            <p>{{ publication.specialty_code }}</p>
-                        </div>
-                        {% endif %}
-                    </div>
-                    <div class="row">
-                        {% if publication.city %}
-                        <div class="col-md-6 mb-3">
-                            <p><strong>Город:</strong></p>
-                            <p>{{ publication.city }}</p>
-                        </div>
-                        {% endif %}
-                        {% if publication.pages %}
-                        <div class="col-md-6 mb-3">
-                            <p><strong>Количество страниц:</strong></p>
-                            <p>{{ publication.pages }}</p>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            
-            {% elif publication.publication_type == 'internet' %}
-            <div class="card mb-4">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">🌐 Информация об интернет-ресурсе</h5>
-                </div>
-                <div class="card-body">
-                    {% if publication.site_name %}
-                    <div class="mb-3">
-                        <p><strong>Название сайта:</strong></p>
-                        <p>{{ publication.site_name }}</p>
-                    </div>
-                    {% endif %}
-                    {% if publication.url %}
-                    <div class="mb-3">
-                        <p><strong>URL:</strong></p>
-                        <p><a href="{{ publication.url }}" target="_blank" class="text-decoration-none">{{ publication.url }} 🔗</a></p>
-                    </div>
-                    {% endif %}
-                    {% if publication.access_date %}
-                    <div class="mb-3">
-                        <p><strong>Дата обращения:</strong></p>
-                        <p>{{ publication.access_date }}</p>
-                    </div>
-                    {% endif %}
+
+            {% if publication.publication_date %}
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <p><strong>Дата публикации:</strong></p>
+                    <p>{{ publication.publication_date.strftime('%d.%m.%Y') }}</p>
                 </div>
             </div>
             {% endif %}
-            
-            <!-- ПРОЧИЕ ПОЛЯ -->
+
+            <hr>
+
+            <div class="mb-3">
+                <p><strong>Название:</strong></p>
+                <p>{{ publication.title }}</p>
+            </div>
+
+            {% if publication.authors %}
+            <div class="mb-3">
+                <p><strong>Авторы:</strong></p>
+                <p>{{ publication.authors }}</p>
+            </div>
+            {% endif %}
+
+            {% if publication.author_single %}
+            <div class="mb-3">
+                <p><strong>Автор:</strong></p>
+                <p>{{ publication.author_single }}</p>
+            </div>
+            {% endif %}
+
+            {% if pub_type_key == 'book' %}
+            <hr>
+            <h5 style="color: #4a2c7a; margin-bottom: 20px;">Информация о книге</h5>
+            <div class="row">
+                {% if publication.edition %}
+                <div class="col-md-6 mb-3">
+                    <p><strong>Номер издания:</strong></p>
+                    <p>{{ publication.edition }}</p>
+                </div>
+                {% endif %}
+                {% if publication.city %}
+                <div class="col-md-6 mb-3">
+                    <p><strong>Город издания:</strong></p>
+                    <p>{{ publication.city }}</p>
+                </div>
+                {% endif %}
+            </div>
+            <div class="row">
+                {% if publication.publisher %}
+                <div class="col-md-6 mb-3">
+                    <p><strong>Издательство:</strong></p>
+                    <p>{{ publication.publisher }}</p>
+                </div>
+                {% endif %}
+                {% if publication.pages %}
+                <div class="col-md-6 mb-3">
+                    <p><strong>Количество страниц:</strong></p>
+                    <p>{{ publication.pages }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            {% elif pub_type_key == 'journal_article' %}
+            <hr>
+            <h5 style="color: #4a2c7a; margin-bottom: 20px;">Информация о журнале</h5>
+            <div class="row">
+                {% if publication.journal_name %}
+                <div class="col-md-8 mb-3">
+                    <p><strong>Название журнала:</strong></p>
+                    <p>{{ publication.journal_name }}</p>
+                </div>
+                {% endif %}
+                {% if publication.issue %}
+                <div class="col-md-4 mb-3">
+                    <p><strong>Номер выпуска:</strong></p>
+                    <p>{{ publication.issue }}</p>
+                </div>
+                {% endif %}
+            </div>
+            {% if publication.pages %}
+            <div class="mb-3">
+                <p><strong>Страницы:</strong></p>
+                <p>{{ publication.pages }}</p>
+            </div>
+            {% endif %}
+
+            {% elif pub_type_key == 'collection_article' %}
+            <hr>
+            <h5 style="color: #4a2c7a; margin-bottom: 20px;">Информация о сборнике</h5>
+            {% if publication.collection_title %}
+            <div class="mb-3">
+                <p><strong>Название сборника:</strong></p>
+                <p>{{ publication.collection_title }}</p>
+            </div>
+            {% endif %}
+            <div class="row">
+                {% if publication.city %}
+                <div class="col-md-6 mb-3">
+                    <p><strong>Город издания:</strong></p>
+                    <p>{{ publication.city }}</p>
+                </div>
+                {% endif %}
+                {% if publication.publisher %}
+                <div class="col-md-6 mb-3">
+                    <p><strong>Издательство:</strong></p>
+                    <p>{{ publication.publisher }}</p>
+                </div>
+                {% endif %}
+            </div>
+            {% if publication.pages %}
+            <div class="mb-3">
+                <p><strong>Страницы:</strong></p>
+                <p>{{ publication.pages }}</p>
+            </div>
+            {% endif %}
+
+            {% elif pub_type_key == 'dissertation' %}
+            <hr>
+            <h5 style="color: #4a2c7a; margin-bottom: 20px;">Информация о диссертации</h5>
+            <div class="row">
+                {% if publication.degree %}
+                <div class="col-md-4 mb-3">
+                    <p><strong>Учёная степень:</strong></p>
+                    <p>{{ publication.degree }}</p>
+                </div>
+                {% endif %}
+                {% if publication.field %}
+                <div class="col-md-4 mb-3">
+                    <p><strong>Отрасль наук:</strong></p>
+                    <p>{{ publication.field }}</p>
+                </div>
+                {% endif %}
+                {% if publication.specialty_code %}
+                <div class="col-md-4 mb-3">
+                    <p><strong>Код специальности:</strong></p>
+                    <p>{{ publication.specialty_code }}</p>
+                </div>
+                {% endif %}
+            </div>
+            <div class="row">
+                {% if publication.city %}
+                <div class="col-md-6 mb-3">
+                    <p><strong>Город:</strong></p>
+                    <p>{{ publication.city }}</p>
+                </div>
+                {% endif %}
+                {% if publication.pages %}
+                <div class="col-md-6 mb-3">
+                    <p><strong>Количество страниц:</strong></p>
+                    <p>{{ publication.pages }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            {% elif pub_type_key == 'abstract' %}
+            <hr>
+            <h5 style="color: #4a2c7a; margin-bottom: 20px;">Информация об автореферате</h5>
+            <div class="row">
+                {% if publication.degree %}
+                <div class="col-md-4 mb-3">
+                    <p><strong>Учёная степень:</strong></p>
+                    <p>{{ publication.degree }}</p>
+                </div>
+                {% endif %}
+                {% if publication.field %}
+                <div class="col-md-4 mb-3">
+                    <p><strong>Отрасль наук:</strong></p>
+                    <p>{{ publication.field }}</p>
+                </div>
+                {% endif %}
+                {% if publication.specialty_code %}
+                <div class="col-md-4 mb-3">
+                    <p><strong>Код специальности:</strong></p>
+                    <p>{{ publication.specialty_code }}</p>
+                </div>
+                {% endif %}
+            </div>
+            <div class="row">
+                {% if publication.city %}
+                <div class="col-md-6 mb-3">
+                    <p><strong>Город:</strong></p>
+                    <p>{{ publication.city }}</p>
+                </div>
+                {% endif %}
+                {% if publication.pages %}
+                <div class="col-md-6 mb-3">
+                    <p><strong>Количество страниц:</strong></p>
+                    <p>{{ publication.pages }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            {% elif pub_type_key == 'internet' %}
+            <hr>
+            <h5 style="color: #4a2c7a; margin-bottom: 20px;">Информация об интернет-ресурсе</h5>
+            {% if publication.site_name %}
+            <div class="mb-3">
+                <p><strong>Название сайта:</strong></p>
+                <p>{{ publication.site_name }}</p>
+            </div>
+            {% endif %}
+            {% if publication.url %}
+            <div class="mb-3">
+                <p><strong>URL:</strong></p>
+                <p><a href="{{ publication.url }}" target="_blank" class="text-decoration-none">{{ publication.url }}</a></p>
+            </div>
+            {% endif %}
+            {% if publication.access_date %}
+            <div class="mb-3">
+                <p><strong>Дата обращения:</strong></p>
+                <p>{{ publication.access_date }}</p>
+            </div>
+            {% endif %}
+
+            {% elif pub_type_key == 'newspaper_article' %}
+            <hr>
+            <h5 style="color: #4a2c7a; margin-bottom: 20px;">Информация о статье из газеты</h5>
+            {% if publication.newspaper_name %}
+            <div class="mb-3">
+                <p><strong>Название газеты:</strong></p>
+                <p>{{ publication.newspaper_name }}</p>
+            </div>
+            {% endif %}
+            {% if publication.newspaper_date %}
+            <div class="mb-3">
+                <p><strong>Дата выхода:</strong></p>
+                <p>{{ publication.newspaper_date }}</p>
+            </div>
+            {% endif %}
+            {% if publication.issue %}
+            <div class="mb-3">
+                <p><strong>Номер:</strong></p>
+                <p>{{ publication.issue }}</p>
+            </div>
+            {% endif %}
+            {% endif %}
+
             {% if publication.doi %}
-            <div class="card mb-4">
-                <div class="card-header bg-warning">
-                    <h5 class="mb-0">Дополнительные данные</h5>
-                </div>
-                <div class="card-body">
-                    {% if publication.doi %}
-                    <p><strong>DOI:</strong> <code>{{ publication.doi }}</code></p>
-                    {% endif %}
-                </div>
+            <hr>
+            <div class="mb-3">
+                <p><strong>DOI:</strong> <code>{{ publication.doi }}</code></p>
             </div>
             {% endif %}
-            
-            <!-- РЕЙТИНГОВАЯ ИНФОРМАЦИЯ -->
-            <div class="card mb-4 border-success">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">Рейтинг</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Статус:</strong></p>
-                            <p>
-                                {% if publication.status == 'active' %}
-                                <span class="badge bg-success">Активна</span>
-                                {% else %}
-                                <span class="badge bg-danger">{{ publication.status }}</span>
-                                {% endif %}
-                            </p>
-                        </div>
-                    </div>
-                </div>
+
+            <hr>
+            <div class="text-muted" style="font-size: 12px;">
+                <p class="mb-1"><strong>Создано:</strong> {{ publication.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
+                <p class="mb-0"><strong>Обновлено:</strong> {{ publication.updated_at.strftime('%d.%m.%Y %H:%M') }}</p>
             </div>
-            
-            <!-- МЕТАДАННЫЕ -->
-            <div class="card mb-4 text-muted" style="font-size: 12px;">
-                <div class="card-body">
-                    <p class="mb-1"><strong>Создано:</strong> {{ publication.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
-                    <p class="mb-0"><strong>Обновлено:</strong> {{ publication.updated_at.strftime('%d.%m.%Y %H:%M') }}</p>
-                </div>
-            </div>
-            
-            <!-- ДЕЙСТВИЯ -->
-            <div class="d-flex gap-2 mb-4">
-                <a href="{{ url_for('rating.edit_publication', pub_id=publication.id) }}" class="btn btn-warning">✏️ Редактировать</a>
-                <form method="POST" action="{{ url_for('rating.delete_publication', pub_id=publication.id) }}" style="display: inline;">
-                    <button type="submit" class="btn btn-danger" onclick="return confirm('Вы уверены? Это действие необратимо.')">🗑️ Удалить</button>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <a href="{{ url_for('rating.edit_publication', pub_id=publication.id, pub_type=pub_type_key) }}" class="btn btn-warning">Редактировать</a>
+                <form method="POST" action="{{ url_for('rating.delete_publication', pub_id=publication.id, pub_type=pub_type_key) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('Вы уверены? Это действие необратимо.')">Удалить</button>
                 </form>
-                <a href="{{ url_for('rating.publications_list') }}" class="btn btn-secondary ms-auto">← Вернуться к списку</a>
+                <a href="{{ url_for('rating.publications_list') }}" class="btn btn-secondary ms-auto">Вернуться к списку</a>
             </div>
         </div>
     </div>

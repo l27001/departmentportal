@@ -1,228 +1,270 @@
 {% extends "base.html" %}
-
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="justify-content-center">
-        <div class="col-lg-8 mx-auto form-background">
-            <h2>{{ title }}</h2>
-            
-            <form method="POST" class="mt-4">
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 30px;">
+            <h3 style="color: #4a2c7a; margin-bottom: 30px;">{{ title }}</h3>
+
+            {% if form.errors %}
+            <div class="alert alert-danger">
+                <strong>Исправьте следующие ошибки:</strong>
+                <ul class="mb-0 mt-1">
+                    {% for field, errors in form.errors.items() %}
+                    {% for error in errors %}
+                    <li>{{ form[field].label.text }}: {{ error }}</li>
+                    {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <form method="POST" id="pub-form" novalidate>
                 {{ form.hidden_tag() }}
-                
-                <!-- ====== ОБЯЗАТЕЛЬНЫЕ ПОЛЯ ====== -->
-                <div class="card mb-4">
-                    <div class="card-header bg-primary text-white">
-                        <h4 class="mb-0">Основная информация</h5>
+
+                {% if template_mode %}
+                <div class="mb-3">
+                    <label class="form-label" style="font-weight: 600; color: #4a2c7a;">Название шаблона</label>
+                    <input type="text" name="template_name" class="form-control" placeholder="Например: Статья для журнала Вестник" required>
+                </div>
+                {% else %}
+                {% set entity_type = entity_type|default('publication') %}
+                {% include 'rating/_template_toolbar.html' %}
+                {% endif %}
+
+                <div class="mb-3">
+                    {{ form.publication_type.label(class="form-label") }}
+                    {% if publication %}
+                    <input type="text" class="form-control" value="{{ pub_type_label }}" disabled>
+                    <div style="display:none;">
+                        {{ form.publication_type(class="form-select") }}
                     </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            {{ form.publication_type.label }}
-                            {{ form.publication_type(class="form-select" + (" is-invalid" if form.publication_type.errors else "")) }}
-                            {% if form.publication_type.errors %}
-                            <div class="invalid-feedback d-block">{{ form.publication_type.errors }}</div>
-                            {% endif %}
+                    {% else %}
+                    {{ form.publication_type(class="form-select" + (" is-invalid" if form.publication_type.errors else "")) }}
+                    {% endif %}
+                    {% if form.publication_type.errors %}
+                    <div class="invalid-feedback d-block">{{ form.publication_type.errors[0] }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    {{ form.title.label(class="form-label") }}
+                    {{ form.title(class="form-control" + (" is-invalid" if form.title.errors else "")) }}
+                    {% if form.title.errors %}
+                    <div class="invalid-feedback d-block">{{ form.title.errors[0] }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.year.label(class="form-label") }}
+                        {{ form.year(class="form-control" + (" is-invalid" if form.year.errors else "")) }}
+                        {% if form.year.errors %}
+                        <div class="invalid-feedback d-block">{{ form.year.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.publication_date.label(class="form-label") }}
+                        {{ form.publication_date(class="form-control" + (" is-invalid" if form.publication_date.errors else ""), type="date") }}
+                        {% if form.publication_date.errors %}
+                        <div class="invalid-feedback d-block">{{ form.publication_date.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="mb-3" id="general-authors-field">
+                    {{ form.authors.label(class="form-label") }}
+                    {{ form.authors(class="form-control", placeholder="Иванов И.М., Петров С.Н.") }}
+                </div>
+
+                <hr class="my-4">
+
+                <h5 style="color: #4a2c7a; margin-bottom: 20px;">Детали публикации</h5>
+
+                <div id="book-fields" style="display: none;">
+                    <h6 class="mb-3">Книга</h6>
+                    <div class="mb-3">
+                        {{ form.edition.label(class="form-label") }}
+                        {{ form.edition(class="form-control", placeholder="3-е") }}
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.city.label(class="form-label") }}
+                            {{ form.city(class="form-control", placeholder="М., СПб., Екатеринбург") }}
                         </div>
-                        
-                        <div class="mb-3">
-                            {{ form.title.label }}
-                            {{ form.title(class="form-control" + (" is-invalid" if form.title.errors else "")) }}
-                            {% if form.title.errors %}
-                            <div class="invalid-feedback d-block">{{ form.title.errors }}</div>
-                            {% endif %}
+                        <div class="col-md-6 mb-3">
+                            {{ form.publisher.label(class="form-label") }}
+                            {{ form.publisher(class="form-control") }}
                         </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                {{ form.year.label }}
-                                {{ form.year(class="form-control" + (" is-invalid" if form.year.errors else "")) }}
-                                {% if form.year.errors %}
-                                <div class="invalid-feedback d-block">{{ form.year.errors }}</div>
-                                {% endif %}
-                            </div>
-                            <div class="mb-3">
-                                {{ form.authors.label }}
-                                {{ form.authors(class="form-control", placeholder="Иванов И.М., Петров С.Н.") }}
-                            </div>
+                    </div>
+                    <div class="mb-3">
+                        {{ form.pages.label(class="form-label") }}
+                        {{ form.pages(class="form-control", placeholder="999") }}
+                    </div>
+                </div>
+
+                <div id="journal-fields" style="display: none;">
+                    <h6 class="mb-3">Статья из журнала</h6>
+                    <div class="mb-3">
+                        {{ form.journal_name.label(class="form-label") }}
+                        {{ form.journal_name(class="form-control") }}
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.issue.label(class="form-label") }}
+                            {{ form.issue(class="form-control", placeholder="10") }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.pages.label(class="form-label") }}
+                            {{ form.pages(class="form-control", placeholder="25-30") }}
                         </div>
                     </div>
                 </div>
-                
-                <!-- ====== ДИНАМИЧЕСКИЕ ПОЛЯ (показываются в зависимости от типа) ====== -->
-                <div class="card mb-4">
-                    <div class="card-header bg-info text-white">
-                        <h4 class="mb-0">Детали публикации</h5>
+
+                <div id="collection-fields" style="display: none;">
+                    <h6 class="mb-3">Статья из сборника</h6>
+                    <div class="mb-3">
+                        {{ form.collection_title.label(class="form-label") }}
+                        {{ form.collection_title(class="form-control") }}
                     </div>
-                    <div class="card-body">
-                        <!-- КНИГА -->
-                        <div id="book-fields" style="display: none;">
-                            <h5 class="mb-3">Книга</h5>
-                            <div class="mb-3">
-                                {{ form.edition.label }}
-                                {{ form.edition(class="form-control", placeholder="3-е") }}
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    {{ form.city.label }}
-                                    {{ form.city(class="form-control", placeholder="М., СПб., Екатеринбург") }}
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    {{ form.publisher.label }}
-                                    {{ form.publisher(class="form-control") }}
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                {{ form.pages.label }}
-                                {{ form.pages(class="form-control", placeholder="999") }}
-                            </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.city.label(class="form-label") }}
+                            {{ form.city(class="form-control", placeholder="М., СПб.") }}
                         </div>
-                        
-                        <!-- ЖУРНАЛ -->
-                        <div id="journal-fields" style="display: none;">
-                            <h5 class="mb-3">Статья из журнала</h5>
-                            <div class="mb-3">
-                                {{ form.journal_name.label }}
-                                {{ form.journal_name(class="form-control") }}
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    {{ form.issue.label }}
-                                    {{ form.issue(class="form-control", placeholder="10") }}
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label>Страницы</label>
-                                    {{ form.journal_pages(class="form-control", placeholder="25-30") }}
-                                </div>
-                            </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.publisher.label(class="form-label") }}
+                            {{ form.publisher(class="form-control") }}
                         </div>
-                        
-                        <!-- СБОРНИК -->
-                        <div id="collection-fields" style="display: none;">
-                            <h5 class="mb-3">Статья из сборника</h5>
-                            <div class="mb-3">
-                                {{ form.article_title.label }}
-                                {{ form.article_title(class="form-control") }}
-                            </div>
-                            <div class="mb-3">
-                                {{ form.collection_title.label }}
-                                {{ form.collection_title(class="form-control") }}
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    {{ form.city.label }}
-                                    {{ form.city(class="form-control", placeholder="М., СПб.") }}
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    {{ form.publisher.label }}
-                                    {{ form.publisher(class="form-control") }}
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label>Страницы</label>
-                                {{ form.pages(class="form-control", placeholder="25-30") }}
-                            </div>
+                    </div>
+                    <div class="mb-3">
+                        {{ form.pages.label(class="form-label") }}
+                        {{ form.pages(class="form-control", placeholder="25-30") }}
+                    </div>
+                </div>
+
+                <div id="dissertation-fields" style="display: none;">
+                    <h6 class="mb-3">Диссертация</h6>
+                    <div class="mb-3">
+                        {{ form.author_single.label(class="form-label") }}
+                        {{ form.author_single(class="form-control", placeholder="Иванов И.М.") }}
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.degree.label(class="form-label") }}
+                            {{ form.degree(class="form-select") }}
                         </div>
-                        
-                        <!-- ДИССЕРТАЦИЯ
-                        <div id="dissertation-fields" style="display: none;">
-                            <h5 class="mb-3">Диссертация</h5>
-                            <div class="mb-3">
-                                {{ form.author_single.label }}
-                                {{ form.author_single(class="form-control", placeholder="Иванов И.М.") }}
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    {{ form.degree.label }}
-                                    {{ form.degree(class="form-select") }}
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    {{ form.field.label }}
-                                    {{ form.field(class="form-select") }}
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                {{ form.specialty_code.label }}
-                                {{ form.specialty_code(class="form-control", placeholder="01.01.01") }}
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    {{ form.city.label }}
-                                    {{ form.city(class="form-control", placeholder="М.") }}
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label>Количество страниц</label>
-                                    {{ form.pages(class="form-control", placeholder="199") }}
-                                </div>
-                            </div>
-                        </div> -->
-                        
-                        <!-- АВТОРЕФЕРАТ
-                        <div id="abstract-fields" style="display: none;">
-                            <h5 class="mb-3">Автореферат диссертации</h5>
-                            <div class="mb-3">
-                                {{ form.author_single.label }}
-                                {{ form.author_single(class="form-control", placeholder="Иванов И.М.") }}
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    {{ form.degree.label }}
-                                    {{ form.degree(class="form-select") }}
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    {{ form.field.label }}
-                                    {{ form.field(class="form-select") }}
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                {{ form.specialty_code.label }}
-                                {{ form.specialty_code(class="form-control", placeholder="01.01.01") }}
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    {{ form.city.label }}
-                                    {{ form.city(class="form-control", placeholder="М.") }}
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label>Количество страниц</label>
-                                    {{ form.pages(class="form-control", placeholder="99") }}
-                                </div>
-                            </div>
-                        </div> -->
-                        
-                        <!-- ИНТЕРНЕТ-РЕСУРС -->
-                        <div id="internet-fields" style="display: none;">
-                            <h5 class="mb-3">Интернет-ресурс</h5>
-                            <div class="mb-3">
-                                {{ form.site_name.label }}
-                                {{ form.site_name(class="form-control", placeholder="Ведомости") }}
-                            </div>
-                            <div class="mb-3">
-                                {{ form.url.label }}
-                                {{ form.url(class="form-control", placeholder="https://www.example.com") }}
-                            </div>
-                            <div class="mb-3">
-                                {{ form.access_date.label }}
-                                {{ form.access_date(class="form-control", placeholder="ДД.ММ.ГГГГ (01.01.2021)") }}
-                            </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.field.label(class="form-label") }}
+                            {{ form.field(class="form-select") }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        {{ form.specialty_code.label(class="form-label") }}
+                        {{ form.specialty_code(class="form-control", placeholder="01.01.01") }}
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.city.label(class="form-label") }}
+                            {{ form.city(class="form-control", placeholder="М.") }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.pages.label(class="form-label") }}
+                            {{ form.pages(class="form-control", placeholder="199") }}
                         </div>
                     </div>
                 </div>
-                
-                <!-- ====== PREVIEW ГОСТ-СТРОКИ ====== -->
-                <div class="card mb-4" id="preview-card" style="display: none;">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">Предпросмотр ГОСТ-строки</h5>
+
+                <div id="abstract-fields" style="display: none;">
+                    <h6 class="mb-3">Автореферат диссертации</h6>
+                    <div class="mb-3">
+                        {{ form.author_single.label(class="form-label") }}
+                        {{ form.author_single(class="form-control", placeholder="Иванов И.М.") }}
                     </div>
-                    <div class="card-body">
-                        <p style="font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.6; background: #f8f9fa; padding: 12px; border-radius: 4px; white-space: pre-wrap; word-break: break-word;" id="gost-preview"></p>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.degree.label(class="form-label") }}
+                            {{ form.degree(class="form-select") }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.field.label(class="form-label") }}
+                            {{ form.field(class="form-select") }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        {{ form.specialty_code.label(class="form-label") }}
+                        {{ form.specialty_code(class="form-control", placeholder="01.01.01") }}
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.city.label(class="form-label") }}
+                            {{ form.city(class="form-control", placeholder="М.") }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.pages.label(class="form-label") }}
+                            {{ form.pages(class="form-control", placeholder="99") }}
+                        </div>
                     </div>
                 </div>
-                
-                <!-- ====== SUBMIT ====== -->
-                <div style="display: flex; gap: 10px; margin-top: 10px;">
+
+                <div id="internet-fields" style="display: none;">
+                    <h6 class="mb-3">Интернет-ресурс</h6>
+                    <div class="mb-3">
+                        {{ form.site_name.label(class="form-label") }}
+                        {{ form.site_name(class="form-control", placeholder="Ведомости") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.url.label(class="form-label") }}
+                        {{ form.url(class="form-control", placeholder="https://www.example.com") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.access_date.label(class="form-label") }}
+                        {{ form.access_date(class="form-control", placeholder="ДД.ММ.ГГГГ (01.01.2021)") }}
+                    </div>
+                </div>
+
+                <div id="newspaper-fields" style="display: none;">
+                    <h6 class="mb-3">Статья из газеты</h6>
+                    <div class="mb-3">
+                        {{ form.newspaper_name.label(class="form-label") }}
+                        {{ form.newspaper_name(class="form-control", placeholder="Южный Урал") }}
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            {{ form.newspaper_date.label(class="form-label") }}
+                            {{ form.newspaper_date(class="form-control", placeholder="ДД.ММ (01.10)") }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.issue.label(class="form-label") }}
+                            {{ form.issue(class="form-control", placeholder="5") }}
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="mb-3">
+                    {{ form.doi.label(class="form-label") }}
+                    {{ form.doi(class="form-control" + (" is-invalid" if form.doi.errors else ""), placeholder="10.1000/xyz123") }}
+                    {% if form.doi.errors %}
+                    <div class="invalid-feedback d-block">{{ form.doi.errors[0] }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3" id="preview-card" style="display: none;">
+                    <label class="form-label" style="font-weight: 600; color: #4a2c7a;">Предпросмотр ГОСТ-строки</label>
+                    <div style="font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.8; background: #f0f4ff; padding: 15px; border-radius: 4px; border-left: 4px solid #4a2c7a; white-space: pre-wrap; word-break: break-word;" id="gost-preview"></div>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    {% if template_mode %}
+                    <button type="submit" class="btn btn-primary">Сохранить шаблон</button>
+                    <a href="{{ url_for('rating.templates_list') }}" class="btn btn-secondary">Отмена</a>
+                    {% else %}
                     {{ form.submit(class="btn btn-primary") }}
                     <a href="{{ url_for('rating.publications_list') }}" class="btn btn-secondary">Отмена</a>
+                    {% endif %}
                 </div>
             </form>
         </div>
@@ -232,7 +274,8 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const typeSelect = document.querySelector('[name="publication_type"]');
-    
+    const isEditMode = document.getElementById('pub-form').classList.contains('edit-mode');
+
     function showFields() {
         const type = typeSelect.value;
         document.getElementById('book-fields').style.display = type === 'book' ? 'block' : 'none';
@@ -241,41 +284,117 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('dissertation-fields').style.display = type === 'dissertation' ? 'block' : 'none';
         document.getElementById('abstract-fields').style.display = type === 'abstract' ? 'block' : 'none';
         document.getElementById('internet-fields').style.display = type === 'internet' ? 'block' : 'none';
-        
+        document.getElementById('newspaper-fields').style.display = type === 'newspaper_article' ? 'block' : 'none';
+
+        const authorsField = document.getElementById('general-authors-field');
+        if (authorsField) {
+            authorsField.style.display = (type === 'dissertation' || type === 'abstract') ? 'none' : 'block';
+        }
+
         updatePreview();
     }
-    
-    function updatePreview() {
+
+    function getFormData() {
+        const type = typeSelect.value;
+        const data = {};
+
+        const sectionMap = {
+            'book': 'book-fields',
+            'journal_article': 'journal-fields',
+            'collection_article': 'collection-fields',
+            'dissertation': 'dissertation-fields',
+            'abstract': 'abstract-fields',
+            'internet': 'internet-fields',
+            'newspaper_article': 'newspaper-fields'
+        };
+
+        const activeSection = document.getElementById(sectionMap[type] || '');
+        if (!activeSection) return data;
+
+        const activeFields = activeSection.querySelectorAll('input[name], select[name], textarea[name]');
+        activeFields.forEach(field => {
+            if (field.name && field.value) {
+                data[field.name] = field.value;
+            }
+        });
+
         const form = document.querySelector('form');
-        const formData = new FormData(form);
-        const data = Object.fromEntries(formData);
-        
-        // Только если основные поля заполнены
-        if (!data.title || !data.year) {
-            document.getElementById('preview-card').style.display = 'none';
-            return;
-        }
-        
-        fetch('{{ url_for("rating.preview_publication") }}', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(data)
-        })
-        .then(r => r.json())
-        .then(json => {
-            document.getElementById('gost-preview').textContent = json.gost_string;
-            document.getElementById('preview-card').style.display = 'block';
-        })
-        .catch(err => console.log('Preview error:', err));
+        const commonSelectors = '[name="title"], [name="year"], [name="publication_date"], [name="authors"], [name="author_single"], [name="doi"], [name="publication_type"]';
+        form.querySelectorAll(commonSelectors).forEach(field => {
+            if (field.value && !data[field.name]) {
+                data[field.name] = field.value;
+            }
+        });
+
+        return data;
     }
-    
-    typeSelect.addEventListener('change', showFields);
+
+    let previewTimeout;
+    function updatePreview() {
+        clearTimeout(previewTimeout);
+        previewTimeout = setTimeout(function() {
+            const data = getFormData();
+
+            if (!data.title || !data.year) {
+                document.getElementById('preview-card').style.display = 'none';
+                return;
+            }
+
+            fetch('{{ url_for("rating.preview_publication") }}', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            })
+            .then(r => r.json())
+            .then(json => {
+                if (json.gost_string) {
+                    document.getElementById('gost-preview').textContent = json.gost_string;
+                    document.getElementById('preview-card').style.display = 'block';
+                } else if (json.error) {
+                    document.getElementById('gost-preview').textContent = 'Ошибка: ' + json.error;
+                    document.getElementById('preview-card').style.display = 'block';
+                }
+            })
+            .catch(err => {
+                console.log('Preview error:', err);
+                document.getElementById('preview-card').style.display = 'none';
+            });
+        }, 300);
+    }
+
+    if (typeSelect) {
+        typeSelect.addEventListener('change', showFields);
+    }
     document.querySelectorAll('input, select, textarea').forEach(el => {
         el.addEventListener('input', updatePreview);
         el.addEventListener('change', updatePreview);
     });
-    
-    // Инициализация при загрузке
+
+    document.getElementById('pub-form').addEventListener('submit', function(e) {
+        const type = typeSelect.value;
+        const typeToSection = {
+            'book': 'book-fields',
+            'journal_article': 'journal-fields',
+            'collection_article': 'collection-fields',
+            'dissertation': 'dissertation-fields',
+            'abstract': 'abstract-fields',
+            'internet': 'internet-fields',
+            'newspaper_article': 'newspaper-fields'
+        };
+        const activeId = typeToSection[type];
+
+        document.querySelectorAll('[id$="-fields"]').forEach(section => {
+            if (section.id !== activeId) {
+                section.querySelectorAll('input, select, textarea').forEach(field => {
+                    if (!field.disabled) {
+                        field.dataset.wasDisabled = 'false';
+                        field.disabled = true;
+                    }
+                });
+            }
+        });
+    });
+
     showFields();
 });
 </script>

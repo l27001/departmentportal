@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Управление шаблонами{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-3">
+        <div class="rating-sidebar">
+            <h5>Разделы</h5>
+            <ul>
+                <li><a href="{{ url_for('rating.awards_list') }}">Награды</a></li>
+                <li><a href="{{ url_for('rating.publications_list') }}">Публикации</a></li>
+                <li><a href="{{ url_for('rating.conferences_list') }}">Конференции</a></li>
+                <li><a href="{{ url_for('rating.trainings_list') }}">Повышение квалификации</a></li>
+                <li><a href="{{ url_for('rating.templates_list') }}" class="active">Шаблоны</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="col-lg-9">
+        <div class="rating-main-card">
+            <div class="rating-header">
+                <h3>Шаблоны</h3>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('rating.create_template', entity_type='publication') }}" class="btn btn-sm btn-outline-primary">Создать шаблон публикации</a>
+                    <a href="{{ url_for('rating.create_template', entity_type='award') }}" class="btn btn-sm btn-outline-primary">Создать шаблон награды</a>
+                    <a href="{{ url_for('rating.create_template', entity_type='conference') }}" class="btn btn-sm btn-outline-primary">Создать шаблон конференции</a>
+                    <a href="{{ url_for('rating.create_template', entity_type='training') }}" class="btn btn-sm btn-outline-primary">Создать шаблон обучения</a>
+                </div>
+            </div>
+
+            {% if templates %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Название</th>
+                            <th>Раздел</th>
+                            <th>Подтип</th>
+                            <th>Создан</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in templates %}
+                        <tr>
+                            <td><strong>{{ t.name }}</strong></td>
+                            <td>{{ entity_labels.get(t.entity_type, t.entity_type) }}</td>
+                            <td>{{ t.sub_type if t.sub_type else '—' }}</td>
+                            <td>{{ t.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                            <td>
+                                <form method="POST" action="{{ url_for('rating.api_delete_template', template_id=t.id) }}" style="display:inline;" onsubmit="return confirm('Удалить шаблон «{{ t.name }}»?')">
+                                    <input type="hidden" name="_method" value="DELETE">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Удалить</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5" style="color: #9e8fb2;">
+                <p style="font-size: 16px; margin-bottom: 8px;">Шаблонов пока нет</p>
+                <p style="font-size: 13px;">Нажмите «Создать шаблон» выше или заполните форму раздела и нажмите «Сохранить как шаблон»</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,176 @@
+<div class="card mb-4" style="border: 1px solid #e8e0f0; border-radius: 8px;">
+    <div class="card-body" style="padding: 16px 20px;">
+        <div class="row align-items-end g-2">
+            <div class="col-md-5">
+                <label class="form-label" style="font-weight: 600; font-size: 13px; color: #4a2c7a; margin-bottom: 4px;">Загрузить шаблон</label>
+                <select id="template-select" class="form-select form-select-sm"
+                        data-base-url="{{ url_for('rating.api_get_template', template_id=0) }}">
+                    <option value="">— Без шаблона —</option>
+                </select>
+            </div>
+            <div class="col-md-7 d-flex gap-2">
+                <button type="button" id="save-template-btn" class="btn btn-sm btn-outline-primary">Сохранить как шаблон</button>
+                <a href="{{ url_for('rating.templates_list') }}" class="btn btn-sm btn-outline-secondary">Управление шаблонами</a>
+            </div>
+        </div>
+        <div id="template-toast" style="display: none; margin-top: 8px; padding: 6px 12px; border-radius: 4px; font-size: 13px;"></div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const templateSelect = document.getElementById('template-select');
+    const saveBtn = document.getElementById('save-template-btn');
+    const toastEl = document.getElementById('template-toast');
+
+    function getEntityType() {
+        return '{{ entity_type }}';
+    }
+
+    function getSubType() {
+        {% if entity_type == 'publication' %}
+        const sel = document.querySelector('[name="publication_type"]');
+        return sel ? sel.value : '';
+        {% else %}
+        return '';
+        {% endif %}
+    }
+
+    function showToast(msg, type) {
+        toastEl.style.display = 'block';
+        toastEl.textContent = msg;
+        toastEl.style.background = type === 'success' ? '#d4edda' : '#f8d7da';
+        toastEl.style.color = type === 'success' ? '#155724' : '#721c24';
+        setTimeout(function() { toastEl.style.display = 'none'; }, 3000);
+    }
+
+    function loadTemplateList() {
+        const entityType = getEntityType();
+        const subType = getSubType();
+        var url = '{{ url_for("rating.api_list_templates") }}?entity_type=' + encodeURIComponent(entityType);
+        if (subType) {
+            url += '&sub_type=' + encodeURIComponent(subType);
+        }
+        fetch(url)
+            .then(function(r) { return r.json(); })
+            .then(function(templates) {
+                templateSelect.innerHTML = '<option value="">— Без шаблона —</option>';
+                templates.forEach(function(t) {
+                    var opt = document.createElement('option');
+                    opt.value = t.id;
+                    opt.textContent = t.name;
+                    templateSelect.appendChild(opt);
+                });
+            })
+            .catch(function() {});
+    }
+
+    function fillFormFromTemplate(data) {
+        var fields = data.template_data || {};
+        var form = document.querySelector('form');
+        for (var name in fields) {
+            var els = form.querySelectorAll('[name="' + name + '"]');
+            var el = null;
+            for (var i = 0; i < els.length; i++) {
+                if (els[i].offsetParent || els[i].type === 'hidden') {
+                    el = els[i];
+                    break;
+                }
+            }
+            if (!el) continue;
+            if (el.type === 'checkbox') {
+                el.checked = !!fields[name];
+            } else {
+                el.value = fields[name];
+            }
+            var event = new Event('input', { bubbles: true });
+            el.dispatchEvent(event);
+            var changeEvent = new Event('change', { bubbles: true });
+            el.dispatchEvent(changeEvent);
+        }
+    }
+
+    templateSelect.addEventListener('change', function() {
+        var id = this.value;
+        if (!id) return;
+        var baseUrl = this.getAttribute('data-base-url');
+        var url = baseUrl.substring(0, baseUrl.lastIndexOf('/0') + 1) + id;
+        fetch(url)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                fillFormFromTemplate(data);
+                showToast('Шаблон "' + data.name + '" применён', 'success');
+            })
+            .catch(function() {
+                showToast('Ошибка загрузки шаблона', 'error');
+            });
+    });
+
+    function collectFormData() {
+        var form = document.querySelector('form');
+        var data = {};
+        form.querySelectorAll('input, select, textarea').forEach(function(el) {
+            if (!el.name || el.name.startsWith('csrf') || el.type === 'submit' || el.type === 'hidden') return;
+            if (!el.offsetParent) return;
+            if (el.type === 'checkbox') {
+                data[el.name] = el.checked;
+            } else if (el.type === 'radio') {
+                if (el.checked) data[el.name] = el.value;
+            } else {
+                data[el.name] = el.value;
+            }
+        });
+        form.querySelectorAll('input[type="hidden"]').forEach(function(el) {
+            if (el.name && !el.name.startsWith('csrf') && !(el.name in data)) {
+                data[el.name] = el.value;
+            }
+        });
+        return data;
+    }
+
+    saveBtn.addEventListener('click', function() {
+        var name = prompt('Введите название шаблона:');
+        if (!name || !name.trim()) return;
+        name = name.trim();
+
+        var entityType = getEntityType();
+        var subType = getSubType();
+        var templateData = collectFormData();
+
+        fetch('{{ url_for("rating.api_save_template") }}', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                name: name,
+                entity_type: entityType,
+                sub_type: subType,
+                template_data: templateData,
+            })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(result) {
+            if (result.error) {
+                showToast(result.error, 'error');
+            } else {
+                showToast('Шаблон "' + result.name + '" сохранён', 'success');
+                loadTemplateList();
+            }
+        })
+        .catch(function() {
+            showToast('Ошибка сохранения шаблона', 'error');
+        });
+    });
+
+    loadTemplateList();
+
+    {% if entity_type == 'publication' %}
+    var typeSelect = document.querySelector('[name="publication_type"]');
+    if (typeSelect) {
+        typeSelect.addEventListener('change', function() {
+            templateSelect.value = '';
+            loadTemplateList();
+        });
+    }
+    {% endif %}
+});
+</script>

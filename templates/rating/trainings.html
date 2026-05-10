@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Повышение квалификации{% endblock %}
+
 {% block content %}
 
 <div class="row">
-    <!-- ЛЕВОЕ МЕНЮ -->
     <div class="col-lg-3">
         <div class="rating-sidebar">
             <h5>Разделы</h5>
@@ -12,109 +12,139 @@
                 <li><a href="{{ url_for('rating.publications_list') }}">Публикации</a></li>
                 <li><a href="{{ url_for('rating.conferences_list') }}">Конференции</a></li>
                 <li><a href="{{ url_for('rating.trainings_list') }}" class="active">Повышение квалификации</a></li>
+                <li><a href="{{ url_for('rating.templates_list') }}">Шаблоны</a></li>
             </ul>
         </div>
     </div>
 
-    <!-- ОСНОВНОЙ КОНТЕНТ -->
     <div class="col-lg-9">
         <div class="rating-main-card">
-
-            <!-- Заголовок + кнопка -->
             <div class="rating-header">
                 <h3>Повышение квалификации</h3>
                 <a href="{{ url_for('rating.add_training') }}" class="btn btn-primary">Добавить обучение</a>
             </div>
 
-            <!-- Инфо-блок -->
             <div class="rating-info-block trainings">
                 <span class="info-label">Скачать</span>
-                <span class="info-value"><strong>{{ total_points }}</strong></span>
                 <div class="rating-export-buttons">
-                    <a href="{{ url_for('rating.export_qualifications_excel') }}" class="btn btn-sm btn-success">📊 Excel</a>
-                    <a href="{{ url_for('rating.export_qualifications_word') }}" class="btn btn-sm btn-info">📄 Word</a>
+                    <a href="{{ url_for('rating.export_qualifications_excel', search_query=request.args.get('search_query',''), date_range=request.args.get('date_range',''), date_from=request.args.get('date_from',''), date_to=request.args.get('date_to','')) }}" class="btn btn-sm btn-success">📊 Excel</a>
+                    <a href="{{ url_for('rating.export_qualifications_word', search_query=request.args.get('search_query',''), date_range=request.args.get('date_range',''), date_from=request.args.get('date_from',''), date_to=request.args.get('date_to','')) }}" class="btn btn-sm btn-info">📄 Word</a>
                 </div>
             </div>
 
-            <!-- Поиск и сортировка -->
-            <form method="GET" class="rating-search-form">
+            <form method="GET" class="rating-search-form" id="search-form">
+                <input type="hidden" name="sort_column" value="{{ request.args.get('sort_column', 'end_date') }}">
+                <input type="hidden" name="sort_dir" value="{{ request.args.get('sort_dir', 'desc') }}">
                 <div class="row g-2">
-                    <div class="col-md-6">
-                        <input type="text" name="search_query" class="form-control" 
-                               placeholder="Поиск по названию..." 
+                    <div class="col-md-5">
+                        <input type="text" name="search_query" class="form-control"
+                               placeholder="Поиск по названию..."
                                value="{{ request.args.get('search_query', '') }}">
                     </div>
                     <div class="col-md-4">
-                        <select name="sort_by" class="form-select">
-                            <option value="date_desc" {% if request.args.get('sort_by', 'date_desc') == 'date_desc' %}selected{% endif %}>Сначала новые</option>
-                            <option value="date_asc" {% if request.args.get('sort_by') == 'date_asc' %}selected{% endif %}>Сначала старые</option>
-                            <option value="title" {% if request.args.get('sort_by') == 'title' %}selected{% endif %}>По названию</option>
-                            <option value="points" {% if request.args.get('sort_by') == 'points' %}selected{% endif %}>По очкам</option>
+                        <select name="date_range" class="form-select" id="date-range">
+                            <option value="all" {% if request.args.get('date_range', 'all') == 'all' %}selected{% endif %}>За всё время</option>
+                            <option value="3" {% if request.args.get('date_range') == '3' %}selected{% endif %}>За 3 месяца</option>
+                            <option value="6" {% if request.args.get('date_range') == '6' %}selected{% endif %}>За полгода</option>
+                            <option value="12" {% if request.args.get('date_range') == '12' %}selected{% endif %}>За год</option>
+                            <option value="24" {% if request.args.get('date_range') == '24' %}selected{% endif %}>За 2 года</option>
+                            <option value="60" {% if request.args.get('date_range') == '60' %}selected{% endif %}>За 5 лет</option>
+                            <option value="custom" {% if request.args.get('date_range') == 'custom' %}selected{% endif %}>Выбрать период</option>
                         </select>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-3">
                         <button type="submit" class="btn btn-primary w-100">Найти</button>
+                    </div>
+                </div>
+                <div class="row g-2 mt-1" id="custom-dates" style="display: none;">
+                    <div class="col-md-3">
+                        <input type="date" name="date_from" class="form-control" value="{{ request.args.get('date_from', '') }}">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="date" name="date_to" class="form-control" value="{{ request.args.get('date_to', '') }}">
                     </div>
                 </div>
             </form>
 
-            <!-- Таблица -->
-            {% if trainings.items %}
-                <table class="table rating-table">
-                    <thead>
-                        <tr>
-                            <th>Название</th>
-                            <th>Организация</th>
-                            <th>Дата начала</th>
-                            <th>Город</th>
-                            <th>Уровень</th>
-                            <th>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for training in trainings.items %}
-                        <tr>
-                            <td><strong>{{ training.title }}</strong></td>
-                            <td>{{ training.organization or '—' }}</td>
-                            <td>{{ training.start_date.strftime('%d.%m.%Y') }}</td>
-                            <td>{{ training.city or '—' }}</td>
-                            <td>{{ training.get_level_display() if training.get_level_display else training.level or '—' }}</td>
-                            <td class="action-buttons">
-                                <a href="{{ url_for('rating.edit_training', training_id=training.id) }}" class="btn btn-sm btn-warning">✏️</a>
-                                <form method="POST" action="{{ url_for('rating.delete_training', training_id=training.id) }}">
-                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Удалить запись?')">🗑️</button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            {% set sort_col = request.args.get('sort_column', 'end_date') %}
+            {% set sort_dir = request.args.get('sort_dir', 'desc') %}
 
-                <!-- Пагинация -->
+            <div class="rating-sort-bar">
+                <span class="sort-label">Сортировка:</span>
+                <select class="form-select form-select-sm sort-select" onchange="sortBy(this.value)">
+                    <option value="end_date" {% if sort_col == 'end_date' %}selected{% endif %}>По дате</option>
+                    <option value="title" {% if sort_col == 'title' %}selected{% endif %}>По названию</option>
+                    <option value="organization" {% if sort_col == 'organization' %}selected{% endif %}>По организации</option>
+                    <option value="city" {% if sort_col == 'city' %}selected{% endif %}>По городу</option>
+                    <option value="level" {% if sort_col == 'level' %}selected{% endif %}>По уровню</option>
+                </select>
+                <a href="#" onclick="toggleDir(); return false;" class="btn btn-sm btn-outline-secondary sort-dir-btn" title="Изменить направление">
+                    {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                </a>
+            </div>
+
+            {% if trainings.items %}
+                <small class="text-muted d-block mb-2">Всего: {{ trainings.total }}</small>
+
+                <div class="rating-cards">
+                {% for training in trainings.items %}
+                    <div class="item-card">
+                        <div class="item-card-body">
+                            <div class="item-card-top">
+                                <h5 class="item-card-title">{{ training.title }}</h5>
+                                <div class="item-card-actions">
+                                    <a href="{{ url_for('rating.edit_training', training_id=training.id) }}" class="btn-action btn-action-edit">Изменить</a>
+                                    <form method="POST" action="{{ url_for('rating.delete_training', training_id=training.id) }}" style="display:inline;">
+                                        <button type="submit" class="btn-action btn-action-delete" onclick="return confirm('Удалить запись?')">Удалить</button>
+                                    </form>
+                                </div>
+                            </div>
+                            <div class="item-card-badges">
+                                <span class="badge bg-primary">{{ training.get_level_display() if training.get_level_display else training.level or '—' }}</span>
+                                {% if training.state_issued %}
+                                <span class="badge bg-success">Государственного образца</span>
+                                {% endif %}
+                            </div>
+                            <div class="item-card-meta">
+                                <span class="meta-item">🏛️ {{ training.organization or '—' }}</span>
+                                {% if training.city %}
+                                <span class="meta-item">📍 {{ training.city }}</span>
+                                {% endif %}
+                                <span class="meta-item">📅 {{ training.end_date.strftime('%d.%m.%Y') if training.end_date else '—' }}</span>
+                                {% if training.duration_hours %}
+                                <span class="meta-item">⏱️ {{ training.duration_hours }} ч.</span>
+                                {% endif %}
+                            </div>
+                            {% if training.description %}
+                            <div class="item-card-desc">{{ training.description }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+                </div>
+
                 {% if trainings.pages > 1 %}
                 <nav class="rating-pagination">
                     <ul class="pagination">
                         {% if trainings.has_prev %}
                         <li class="page-item">
-                            <a class="page-link" href="{{ url_for('rating.trainings_list', page=trainings.prev_num, search_query=request.args.get('search_query',''), sort_by=request.args.get('sort_by','date_desc')) }}">Назад</a>
+                            <a class="page-link" href="{{ url_for('rating.trainings_list', page=trainings.prev_num, search_query=request.args.get('search_query',''), sort_column=request.args.get('sort_column','end_date'), sort_dir=request.args.get('sort_dir','desc'), date_range=request.args.get('date_range',''), date_from=request.args.get('date_from',''), date_to=request.args.get('date_to','')) }}">Назад</a>
                         </li>
                         {% endif %}
-                        
                         {% for page_num in trainings.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
                             {% if page_num %}
                                 {% if page_num == trainings.page %}
                                 <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
                                 {% else %}
-                                <li class="page-item"><a class="page-link" href="{{ url_for('rating.trainings_list', page=page_num, search_query=request.args.get('search_query',''), sort_by=request.args.get('sort_by','date_desc')) }}">{{ page_num }}</a></li>
+                                <li class="page-item"><a class="page-link" href="{{ url_for('rating.trainings_list', page=page_num, search_query=request.args.get('search_query',''), sort_column=request.args.get('sort_column','end_date'), sort_dir=request.args.get('sort_dir','desc'), date_range=request.args.get('date_range',''), date_from=request.args.get('date_from',''), date_to=request.args.get('date_to','')) }}">{{ page_num }}</a></li>
                                 {% endif %}
                             {% else %}
                                 <li class="page-item disabled"><span class="page-link">…</span></li>
                             {% endif %}
                         {% endfor %}
-                        
                         {% if trainings.has_next %}
                         <li class="page-item">
-                            <a class="page-link" href="{{ url_for('rating.trainings_list', page=trainings.next_num, search_query=request.args.get('search_query',''), sort_by=request.args.get('sort_by','date_desc')) }}">Вперёд</a>
+                            <a class="page-link" href="{{ url_for('rating.trainings_list', page=trainings.next_num, search_query=request.args.get('search_query',''), sort_column=request.args.get('sort_column','end_date'), sort_dir=request.args.get('sort_dir','desc'), date_range=request.args.get('date_range',''), date_from=request.args.get('date_from',''), date_to=request.args.get('date_to','')) }}">Вперёд</a>
                         </li>
                         {% endif %}
                     </ul>
@@ -130,4 +160,162 @@
         </div>
     </div>
 </div>
+
+<style>
+.rating-sort-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding: 10px 14px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+.sort-label {
+    font-size: 13px;
+    color: #666;
+    white-space: nowrap;
+    font-weight: 500;
+}
+.sort-select {
+    width: auto;
+    min-width: 160px;
+}
+.sort-dir-btn {
+    font-size: 14px;
+    line-height: 1;
+    padding: 4px 10px;
+}
+
+.sortable { cursor: pointer; user-select: none; }
+.sortable:hover { background-color: #f0f0f0; }
+.sort-indicator { color: #999; }
+.sort-active .sort-indicator { color: #333; font-weight: bold; }
+
+.item-card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    transition: box-shadow 0.2s, border-color 0.2s;
+}
+.item-card:hover {
+    border-color: #c5d5f0;
+    box-shadow: 0 2px 12px rgba(74,44,122,0.08);
+}
+.item-card-body {
+    padding: 16px 20px;
+}
+.item-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+.item-card-title {
+    margin: 0;
+    color: #2c2c2c;
+    font-size: 16px;
+    font-weight: 600;
+}
+.item-card-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s;
+}
+.btn-action-edit {
+    background: #e8f0fe;
+    color: #4a2c7a;
+}
+.btn-action-edit:hover {
+    background: #d4e2fc;
+    color: #3a1e6a;
+    text-decoration: none;
+}
+.btn-action-delete {
+    background: #fde8e8;
+    color: #c0392b;
+}
+.btn-action-delete:hover {
+    background: #fbd0d0;
+    color: #a93226;
+    text-decoration: none;
+}
+.item-card-badges {
+    margin-top: 8px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.item-card-badges .badge {
+    font-size: 12px;
+    padding: 4px 10px;
+    font-weight: 500;
+}
+.item-card-meta {
+    margin-top: 8px;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    color: #666;
+    font-size: 13px;
+}
+.meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.item-card-desc {
+    margin-top: 8px;
+    color: #555;
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-radius: 6px;
+}
+</style>
+
+<script>
+function sortBy(column) {
+    var params = new URLSearchParams(window.location.search);
+    params.set('sort_column', column);
+    params.set('page', '1');
+    window.location.search = params.toString();
+}
+function toggleDir() {
+    var params = new URLSearchParams(window.location.search);
+    var dir = params.get('sort_dir') === 'asc' ? 'desc' : 'asc';
+    params.set('sort_dir', dir);
+    params.set('page', '1');
+    window.location.search = params.toString();
+}
+document.addEventListener('DOMContentLoaded', function() {
+    var dateRange = document.getElementById('date-range');
+    var customDates = document.getElementById('custom-dates');
+    function toggleCustomDates() {
+        if (customDates) {
+            customDates.style.display = dateRange.value === 'custom' ? 'flex' : 'none';
+        }
+    }
+    if (dateRange) {
+        dateRange.addEventListener('change', toggleCustomDates);
+        toggleCustomDates();
+    }
+});
+</script>
 {% endblock %}
