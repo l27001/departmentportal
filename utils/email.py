@@ -20,7 +20,7 @@ def send_email(to: str, subject: str, body_html: str) -> bool:
     mail_from = config.get("MAIL_FROM", "noreply@department.local")
     from_name = config.get("MAIL_FROM_NAME", "Портал кафедры")
 
-    if not host or host == "localhost":
+    if not host:
         logger.warning("SMTP not configured — email not sent (to=%s, subject=%s)", to, subject)
         return False
 
@@ -29,7 +29,7 @@ def send_email(to: str, subject: str, body_html: str) -> bool:
     msg["From"] = formataddr((from_name, mail_from))
     msg["To"] = to
     msg["Date"] = formatdate(localtime=True)
-    msg["Message-ID"] = make_msgid(domain=mail_from.split("@")[-1] if "@" in mail_from else "department.local")
+    msg["Message-ID"] = make_msgid(domain=mail_from.split("@")[-1])
     msg["MIME-Version"] = "1.0"
 
     msg.attach(MIMEText(body_html, "html", "utf-8"))
