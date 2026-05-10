@@ -24,6 +24,7 @@ def create_announcement():
         title = request.form.get('title')
         text = request.form.get('text')
         deadline_str = request.form.get('deadline')
+        require_rsvp = request.form.get('require_rsvp') == 'on'
         files = request.files.getlist('file')
 
         if not title or not text or not deadline_str:
@@ -43,7 +44,7 @@ def create_announcement():
                 return render_template('announcements/create.html', role=role)
 
         user_id = get_jwt_identity()
-        announcement = Announcement(title=title, text=text, deadline=deadline, creator_id=user_id)
+        announcement = Announcement(title=title, text=text, deadline=deadline, creator_id=user_id, require_rsvp=require_rsvp)
         db.session.add(announcement)
         db.session.flush()
 
@@ -80,7 +81,8 @@ def create_announcement():
 def all_announcements():
     page = request.args.get('page', 1, type=int)
     per_page = 10
+    role_id = get_jwt()["role"]
     pagination = Announcement.query.filter_by(is_deleted=False).order_by(Announcement.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
     user_id = get_jwt_identity()
     viewed_ids = {v.announcement_id for v in AnnouncementView.query.filter_by(user_id=user_id).all()}
-    return render_template('announcements/all.html', announcements=pagination.items, page=page, total=pagination.total, per_page=per_page, total_pages=pagination.pages, viewed_ids=viewed_ids)
+    return render_template('announcements/all.html', announcements=pagination.items, page=page, total=pagination.total, per_page=per_page, total_pages=pagination.pages, viewed_ids=viewed_ids, role_id=role_id)

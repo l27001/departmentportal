@@ -1,3 +1,6 @@
+from utils.email import send_email
+
+# ГОСТ-функции, импортируются как from utils import generate_gost_string
 from datetime import datetime
 
 
@@ -44,6 +47,24 @@ def generate_gost_string(pub):
         return generate_gost_newspaper(pub)
     else:
         return f"{pub.title}. – {pub.year}."
+    return cities_short.get(city_lower, city_str)
+
+
+def generate_gost_string(publication):
+    pub_type = publication.publication_type.lower()
+    if pub_type == 'book':
+        return generate_gost_book(publication)
+    elif pub_type == 'journal_article':
+        return generate_gost_journal(publication)
+    elif pub_type == 'collection_article':
+        return generate_gost_collection(publication)
+    elif pub_type == 'dissertation':
+        return generate_gost_dissertation(publication)
+    elif pub_type == 'abstract':
+        return generate_gost_abstract(publication)
+    elif pub_type == 'internet':
+        return generate_gost_internet(publication)
+    return f"{publication.title}. – {publication.year}."
 
 
 def generate_gost_book(pub):
@@ -60,6 +81,7 @@ def generate_gost_book(pub):
     result += f"{city} : {publisher}, {year}"
     if pages:
         result += f". – {pages}"
+    result += "."
     return result.replace('. – .', '.')
 
 

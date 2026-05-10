@@ -27,6 +27,13 @@
             <input type="file" id="file" name="file" multiple>
         </div>
 
+        <div class="input-group">
+            <label class="checkbox-label">
+                <input type="checkbox" id="require_rsvp" name="require_rsvp">
+                <span>Отметка</span>
+            </label>
+        </div>
+
         <div class="modal-actions">
             <button type="submit" class="btn btn-primary">Создать анонс</button>
             <a href="{{ url_for('tasks.list_tasks') }}" class="btn btn-cancel">Отмена</a>

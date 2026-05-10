@@ -54,13 +54,13 @@ class TaskUserAssignment(db.Model):
 
     task_id = db.Column(
         db.Integer,
-        db.ForeignKey("tasks.id"),
+        db.ForeignKey("tasks.id", ondelete="CASCADE"),
         primary_key=True
     )
 
     user_id = db.Column(
         db.Integer,
-        db.ForeignKey("users.id"),
+        db.ForeignKey("users.id", ondelete="CASCADE"),
         primary_key=True
     )
 
