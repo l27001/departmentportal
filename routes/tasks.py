@@ -106,12 +106,8 @@ def list_tasks():
         deadline_str = task.deadline_at.strftime('%Y-%m-%d')
         if deadline_str not in tasks_by_deadline:
             tasks_by_deadline[deadline_str] = []
-        if is_leader:
-            t_assignments = [a for aid, a in all_assignments.items() if aid == int(task.id)]
-            status = t_assignments[0].status if t_assignments else None
-        else:
-            assignment = user_assignments.get(int(task.id))
-            status = assignment.status if assignment else None
+        assignment = user_assignments.get(int(task.id))
+        status = assignment.status if assignment else None
         is_overdue = status not in ('завершена', 'на проверке') and task.deadline_at < today_date
         tasks_by_deadline[deadline_str].append({
             'id': task.id,
