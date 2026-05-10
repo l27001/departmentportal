@@ -29,7 +29,7 @@ def send_email(to: str, subject: str, body_html: str) -> bool:
     msg["From"] = formataddr((from_name, mail_from))
     msg["To"] = to
     msg["Date"] = formatdate(localtime=True)
-    msg["Message-ID"] = make_msgid(domain=mail_from.split("@")[-1])
+    msg["Message-ID"] = make_msgid(domain=mail_from.split("@")[-1] if "@" in mail_from else None)
     msg["MIME-Version"] = "1.0"
 
     msg.attach(MIMEText(body_html, "html", "utf-8"))
