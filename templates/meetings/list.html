@@ -23,10 +23,14 @@
                 {% endif %}
                 <div class="meeting-card-badges">
                     {% if meeting_task_counts[meeting.id] > 0 %}
-                    <span class="meeting-badge badge-tasks">{{ meeting_task_counts[meeting.id] }} задач</span>
+                    {% set n = meeting_task_counts[meeting.id] %}
+                    {% set word = 'задача' if n % 10 == 1 and n % 100 != 11 else 'задачи' if n % 10 >= 2 and n % 10 <= 4 and (n % 100 < 10 or n % 100 >= 20) else 'задач' %}
+                    <span class="meeting-badge badge-tasks">{{ n }} {{ word }}</span>
                     {% endif %}
                     {% if meeting.attachments|length > 0 %}
-                    <span class="meeting-badge badge-attachments">{{ meeting.attachments|length }} файлов</span>
+                    {% set fn = meeting.attachments|length %}
+                    {% set fword = 'файл' if fn % 10 == 1 and fn % 100 != 11 else 'файла' if fn % 10 >= 2 and fn % 10 <= 4 and (fn % 100 < 10 or fn % 100 >= 20) else 'файлов' %}
+                    <span class="meeting-badge badge-attachments">{{ fn }} {{ fword }}</span>
                     {% endif %}
                 </div>
             </div>
