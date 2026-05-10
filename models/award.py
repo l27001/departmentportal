@@ -222,3 +222,20 @@ class RatingTemplate(db.Model):
 
     def __repr__(self):
         return f'<RatingTemplate {self.name} ({self.entity_type})>'
+
+
+class EntityCoauthor(db.Model):
+    __tablename__ = 'entity_coauthors'
+
+    id = db.Column(db.Integer, primary_key=True)
+    entity_type = db.Column(db.String(50), nullable=False)
+    entity_id = db.Column(db.Integer, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user = db.relationship('User', backref='coauthored_entities')
+
+    __table_args__ = (
+        db.UniqueConstraint('entity_type', 'entity_id', 'user_id', name='uq_entity_coauthor'),
+    )
+
+    def __repr__(self):
+        return f'<EntityCoauthor {self.entity_type}:{self.entity_id} user={self.user_id}>'

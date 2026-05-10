@@ -257,6 +257,15 @@
                     <div style="font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.8; background: #f0f4ff; padding: 15px; border-radius: 4px; border-left: 4px solid #4a2c7a; white-space: pre-wrap; word-break: break-word;" id="gost-preview"></div>
                 </div>
 
+                {% if not template_mode and users is defined %}
+                <hr class="my-4">
+                <div class="mb-3">
+                    {{ form.coauthor_ids.label(class="form-label", style="font-weight: 600; color: #4a2c7a;") }}
+                    {{ form.coauthor_ids(class="form-select", size=5) }}
+                    <small class="text-muted">Зажмите Ctrl, чтобы выбрать несколько</small>
+                </div>
+                {% endif %}
+
                 <div style="display: flex; gap: 10px;">
                     {% if template_mode %}
                     <button type="submit" class="btn btn-primary">Сохранить шаблон</button>

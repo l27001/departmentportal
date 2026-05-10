@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, TextAreaField, SelectField, DateField, IntegerField, SubmitField, URLField, BooleanField
+from wtforms import StringField, TextAreaField, SelectField, SelectMultipleField, DateField, IntegerField, SubmitField, URLField, BooleanField
 from wtforms.validators import DataRequired, Optional, Length
 
 AWARD_LEVELS = [
@@ -96,6 +96,13 @@ class PublicationForm(FlaskForm):
 
     newspaper_name = StringField('Название газеты', validators=[Optional(), Length(max=255)])
     newspaper_date = StringField('Дата выхода газеты (ДД.ММ)', validators=[Optional(), Length(max=20)])
+
+    coauthor_ids = SelectMultipleField(
+        'Соавторы',
+        choices=[],
+        validators=[Optional()],
+        render_kw={'class': 'form-select', 'size': 5}
+    )
 
     submit = SubmitField('Сохранить')
 

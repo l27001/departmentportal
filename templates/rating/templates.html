@@ -20,12 +20,14 @@
         <div class="rating-main-card">
             <div class="rating-header">
                 <h3>Шаблоны</h3>
+                {% if role.name == 'Руководитель' %}
                 <div class="d-flex gap-2">
                     <a href="{{ url_for('rating.create_template', entity_type='publication') }}" class="btn btn-sm btn-outline-primary">Создать шаблон публикации</a>
                     <a href="{{ url_for('rating.create_template', entity_type='award') }}" class="btn btn-sm btn-outline-primary">Создать шаблон награды</a>
                     <a href="{{ url_for('rating.create_template', entity_type='conference') }}" class="btn btn-sm btn-outline-primary">Создать шаблон конференции</a>
                     <a href="{{ url_for('rating.create_template', entity_type='training') }}" class="btn btn-sm btn-outline-primary">Создать шаблон обучения</a>
                 </div>
+                {% endif %}
             </div>
 
             {% if templates %}
@@ -48,10 +50,14 @@
                             <td>{{ t.sub_type if t.sub_type else '—' }}</td>
                             <td>{{ t.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
                             <td>
+                                {% if role.name == 'Руководитель' %}
                                 <form method="POST" action="{{ url_for('rating.api_delete_template', template_id=t.id) }}" style="display:inline;" onsubmit="return confirm('Удалить шаблон «{{ t.name }}»?')">
                                     <input type="hidden" name="_method" value="DELETE">
                                     <button type="submit" class="btn btn-sm btn-outline-danger">Удалить</button>
                                 </form>
+                                {% else %}
+                                <span class="text-muted" style="font-size:13px;">—</span>
+                                {% endif %}
                             </td>
                         </tr>
                         {% endfor %}

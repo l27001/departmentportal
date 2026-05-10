@@ -149,6 +149,10 @@
                                 {% if pub.author_single %}
                                 <span class="meta-item">👤 {{ pub.author_single }}</span>
                                 {% endif %}
+                                {% set co = coauthors_map.get((pub.__tablename__, pub.id), []) %}
+                                {% if co %}
+                                <span class="meta-item">✏️ Соавторы: {{ co | map(attribute='name') | join(', ') }}</span>
+                                {% endif %}
                             </div>
                         </div>
                     </div>

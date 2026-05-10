@@ -278,6 +278,18 @@
             {% endif %}
             {% endif %}
 
+            {% if coauthors is defined and coauthors %}
+            <hr>
+            <div class="mb-3">
+                <p><strong>Соавторы:</strong></p>
+                <ul>
+                    {% for c in coauthors %}
+                    <li>{{ c.user.name }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
             {% if publication.doi %}
             <hr>
             <div class="mb-3">

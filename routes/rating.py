@@ -1,10 +1,12 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, send_file, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from extensions import db
+from decorators.roles import roles_required
 from models.user import User
-from models.award import Award, Book, JournalArticle, CollectionArticle, Dissertation, Abstract, Internet, NewspaperArticle, Conference, Training, RatingTemplate
+from models.award import Award, Book, JournalArticle, CollectionArticle, Dissertation, Abstract, Internet, NewspaperArticle, Conference, Training, RatingTemplate, EntityCoauthor
 from forms.rating import AwardForm, PublicationForm, ConferenceForm, TrainingForm, SearchFilterForm
 from sqlalchemy import or_
+from wtforms.validators import Optional
 from datetime import datetime, timedelta, date
 from io import BytesIO
 from openpyxl import Workbook
@@ -78,17 +80,31 @@ PUB_TYPE_LABELS = {
 
 rating_bp = Blueprint('rating', __name__, url_prefix='/rating')
 
+
+def filter_by_role(model, user, coauthor_entity_type=None):
+    if user.role.name == 'Руководитель':
+        return True
+    if coauthor_entity_type:
+        coauthor_ids = [
+            c.entity_id for c in EntityCoauthor.query.filter_by(
+                entity_type=coauthor_entity_type, user_id=user.id
+            ).all()
+        ]
+        return or_(model.user_id == user.id, model.id.in_(coauthor_ids))
+    return model.user_id == user.id
+
+
 # ==================== AWARDS ====================
 
 @rating_bp.route('/awards')
 @jwt_required()
 def awards_list():
     user_id = get_jwt_identity()
-    User.query.get_or_404(user_id)
+    user = User.query.get_or_404(user_id)
     search_form = SearchFilterForm()
     page = request.args.get('page', 1, type=int)
 
-    query = Award.query.filter_by(user_id=user_id, status='active')
+    query = Award.query.filter(filter_by_role(Award, user)).filter(Award.status == 'active')
 
     search_query = request.args.get('search_query', '')
     if search_query:
@@ -190,7 +206,7 @@ def delete_award(award_id):
 @jwt_required()
 def publications_list():
     user_id = get_jwt_identity()
-    User.query.get_or_404(user_id)
+    user = User.query.get_or_404(user_id)
     search_form = SearchFilterForm()
     page = request.args.get('page', 1, type=int)
 
@@ -204,8 +220,12 @@ def publications_list():
 
     models_to_query = list(PUB_MODELS.values()) if not pub_type else [PUB_MODELS[pub_type]]
 
+    # map model class to entity_type string for coauthors
+    pub_type_map = {v: k for k, v in PUB_MODELS.items()}
+
     for model in models_to_query:
-        query = model.query.filter_by(user_id=user_id)
+        entity_type = pub_type_map[model]
+        query = model.query.filter(filter_by_role(model, user, coauthor_entity_type=entity_type))
 
         if search_query:
             author_fields = []
@@ -302,10 +322,20 @@ def publications_list():
 
     publications = PaginatedResult(paginated, total, page, per_page)
 
+    coauthors_map = {}
+    pub_type_lookup = {v: k for k, v in PUB_MODELS.items()}
+    for pub in paginated:
+        ptype = pub_type_lookup.get(type(pub))
+        if ptype:
+            coauthors = EntityCoauthor.query.filter_by(entity_type=ptype, entity_id=pub.id).all()
+            if coauthors:
+                coauthors_map[(type(pub).__tablename__, pub.id)] = [c.user for c in coauthors]
+
     return render_template(
         'rating/publications.html',
         publications=publications,
         search_form=search_form,
+        coauthors_map=coauthors_map,
     )
 
 @rating_bp.route('/publications/preview', methods=['POST'])
@@ -400,6 +430,8 @@ def preview_publication():
 def add_publication():
     user_id = get_jwt_identity()
     form = PublicationForm()
+    users = User.query.join(User.role).filter(User.is_active == True, User.id != user_id, db.text("roles.name != 'Руководитель'")).order_by(User.name).all()
+    form.coauthor_ids.choices = [(str(u.id), f'{u.name} ({u.email})') for u in users]
     if form.validate_on_submit():
         pub_type = form.publication_type.data
         model = PUB_MODELS.get(pub_type)
@@ -437,11 +469,22 @@ def add_publication():
 
         pub.gost_string = generate_gost_string(pub)
         db.session.add(pub)
+        db.session.flush()
+
+        coauthor_ids = form.coauthor_ids.data or []
+        for coauthor_id in coauthor_ids:
+            coauthor_id = int(coauthor_id)
+            if coauthor_id != user_id:
+                db.session.add(EntityCoauthor(
+                    entity_type=pub_type,
+                    entity_id=pub.id,
+                    user_id=coauthor_id,
+                ))
         db.session.commit()
         flash('Публикация добавлена!', 'success')
         return redirect(url_for('rating.publications_list'))
 
-    return render_template('rating/publication_form.html', form=form, title='Добавить публикацию')
+    return render_template('rating/publication_form.html', form=form, title='Добавить публикацию', users=users)
 
 
 @rating_bp.route('/publications/<int:pub_id>/edit', methods=['GET', 'POST'])
@@ -465,6 +508,8 @@ def edit_publication(pub_id):
         form_pub_type = 'book'
 
     form = PublicationForm()
+    users_list = User.query.join(User.role).filter(User.is_active == True, User.id != user_id, db.text("roles.name != 'Руководитель'")).order_by(User.name).all()
+    form.coauthor_ids.choices = [(str(u.id), f'{u.name} ({u.email})') for u in users_list]
     if form.validate_on_submit():
         pub_date = form.publication_date.data if form.publication_date.data else None
 
@@ -509,16 +554,29 @@ def edit_publication(pub_id):
             pub_record.newspaper_date = form.newspaper_date.data
 
         pub_record.gost_string = generate_gost_string(pub_record)
+
+        EntityCoauthor.query.filter_by(entity_type=form_pub_type, entity_id=pub_record.id).delete()
+        coauthor_ids = form.coauthor_ids.data or []
+        for coauthor_id in coauthor_ids:
+            coauthor_id = int(coauthor_id)
+            if coauthor_id != user_id:
+                db.session.add(EntityCoauthor(
+                    entity_type=form_pub_type,
+                    entity_id=pub_record.id,
+                    user_id=coauthor_id,
+                ))
         db.session.commit()
         flash('Публикация обновлена!', 'success')
         return redirect(url_for('rating.publications_list'))
 
-    elif request.method == 'GET':
+    if request.method == 'GET':
         form.publication_type.data = form_pub_type
         form.title.data = pub_record.title
         form.year.data = pub_record.year
         form.publication_date.data = pub_record.publication_date
         form.doi.data = pub_record.doi
+        existing_coauthors = EntityCoauthor.query.filter_by(entity_type=form_pub_type, entity_id=pub_record.id).all()
+        form.coauthor_ids.data = [str(c.user_id) for c in existing_coauthors]
         if hasattr(pub_record, 'authors'):
             form.authors.data = pub_record.authors
         if hasattr(pub_record, 'author_single'):
@@ -554,7 +612,7 @@ def edit_publication(pub_id):
         if hasattr(pub_record, 'newspaper_date'):
             form.newspaper_date.data = pub_record.newspaper_date
 
-    return render_template('rating/publication_form.html', form=form, title='Редактировать публикацию', publication=pub_record, pub_type_label=PUB_TYPE_LABELS.get(form_pub_type, form_pub_type))
+    return render_template('rating/publication_form.html', form=form, title='Редактировать публикацию', publication=pub_record, pub_type_label=PUB_TYPE_LABELS.get(form_pub_type, form_pub_type), users=users_list)
 
 
 def _get_publication_by_id(pub_id, pub_type=None):
@@ -571,14 +629,21 @@ def _get_publication_by_id(pub_id, pub_type=None):
 @jwt_required()
 def view_publication(pub_id):
     user_id = get_jwt_identity()
+    user = User.query.get_or_404(user_id)
     pub_type = request.args.get('pub_type', '')
     publication = _get_publication_by_id(pub_id, pub_type)
     if not publication:
         flash('Публикация не найдена', 'danger')
         return redirect(url_for('rating.publications_list'))
-    if publication.user_id != user_id:
-        flash('У вас нет доступа', 'danger')
-        return redirect(url_for('rating.publications_list'))
+
+    is_owner = publication.user_id == user_id
+    if user.role.name != 'Руководитель' and not is_owner:
+        coauthor_ids = [c.user_id for c in EntityCoauthor.query.filter_by(
+            entity_type=pub_type, entity_id=publication.id
+        ).all()]
+        if user_id not in coauthor_ids:
+            flash('У вас нет доступа', 'danger')
+            return redirect(url_for('rating.publications_list'))
 
     pub_type_key = None
     for key, model in PUB_MODELS.items():
@@ -586,7 +651,8 @@ def view_publication(pub_id):
             pub_type_key = key
             break
 
-    return render_template('rating/publication_view.html', publication=publication, pub_type_key=pub_type_key)
+    coauthors = EntityCoauthor.query.filter_by(entity_type=pub_type_key, entity_id=publication.id).all()
+    return render_template('rating/publication_view.html', publication=publication, pub_type_key=pub_type_key, coauthors=coauthors)
 
 
 @rating_bp.route('/publications/<int:pub_id>/delete', methods=['POST'])
@@ -614,11 +680,11 @@ def delete_publication(pub_id):
 @jwt_required()
 def conferences_list():
     user_id = get_jwt_identity()
-    User.query.get_or_404(user_id)
+    user = User.query.get_or_404(user_id)
     search_form = SearchFilterForm()
     page = request.args.get('page', 1, type=int)
 
-    query = Conference.query.filter_by(user_id=user_id, status='active')
+    query = Conference.query.filter(filter_by_role(Conference, user)).filter(Conference.status == 'active')
 
     search_query = request.args.get('search_query', '')
     if search_query:
@@ -727,11 +793,11 @@ def delete_conference(conf_id):
 @jwt_required()
 def trainings_list():
     user_id = get_jwt_identity()
-    User.query.get_or_404(user_id)
+    user = User.query.get_or_404(user_id)
     search_form = SearchFilterForm()
     page = request.args.get('page', 1, type=int)
 
-    query = Training.query.filter_by(user_id=user_id, status='active')
+    query = Training.query.filter(filter_by_role(Training, user)).filter(Training.status == 'active')
 
     search_query = request.args.get('search_query', '')
     if search_query:
@@ -876,6 +942,7 @@ def api_list_templates():
 
 @rating_bp.route('/publications/api/templates', methods=['POST'])
 @jwt_required()
+@roles_required('Руководитель')
 def api_save_template():
     data = request.get_json()
     if not data or not data.get('name') or not data.get('entity_type'):
@@ -906,6 +973,7 @@ def api_get_template(template_id):
 
 @rating_bp.route('/publications/api/templates/<int:template_id>', methods=['PUT'])
 @jwt_required()
+@roles_required('Руководитель')
 def api_update_template(template_id):
     template = RatingTemplate.query.get_or_404(template_id)
     data = request.get_json()
@@ -921,6 +989,7 @@ def api_update_template(template_id):
 
 @rating_bp.route('/publications/api/templates/<int:template_id>', methods=['DELETE', 'POST'])
 @jwt_required()
+@roles_required('Руководитель')
 def api_delete_template(template_id):
     if request.method == 'POST' and request.form.get('_method') != 'DELETE':
         if not request.is_json:
@@ -936,6 +1005,7 @@ def api_delete_template(template_id):
 
 @rating_bp.route('/templates/create', methods=['GET', 'POST'])
 @jwt_required()
+@roles_required('Руководитель')
 def create_template():
     entity_type = request.args.get('entity_type', 'award')
     sub_type = request.args.get('sub_type', '')
@@ -983,19 +1053,25 @@ def create_template():
             flash('Шаблон «{}» сохранён!'.format(template.name), 'success')
             return redirect(url_for('rating.templates_list'))
 
+    users = User.query.join(User.role).filter(User.is_active == True, db.text("roles.name != 'Руководитель'")).order_by(User.name).all()
+    current_user_id = get_jwt_identity()
     return render_template(tmpl,
         form=form,
         title='Создать шаблон — {}'.format(ENTITY_TYPE_CHOICES.get(entity_type, entity_type)),
         template_mode=True,
         cancel_url=url_for('rating.templates_list'),
-        entity_type=entity_type)
+        entity_type=entity_type,
+        users=users,
+        current_user_id=current_user_id)
 
 
 @rating_bp.route('/templates')
 @jwt_required()
 def templates_list():
+    user_id = get_jwt_identity()
+    user = User.query.get_or_404(user_id)
     templates = RatingTemplate.query.order_by(RatingTemplate.updated_at.desc()).all()
-    return render_template('rating/templates.html', templates=templates, entity_labels=ENTITY_TYPE_CHOICES)
+    return render_template('rating/templates.html', templates=templates, entity_labels=ENTITY_TYPE_CHOICES, role=user.role)
 
 
 """Экспорт в Excel"""
