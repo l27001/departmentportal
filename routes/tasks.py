@@ -77,13 +77,10 @@ def list_tasks():
     def task_sort_key(t):
         if is_leader:
             has_review = int(t.id) in review_task_ids
-            has_completed = any(a.approved for aid, a in all_assignments.items() if aid == int(t.id))
-            has_incomplete = any(not a.approved for aid, a in all_assignments.items() if aid == int(t.id))
+            # has_incomplete = any(not a.approved for aid, a in all_assignments.items() if aid == int(t.id))
             if has_review:
                 return 0
-            if not has_incomplete:
-                return 1
-            return 2
+            return 1
         asgn = user_assignments.get(int(t.id))
         if not asgn:
             return 0
@@ -104,7 +101,6 @@ def list_tasks():
     announcements = Announcement.query.filter(Announcement.is_deleted == False, Announcement.deadline >= today_date).order_by(Announcement.created_at.desc()).limit(15).all()
     viewed_ids = {v.announcement_id for v in AnnouncementView.query.filter_by(user_id=user_id).all()}
 
-    events = []
     tasks_by_deadline = {}
     for task in tasks:
         deadline_str = task.deadline_at.strftime('%Y-%m-%d')
@@ -145,7 +141,7 @@ def create_task():
         description = request.form['description']
         priority = request.form['priority']
         deadline_at = request.form['deadline_at']
-        no_review = request.form.get('no_review') == 'on'
+        no_review = request.form.get('no_review') == '1'
         assignees = request.form.getlist('assignees')
         assignees = [a for a in assignees if a.strip()]
 

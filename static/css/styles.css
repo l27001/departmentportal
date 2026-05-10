@@ -351,6 +351,7 @@ select:focus {
 
 .task-info {
   flex: 1;
+  max-width: 25%;
 }
 
 .task-title {
