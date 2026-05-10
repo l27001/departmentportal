@@ -22,20 +22,52 @@ def list_documents():
         in: query
         type: string
         description: Фильтр по категории
+      - name: page
+        in: query
+        type: integer
+        default: 1
+      - name: per_page
+        in: query
+        type: integer
+        default: 20
     responses:
       200:
         description: Список документов
         schema:
-          type: array
-          items:
-            $ref: '#/definitions/Document'
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/definitions/Document'
+            page:
+              type: integer
+            per_page:
+              type: integer
+            total:
+              type: integer
+            pages:
+              type: integer
     """
     category = request.args.get("category")
-    query = Document.query
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 20, type=int)
+
+    base_query = Document.query
     if category:
-        query = query.filter_by(category=category)
-    docs = query.order_by(Document.created_at.desc()).all()
-    return jsonify([d.to_dict() for d in docs])
+        base_query = base_query.filter_by(category=category)
+    base_query = base_query.order_by(Document.created_at.desc())
+
+    total = base_query.count()
+    docs = base_query.offset((page - 1) * per_page).limit(per_page).all()
+
+    return jsonify({
+        "items": [d.to_dict() for d in docs],
+        "page": page,
+        "per_page": per_page,
+        "total": total,
+        "pages": (total + per_page - 1) // per_page,
+    })
 
 
 @api_documents_bp.route("/", methods=["POST"])

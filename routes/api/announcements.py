@@ -16,29 +16,61 @@ def list_announcements():
     tags: [Announcements]
     security:
       - BearerAuth: []
+    parameters:
+      - name: page
+        in: query
+        type: integer
+        default: 1
+      - name: per_page
+        in: query
+        type: integer
+        default: 20
     responses:
       200:
         description: Список объявлений
         schema:
-          type: array
-          items:
-            allOf:
-              - $ref: '#/definitions/Announcement'
-              - type: object
-                properties:
-                  is_read:
-                    type: boolean
-                    description: Прочитано ли текущим пользователем
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                allOf:
+                  - $ref: '#/definitions/Announcement'
+                  - type: object
+                    properties:
+                      is_read:
+                        type: boolean
+            page:
+              type: integer
+            per_page:
+              type: integer
+            total:
+              type: integer
+            pages:
+              type: integer
     """
     user_id = get_jwt_identity()
-    announcements = Announcement.query.filter_by(is_deleted=False).order_by(Announcement.created_at.desc()).all()
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 20, type=int)
+
+    base_query = Announcement.query.filter_by(is_deleted=False).order_by(Announcement.created_at.desc())
+    total = base_query.count()
+    announcements = base_query.offset((page - 1) * per_page).limit(per_page).all()
+
     viewed_ids = {v.announcement_id for v in AnnouncementView.query.filter_by(user_id=user_id).all()}
-    result = []
+    items = []
     for a in announcements:
         d = a.to_dict()
         d["is_read"] = a.id in viewed_ids
-        result.append(d)
-    return jsonify(result)
+        items.append(d)
+
+    return jsonify({
+        "items": items,
+        "page": page,
+        "per_page": per_page,
+        "total": total,
+        "pages": (total + per_page - 1) // per_page,
+    })
 
 
 @announcements_bp.route("/<int:id>", methods=["GET"])
@@ -362,37 +394,6 @@ def mark_viewed(id):
         db.session.commit()
 
     return jsonify({"msg": "Просмотр отмечен"})
-
-
-@announcements_bp.route("/<int:id>/views", methods=["GET"])
-@jwt_required()
-def get_views(id):
-    """Получить список просмотров объявления (только Руководитель/Документовед)
-    ---
-    tags: [Announcements]
-    security:
-      - BearerAuth: []
-    parameters:
-      - name: id
-        in: path
-        type: integer
-        required: true
-    responses:
-      200:
-        description: Список просмотров
-      403:
-        description: Доступ запрещён
-    """
-    role = get_jwt()["role"]
-    if role not in (1, 2):
-        return jsonify({"msg": "Доступ запрещён"}), 403
-
-    views = AnnouncementView.query.filter_by(announcement_id=id).order_by(AnnouncementView.viewed_at.desc()).all()
-    return jsonify([{
-        "user_id": v.user_id,
-        "user_name": v.user.name if v.user else None,
-        "viewed_at": v.viewed_at.isoformat() if v.viewed_at else None,
-    } for v in views])
 
 
 @announcements_bp.route("/<int:id>/read-status", methods=["GET"])

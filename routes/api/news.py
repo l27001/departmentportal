@@ -20,20 +20,52 @@ def list_news():
         type: integer
         enum: [0, 1]
         description: Фильтр закреплённых новостей (1 = только закреплённые)
+      - name: page
+        in: query
+        type: integer
+        default: 1
+      - name: per_page
+        in: query
+        type: integer
+        default: 20
     responses:
       200:
         description: Список новостей
         schema:
-          type: array
-          items:
-            $ref: '#/definitions/News'
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/definitions/News'
+            page:
+              type: integer
+            per_page:
+              type: integer
+            total:
+              type: integer
+            pages:
+              type: integer
     """
     pinned = request.args.get("pinned")
-    query = News.query.filter_by(is_deleted=False)
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 20, type=int)
+
+    base_query = News.query.filter_by(is_deleted=False)
     if pinned == "1":
-        query = query.filter_by(is_pinned=True)
-    news = query.order_by(News.is_pinned.desc(), News.created_at.desc()).all()
-    return jsonify([n.to_dict() for n in news])
+        base_query = base_query.filter_by(is_pinned=True)
+    base_query = base_query.order_by(News.is_pinned.desc(), News.created_at.desc())
+
+    total = base_query.count()
+    news = base_query.offset((page - 1) * per_page).limit(per_page).all()
+
+    return jsonify({
+        "items": [n.to_dict() for n in news],
+        "page": page,
+        "per_page": per_page,
+        "total": total,
+        "pages": (total + per_page - 1) // per_page,
+    })
 
 
 @news_bp.route("/<int:id>", methods=["GET"])
