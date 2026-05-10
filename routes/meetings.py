@@ -134,6 +134,8 @@ def create_meeting():
             return _render_create(role)
 
         meeting = DepartmentMeeting(title=title, description=description, date=meeting_date)
+        db.session.add(meeting)
+        db.session.flush()
 
         for tid in task_ids:
             task = Task.query.get(int(tid))
@@ -145,9 +147,6 @@ def create_meeting():
         except ValueError as e:
             flash(str(e), "danger")
             return _render_create(role)
-
-        db.session.add(meeting)
-        db.session.flush()
 
         if files:
             upload_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "attachments", "meetings", str(meeting.id))
