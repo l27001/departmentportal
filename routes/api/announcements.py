@@ -213,11 +213,15 @@ def toggle_rsvp(id):
               type: boolean
             rsvp_count:
               type: integer
+      400:
+        description: Отметка не включена для этого анонса
       404:
         description: Не найдено
     """
     user_id = get_jwt_identity()
     announcement = Announcement.query.filter_by(id=id, is_deleted=False).first_or_404()
+    if not announcement.require_rsvp:
+        return jsonify({"msg": "Отметка не включена для этого анонса"}), 400
 
     existing = AnnouncementRsvp.query.filter_by(announcement_id=id, user_id=user_id).first()
     if existing:
@@ -254,9 +258,13 @@ def get_rsvp_status(id):
               type: boolean
             rsvp_count:
               type: integer
+      400:
+        description: Отметка не включена для этого анонса
     """
     user_id = get_jwt_identity()
     announcement = Announcement.query.filter_by(id=id, is_deleted=False).first_or_404()
+    if not announcement.require_rsvp:
+        return jsonify({"msg": "Отметка не включена для этого анонса"}), 400
     existing = AnnouncementRsvp.query.filter_by(announcement_id=id, user_id=user_id).first()
     return jsonify({
         "rsvped": existing is not None,
@@ -291,12 +299,18 @@ def get_rsvp_list(id):
                 type: string
               created_at:
                 type: string
+      400:
+        description: Отметка не включена для этого анонса
       403:
         description: Доступ запрещён
     """
     role = get_jwt()["role"]
     if role not in (1, 2):
         return jsonify({"msg": "Доступ запрещён"}), 403
+
+    announcement = Announcement.query.filter_by(id=id, is_deleted=False).first_or_404()
+    if not announcement.require_rsvp:
+        return jsonify({"msg": "Отметка не включена для этого анонса"}), 400
 
     rsvps = AnnouncementRsvp.query.filter_by(announcement_id=id).order_by(AnnouncementRsvp.created_at.asc()).all()
     return jsonify([{
