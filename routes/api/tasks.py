@@ -55,7 +55,24 @@ def list_tasks():
             tasks:
               type: array
               items:
-                $ref: '#/definitions/Task'
+                allOf:
+                  - $ref: '#/definitions/Task'
+                  - type: object
+                    properties:
+                       assignments:
+                         type: array
+                         description: Только для Руководитель/Документовед
+                         items:
+                           type: object
+                           properties:
+                             user_id:
+                               type: integer
+                             user_name:
+                               type: string
+                             status:
+                               type: string
+                             approved:
+                               type: boolean
             pagination:
               type: object
               properties:
@@ -108,8 +125,23 @@ def list_tasks():
     paginated_tasks = tasks[start:end]
     total_pages = (total + per_page - 1) // per_page if per_page > 0 else 1
 
+    tasks_data = []
+    for task in paginated_tasks:
+        d = task.to_dict()
+        if role in (1, 2):
+            d["assignments"] = [
+                {
+                    "user_id": a.user_id,
+                    "user_name": a.user.name if a.user else None,
+                    "status": a.status,
+                    "approved": a.approved,
+                }
+                for a in task.assignments
+            ]
+        tasks_data.append(d)
+
     return jsonify({
-        "tasks": [task.to_dict() for task in paginated_tasks],
+        "tasks": tasks_data,
         "pagination": {
             "page": page,
             "per_page": per_page,
