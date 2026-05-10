@@ -22,10 +22,23 @@ def list_announcements():
         schema:
           type: array
           items:
-            $ref: '#/definitions/Announcement'
+            allOf:
+              - $ref: '#/definitions/Announcement'
+              - type: object
+                properties:
+                  is_read:
+                    type: boolean
+                    description: Прочитано ли текущим пользователем
     """
+    user_id = get_jwt_identity()
     announcements = Announcement.query.filter_by(is_deleted=False).order_by(Announcement.created_at.desc()).all()
-    return jsonify([a.to_dict() for a in announcements])
+    viewed_ids = {v.announcement_id for v in AnnouncementView.query.filter_by(user_id=user_id).all()}
+    result = []
+    for a in announcements:
+        d = a.to_dict()
+        d["is_read"] = a.id in viewed_ids
+        result.append(d)
+    return jsonify(result)
 
 
 @announcements_bp.route("/<int:id>", methods=["GET"])
