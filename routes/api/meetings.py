@@ -5,6 +5,7 @@ from extensions import db
 from models.meeting import DepartmentMeeting, MeetingTask
 from models.task import Task
 from models.attachment import Attachment
+from utils.notifications import notify_meeting_created
 
 meetings_bp = Blueprint("api_meetings", __name__, url_prefix="/api/meetings")
 
@@ -143,6 +144,8 @@ def create_meeting():
 
     db.session.add(meeting)
     db.session.commit()
+
+    notify_meeting_created(meeting, request.host_url)
 
     return jsonify(meeting.to_dict()), 201
 

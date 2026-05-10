@@ -10,6 +10,7 @@ from models.attachment import Attachment
 from models.role import Role
 from models.user import User
 from models.group import Group, UserGroup
+from utils.notifications import notify_meeting_created
 
 meetings_bp = Blueprint("web_meetings", __name__, url_prefix="/meetings")
 
@@ -171,6 +172,7 @@ def create_meeting():
                     db.session.add(attachment)
 
         db.session.commit()
+        notify_meeting_created(meeting, request.host_url)
         flash("Заседание успешно создано", "success")
         return redirect(url_for("web_meetings.list_meetings"))
 
