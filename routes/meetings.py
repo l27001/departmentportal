@@ -10,6 +10,7 @@ from models.attachment import Attachment
 from models.role import Role
 from models.user import User
 from models.group import Group, UserGroup
+from utils.notifications import notify_meeting_created
 
 meetings_bp = Blueprint("web_meetings", __name__, url_prefix="/meetings")
 
@@ -133,6 +134,8 @@ def create_meeting():
             return _render_create(role)
 
         meeting = DepartmentMeeting(title=title, description=description, date=meeting_date)
+        db.session.add(meeting)
+        db.session.flush()
 
         for tid in task_ids:
             task = Task.query.get(int(tid))
@@ -144,9 +147,6 @@ def create_meeting():
         except ValueError as e:
             flash(str(e), "danger")
             return _render_create(role)
-
-        db.session.add(meeting)
-        db.session.flush()
 
         if files:
             upload_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "attachments", "meetings", str(meeting.id))
@@ -171,6 +171,7 @@ def create_meeting():
                     db.session.add(attachment)
 
         db.session.commit()
+        notify_meeting_created(meeting, request.host_url)
         flash("Заседание успешно создано", "success")
         return redirect(url_for("web_meetings.list_meetings"))
 
