@@ -1,5 +1,12 @@
+import os
 from models.user import User
 from utils.email import send_email
+
+
+def _is_dev_allowed(email):
+    if os.getenv("FLASK_ENV") != "development":
+        return True
+    return email.endswith("@ezdomain.ru")
 
 
 def notify_meeting_created(meeting, base_url):
@@ -16,6 +23,8 @@ def notify_meeting_created(meeting, base_url):
     users = User.query.filter(User.dismissal_date.is_(None)).all()
     for user in users:
         if not user.email:
+            continue
+        if not _is_dev_allowed(user.email):
             continue
 
         user_tasks = user_tasks_map.get(user.id, [])
