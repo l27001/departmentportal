@@ -1,75 +1,130 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, send_file
-from flask_jwt_extended import (
-    jwt_required,
-    get_jwt_identity,
-    get_jwt
-)
+from flask import Blueprint, render_template, redirect, url_for, flash, request, send_file, jsonify
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from extensions import db
 from models.user import User
-from models.award import Award, Publication, Conference, Training
+from models.award import Award, Book, JournalArticle, CollectionArticle, Dissertation, Abstract, Internet, NewspaperArticle, Conference, Training, RatingTemplate
 from forms.rating import AwardForm, PublicationForm, ConferenceForm, TrainingForm, SearchFilterForm
-from sqlalchemy import or_, desc
-from datetime import datetime
+from sqlalchemy import or_
+from datetime import datetime, timedelta, date
 from io import BytesIO
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from datetime import datetime
-from io import BytesIO
-from openpyxl import Workbook
-from openpyxl.styles import Alignment
-from docx import Document
-from flask import send_file
+from docx.shared import RGBColor
 from utils import generate_gost_string
-from flask import jsonify
+
+
+def apply_date_filter(query, date_col, date_range, date_from, date_to):
+    if date_range == '3':
+        cutoff = datetime.now() - timedelta(days=90)
+        query = query.filter(date_col >= cutoff.date())
+    elif date_range == '6':
+        cutoff = datetime.now() - timedelta(days=180)
+        query = query.filter(date_col >= cutoff.date())
+    elif date_range == '12':
+        cutoff = datetime.now() - timedelta(days=365)
+        query = query.filter(date_col >= cutoff.date())
+    elif date_range == '24':
+        cutoff = datetime.now() - timedelta(days=730)
+        query = query.filter(date_col >= cutoff.date())
+    elif date_range == '60':
+        cutoff = datetime.now() - timedelta(days=1825)
+        query = query.filter(date_col >= cutoff.date())
+    elif date_range == 'custom':
+        if date_from:
+            query = query.filter(date_col >= date_from)
+        if date_to:
+            query = query.filter(date_col <= date_to)
+    return query
+
+
+def parse_date_args(date_from_str, date_to_str):
+    date_from = None
+    date_to = None
+    if date_from_str:
+        try:
+            date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date()
+        except ValueError:
+            pass
+    if date_to_str:
+        try:
+            date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date()
+        except ValueError:
+            pass
+    return date_from, date_to
+
+
+PUB_MODELS = {
+    'book': Book,
+    'journal_article': JournalArticle,
+    'collection_article': CollectionArticle,
+    'dissertation': Dissertation,
+    'abstract': Abstract,
+    'internet': Internet,
+    'newspaper_article': NewspaperArticle,
+}
+
+PUB_TYPE_LABELS = {
+    'book': 'Книга',
+    'journal_article': 'Журнал',
+    'collection_article': 'Сборник',
+    'dissertation': 'Диссертация',
+    'abstract': 'Автореферат',
+    'internet': 'Интернет',
+    'newspaper_article': 'Газета',
+}
 
 
 rating_bp = Blueprint('rating', __name__, url_prefix='/rating')
 
 # ==================== AWARDS ====================
+
 @rating_bp.route('/awards')
 @jwt_required()
 def awards_list():
-    """Список наград с поиском и фильтрами"""
-    user_id = get_jwt_identity()  # Получаем ID текущего пользователя из JWT
-    current_user = User.query.get_or_404(user_id)  # Получаем пользователя по ID
+    user_id = get_jwt_identity()
+    User.query.get_or_404(user_id)
     search_form = SearchFilterForm()
     page = request.args.get('page', 1, type=int)
-    
-    query = Award.query.filter_by(user_id=current_user.id, status='active')
-    
-    # Поиск
+
+    query = Award.query.filter_by(user_id=user_id, status='active')
+
     search_query = request.args.get('search_query', '')
     if search_query:
         query = query.filter(or_(
             Award.title.ilike(f'%{search_query}%'),
             Award.description.ilike(f'%{search_query}%')
         ))
-    
-    # Сортировка
-    sort_by = request.args.get('sort_by', 'date_desc')
-    if sort_by == 'date_desc':
-        query = query.order_by(desc(Award.date_received))
-    elif sort_by == 'date_asc':
-        query = query.order_by(Award.date_received)
-    elif sort_by == 'title':
-        query = query.order_by(Award.title)
-    
+
+    date_range = request.args.get('date_range', 'all')
+    date_from, date_to = parse_date_args(request.args.get('date_from'), request.args.get('date_to'))
+    query = apply_date_filter(query, Award.date_received, date_range, date_from, date_to)
+
+    sort_column = request.args.get('sort_column', 'date_received')
+    sort_dir = request.args.get('sort_dir', 'desc')
+    col_map = {
+        'title': Award.title,
+        'award_type': Award.award_type,
+        'issuer': Award.issuer,
+        'date_received': Award.date_received,
+        'level': Award.level,
+    }
+    col = col_map.get(sort_column, Award.date_received)
+    query = query.order_by(col.desc() if sort_dir == 'desc' else col.asc())
+
     awards = query.paginate(page=page, per_page=10)
-    
+
     return render_template('rating/awards.html', awards=awards, search_form=search_form)
 
 @rating_bp.route('/awards/add', methods=['GET', 'POST'])
 @jwt_required()
 def add_award():
-    """Добавление новой награды"""
     user_id = get_jwt_identity()
-    current_user = User.query.get_or_404(user_id)
     form = AwardForm()
     if form.validate_on_submit():
         award = Award(
-            user_id=current_user.id,
+            user_id=user_id,
             title=form.title.data,
             description=form.description.data,
             award_type=form.award_type.data,
@@ -87,11 +142,9 @@ def add_award():
 @rating_bp.route('/awards/<int:award_id>/edit', methods=['GET', 'POST'])
 @jwt_required()
 def edit_award(award_id):
-    """Редактирование награды"""
     user_id = get_jwt_identity()
-    current_user = User.query.get_or_404(user_id)
     award = Award.query.get_or_404(award_id)
-    if award.user_id != current_user.id:
+    if award.user_id != user_id:
         flash('У вас нет доступа', 'danger')
         return redirect(url_for('rating.awards_list'))
     
@@ -120,11 +173,9 @@ def edit_award(award_id):
 @rating_bp.route('/awards/<int:award_id>/delete', methods=['POST'])
 @jwt_required()
 def delete_award(award_id):
-    """Удаление награды"""
     user_id = get_jwt_identity()
-    current_user = User.query.get_or_404(user_id)
     award = Award.query.get_or_404(award_id)
-    if award.user_id != current_user.id:
+    if award.user_id != user_id:
         flash('У вас нет доступа', 'danger')
         return redirect(url_for('rating.awards_list'))
     
@@ -138,43 +189,119 @@ def delete_award(award_id):
 @rating_bp.route('/publications')
 @jwt_required()
 def publications_list():
-    """Список публикаций с поиском и фильтрами"""
     user_id = get_jwt_identity()
-    current_user = User.query.get_or_404(user_id)
+    User.query.get_or_404(user_id)
     search_form = SearchFilterForm()
     page = request.args.get('page', 1, type=int)
-    
-    # Базовый запрос только для текущего пользователя
-    query = Publication.query.filter_by(user_id=current_user.id, status='active')
-    
-    # Поиск по названию или авторам
-    search_query = request.args.get('search_query', '')
-    if search_query:
-        query = query.filter(or_(
-            Publication.title.ilike(f'%{search_query}%'),
-            Publication.authors.ilike(f'%{search_query}%'),
-            Publication.article_title.ilike(f'%{search_query}%'),
-            Publication.author_single.ilike(f'%{search_query}%')
-        ))
-    
-    # Фильтр по типу публикации
+
+    all_publications = []
+
     pub_type = request.args.get('pub_type', '')
-    if pub_type:
-        query = query.filter(Publication.publication_type == pub_type)
-    
-    # Сортировка
+    search_query = request.args.get('search_query', '')
     sort_by = request.args.get('sort_by', 'date_desc')
-    if sort_by == 'date_desc':
-        query = query.order_by(desc(Publication.year))  # ✅
-    elif sort_by == 'date_asc':
-        query = query.order_by(Publication.year)  # ✅
-    elif sort_by == 'title':
-        query = query.order_by(Publication.title)
-    
-    # Пагинация
-    publications = query.paginate(page=page, per_page=10)
-    
-    
+    date_range = request.args.get('date_range', 'all')
+    date_from, date_to = parse_date_args(request.args.get('date_from'), request.args.get('date_to'))
+
+    models_to_query = list(PUB_MODELS.values()) if not pub_type else [PUB_MODELS[pub_type]]
+
+    for model in models_to_query:
+        query = model.query.filter_by(user_id=user_id)
+
+        if search_query:
+            author_fields = []
+            if hasattr(model, 'authors'):
+                author_fields.append(model.authors.ilike(f'%{search_query}%'))
+            if hasattr(model, 'author_single'):
+                author_fields.append(model.author_single.ilike(f'%{search_query}%'))
+            if author_fields:
+                query = query.filter(or_(model.title.ilike(f'%{search_query}%'), or_(*author_fields)))
+            else:
+                query = query.filter(model.title.ilike(f'%{search_query}%'))
+
+        if date_range != 'all' and hasattr(model, 'publication_date'):
+            if date_range == '3':
+                cutoff = datetime.now() - timedelta(days=90)
+                query = query.filter(model.publication_date >= cutoff.date())
+            elif date_range == '6':
+                cutoff = datetime.now() - timedelta(days=180)
+                query = query.filter(model.publication_date >= cutoff.date())
+            elif date_range == '12':
+                cutoff = datetime.now() - timedelta(days=365)
+                query = query.filter(model.publication_date >= cutoff.date())
+            elif date_range == '24':
+                cutoff = datetime.now() - timedelta(days=730)
+                query = query.filter(model.publication_date >= cutoff.date())
+            elif date_range == 'custom':
+                if date_from:
+                    query = query.filter(model.publication_date >= date_from)
+                if date_to:
+                    query = query.filter(model.publication_date <= date_to)
+
+        all_publications.extend(query.all())
+
+    if date_range != 'all':
+        cutoff_date = None
+        if date_range == '3':
+            cutoff_date = datetime.now() - timedelta(days=90)
+        elif date_range == '6':
+            cutoff_date = datetime.now() - timedelta(days=180)
+        elif date_range == '12':
+            cutoff_date = datetime.now() - timedelta(days=365)
+        elif date_range == '24':
+            cutoff_date = datetime.now() - timedelta(days=730)
+
+        filtered = []
+        for pub in all_publications:
+            if pub.publication_date is None:
+                continue
+            if cutoff_date and pub.publication_date < cutoff_date.date():
+                continue
+            if date_range == 'custom' and date_from and pub.publication_date < date_from:
+                continue
+            if date_range == 'custom' and date_to and pub.publication_date > date_to:
+                continue
+            filtered.append(pub)
+        all_publications = filtered
+
+    sort_column = request.args.get('sort_column', 'year')
+    sort_dir = request.args.get('sort_dir', 'desc')
+    type_names = {
+        'publication_books': 'Книга',
+        'publication_journal_articles': 'Журнал',
+        'publication_collection_articles': 'Сборник',
+        'publication_dissertations': 'Диссертация',
+        'publication_abstracts': 'Автореферат',
+        'publication_internets': 'Интернет',
+        'publication_newspaper_articles': 'Газета',
+    }
+
+    if sort_column == 'year':
+        all_publications.sort(key=lambda x: x.year or 0, reverse=(sort_dir == 'desc'))
+    elif sort_column == 'title':
+        all_publications.sort(key=lambda x: (x.title or '').lower(), reverse=(sort_dir == 'desc'))
+    elif sort_column == 'type':
+        all_publications.sort(key=lambda x: type_names.get(x.__tablename__, ''), reverse=(sort_dir == 'desc'))
+
+    per_page = 10
+    total = len(all_publications)
+    start = (page - 1) * per_page
+    end = start + per_page
+    paginated = all_publications[start:end]
+
+    class PaginatedResult:
+        def __init__(self, items, total, page, per_page):
+            self.items = items
+            self.total = total
+            self.page = page
+            self.per_page = per_page
+            self.pages = (total + per_page - 1) // per_page
+            self.has_prev = page > 1
+            self.has_next = page * per_page < total
+            self.prev_num = page - 1
+            self.next_num = page + 1
+
+    publications = PaginatedResult(paginated, total, page, per_page)
+
     return render_template(
         'rating/publications.html',
         publications=publications,
@@ -184,32 +311,84 @@ def publications_list():
 @rating_bp.route('/publications/preview', methods=['POST'])
 @jwt_required()
 def preview_publication():
-    """AJAX preview ГОСТ-строки при вводе формы"""
     data = request.get_json()
-    
+    pub_type = data.get('publication_type', '')
+    model = PUB_MODELS.get(pub_type)
+    if not model:
+        return jsonify({'error': 'Unknown publication type'}), 400
+
     try:
-        temp_pub = Publication(
-            publication_type=data.get('publication_type', ''),
-            title=data.get('title', ''),
-            year=int(data.get('year', datetime.now().year)) if data.get('year') else datetime.now().year,
-            authors=data.get('authors', ''),
-            edition=data.get('edition', ''),
-            city=data.get('city', ''),
-            publisher=data.get('publisher', ''),
-            pages=data.get('pages', ''),
-            journal_name=data.get('journal_name', ''),
-            issue=data.get('issue', ''),
-            article_title=data.get('article_title', ''),
-            collection_title=data.get('collection_title', ''),
-            author_single=data.get('author_single', ''),
-            degree=data.get('degree', ''),
-            field=data.get('field', ''),
-            specialty_code=data.get('specialty_code', ''),
-            site_name=data.get('site_name', ''),
-            url=data.get('url', ''),
-            access_date=data.get('access_date', ''),
-        )
-        
+        year_val = int(data.get('year', datetime.now().year)) if data.get('year') else datetime.now().year
+        common = {
+            'title': data.get('title', ''),
+            'year': year_val,
+            'doi': data.get('doi', ''),
+        }
+
+        pub_date_str = data.get('publication_date', '')
+        if pub_date_str:
+            try:
+                common['publication_date'] = datetime.strptime(pub_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                common['publication_date'] = None
+        else:
+            common['publication_date'] = None
+
+        if pub_type == 'book':
+            temp_pub = model(
+                **common,
+                authors=data.get('authors', ''),
+                edition=data.get('edition', ''),
+                city=data.get('city', ''),
+                publisher=data.get('publisher', ''),
+                pages=data.get('pages', ''),
+            )
+        elif pub_type == 'journal_article':
+            temp_pub = model(
+                **common,
+                authors=data.get('authors', ''),
+                journal_name=data.get('journal_name', ''),
+                issue=data.get('issue', ''),
+                pages=data.get('pages', ''),
+            )
+        elif pub_type == 'collection_article':
+            temp_pub = model(
+                **common,
+                authors=data.get('authors', ''),
+                collection_title=data.get('collection_title', ''),
+                city=data.get('city', ''),
+                publisher=data.get('publisher', ''),
+                pages=data.get('pages', ''),
+            )
+        elif pub_type in ('dissertation', 'abstract'):
+            temp_pub = model(
+                **common,
+                author_single=data.get('author_single', ''),
+                degree=data.get('degree', ''),
+                field=data.get('field', ''),
+                specialty_code=data.get('specialty_code', ''),
+                city=data.get('city', ''),
+                pages=data.get('pages', ''),
+            )
+        elif pub_type == 'internet':
+            temp_pub = model(
+                **common,
+                authors=data.get('authors', ''),
+                site_name=data.get('site_name', ''),
+                url=data.get('url', ''),
+                access_date=data.get('access_date', ''),
+            )
+        elif pub_type == 'newspaper_article':
+            temp_pub = model(
+                **common,
+                authors=data.get('authors', ''),
+                newspaper_name=data.get('newspaper_name', ''),
+                newspaper_date=data.get('newspaper_date', ''),
+                issue=data.get('issue', ''),
+            )
+        else:
+            return jsonify({'error': 'Unknown publication type'}), 400
+
         gost_string = generate_gost_string(temp_pub)
         return jsonify({'gost_string': gost_string})
     except Exception as e:
@@ -220,43 +399,48 @@ def preview_publication():
 @jwt_required()
 def add_publication():
     user_id = get_jwt_identity()
-    current_user = User.query.get_or_404(user_id)
     form = PublicationForm()
     if form.validate_on_submit():
-        publication = Publication(
-            user_id=current_user.id,
-            publication_type=form.publication_type.data,
-            title=form.title.data,
-            year=form.year.data,
-            authors=form.authors.data,
-            edition=form.edition.data,
-            city=form.city.data,
-            publisher=form.publisher.data,
-            
-            pages=form.journal_pages.data if form.publication_type.data == 'journal_article' else (form.collection_pages.data if form.publication_type.data == 'collection_article' else form.pages.data),
+        pub_type = form.publication_type.data
+        model = PUB_MODELS.get(pub_type)
+        if not model:
+            flash('Неизвестный тип публикации', 'danger')
+            return redirect(url_for('rating.publications_list'))
 
+        pub_date = form.publication_date.data if form.publication_date.data else None
 
-            journal_name=form.journal_name.data,
-            issue=form.issue.data,
-            article_title=form.article_title.data,
-            collection_title=form.collection_title.data,
-            author_single=form.author_single.data,
-            degree=form.degree.data,
-            field=form.field.data,
-            specialty_code=form.specialty_code.data,
-            site_name=form.site_name.data,
-            url=form.url.data,
-            access_date=form.access_date.data,
-            doi=form.doi.data,
-            status='active'
-        )
-        # ГЕНЕРИРУЕМ ГОСТ-СТРОКУ
-        publication.gost_string = generate_gost_string(publication)
-        db.session.add(publication)
+        common = {
+            'user_id': user_id,
+            'title': form.title.data,
+            'year': form.year.data,
+            'publication_date': pub_date,
+            'doi': form.doi.data,
+        }
+
+        if pub_type == 'book':
+            pub = model(**common, authors=form.authors.data, edition=form.edition.data, city=form.city.data, publisher=form.publisher.data, pages=form.pages.data)
+        elif pub_type == 'journal_article':
+            pub = model(**common, authors=form.authors.data, journal_name=form.journal_name.data, issue=form.issue.data, pages=form.pages.data)
+        elif pub_type == 'collection_article':
+            pub = model(**common, authors=form.authors.data, collection_title=form.collection_title.data, city=form.city.data, publisher=form.publisher.data, pages=form.pages.data)
+        elif pub_type == 'dissertation':
+            pub = model(**common, author_single=form.author_single.data, degree=form.degree.data, field=form.field.data, specialty_code=form.specialty_code.data, city=form.city.data, pages=form.pages.data)
+        elif pub_type == 'abstract':
+            pub = model(**common, author_single=form.author_single.data, degree=form.degree.data, field=form.field.data, specialty_code=form.specialty_code.data, city=form.city.data, pages=form.pages.data)
+        elif pub_type == 'internet':
+            pub = model(**common, authors=form.authors.data, site_name=form.site_name.data, url=form.url.data, access_date=form.access_date.data)
+        elif pub_type == 'newspaper_article':
+            pub = model(**common, authors=form.authors.data, newspaper_name=form.newspaper_name.data, newspaper_date=form.newspaper_date.data, issue=form.issue.data)
+        else:
+            flash('Неизвестный тип публикации', 'danger')
+            return redirect(url_for('rating.publications_list'))
+
+        pub.gost_string = generate_gost_string(pub)
+        db.session.add(pub)
         db.session.commit()
         flash('Публикация добавлена!', 'success')
         return redirect(url_for('rating.publications_list'))
-    
+
     return render_template('rating/publication_form.html', form=form, title='Добавить публикацию')
 
 
@@ -264,97 +448,160 @@ def add_publication():
 @jwt_required()
 def edit_publication(pub_id):
     user_id = get_jwt_identity()
-    current_user = User.query.get_or_404(user_id)
-    publication = Publication.query.get_or_404(pub_id)
-    if publication.user_id != current_user.id:
+    pub_type = request.args.get('pub_type', '')
+    pub_record = _get_publication_by_id(pub_id, pub_type)
+    if not pub_record:
+        flash('Публикация не найдена', 'danger')
+        return redirect(url_for('rating.publications_list'))
+    if pub_record.user_id != user_id:
         flash('У вас нет доступа', 'danger')
         return redirect(url_for('rating.publications_list'))
-    
+
+    for key, model in PUB_MODELS.items():
+        if isinstance(pub_record, model):
+            form_pub_type = key
+            break
+    else:
+        form_pub_type = 'book'
+
     form = PublicationForm()
     if form.validate_on_submit():
-        publication.publication_type = form.publication_type.data
-        publication.title = form.title.data
-        publication.year = form.year.data
-        publication.authors = form.authors.data
-        publication.edition = form.edition.data
-        publication.city = form.city.data
-        publication.publisher = form.publisher.data
-        if form.publication_type.data == 'journal_article':
-            publication.pages=form.journal_pages.data
-        else:
-            publication.pages = (form.collection_pages.data if form.publication_type.data == 'collection_article' else form.pages.data)
+        pub_date = form.publication_date.data if form.publication_date.data else None
 
+        pub_record.title = form.title.data
+        pub_record.year = form.year.data
+        pub_record.publication_date = pub_date
+        pub_record.doi = form.doi.data
 
-        publication.journal_name = form.journal_name.data
-        publication.issue = form.issue.data
-        publication.article_title = form.article_title.data
-        publication.collection_title = form.collection_title.data
-        publication.author_single = form.author_single.data
-        publication.degree = form.degree.data
-        publication.field = form.field.data
-        publication.specialty_code = form.specialty_code.data
-        publication.site_name = form.site_name.data
-        publication.url = form.url.data
-        publication.access_date = form.access_date.data
-        publication.doi = form.doi.data
-        
-        # ПЕРЕСЧИТЫВАЕМ ГОСТ-СТРОКУ
-        publication.gost_string = generate_gost_string(publication)
+        if hasattr(pub_record, 'authors'):
+            pub_record.authors = form.authors.data
+        if hasattr(pub_record, 'author_single'):
+            pub_record.author_single = form.author_single.data
+        if hasattr(pub_record, 'edition'):
+            pub_record.edition = form.edition.data
+        if hasattr(pub_record, 'city'):
+            pub_record.city = form.city.data
+        if hasattr(pub_record, 'publisher'):
+            pub_record.publisher = form.publisher.data
+        if hasattr(pub_record, 'pages'):
+            pub_record.pages = form.pages.data
+        if hasattr(pub_record, 'journal_name'):
+            pub_record.journal_name = form.journal_name.data
+        if hasattr(pub_record, 'issue'):
+            pub_record.issue = form.issue.data
+        if hasattr(pub_record, 'collection_title'):
+            pub_record.collection_title = form.collection_title.data
+        if hasattr(pub_record, 'degree'):
+            pub_record.degree = form.degree.data
+        if hasattr(pub_record, 'field'):
+            pub_record.field = form.field.data
+        if hasattr(pub_record, 'specialty_code'):
+            pub_record.specialty_code = form.specialty_code.data
+        if hasattr(pub_record, 'site_name'):
+            pub_record.site_name = form.site_name.data
+        if hasattr(pub_record, 'url'):
+            pub_record.url = form.url.data
+        if hasattr(pub_record, 'access_date'):
+            pub_record.access_date = form.access_date.data
+        if hasattr(pub_record, 'newspaper_name'):
+            pub_record.newspaper_name = form.newspaper_name.data
+        if hasattr(pub_record, 'newspaper_date'):
+            pub_record.newspaper_date = form.newspaper_date.data
+
+        pub_record.gost_string = generate_gost_string(pub_record)
         db.session.commit()
         flash('Публикация обновлена!', 'success')
         return redirect(url_for('rating.publications_list'))
-    
-    elif request.method == 'GET':
-        form.publication_type.data = publication.publication_type
-        form.title.data = publication.title
-        form.year.data = publication.year
-        form.authors.data = publication.authors
-        form.edition.data = publication.edition
-        form.city.data = publication.city
-        form.publisher.data = publication.publisher
-        form.pages.data = publication.pages
-        form.journal_name.data = publication.journal_name
-        form.issue.data = publication.issue
-        form.article_title.data = publication.article_title
-        form.collection_title.data = publication.collection_title
-        form.author_single.data = publication.author_single
-        form.degree.data = publication.degree
-        form.field.data = publication.field
-        form.specialty_code.data = publication.specialty_code
-        form.site_name.data = publication.site_name
-        form.url.data = publication.url
-        form.access_date.data = publication.access_date
-        form.doi.data = publication.doi
 
-    
-    return render_template('rating/publication_form.html', form=form, title='Редактировать публикацию', publication=publication)
+    elif request.method == 'GET':
+        form.publication_type.data = form_pub_type
+        form.title.data = pub_record.title
+        form.year.data = pub_record.year
+        form.publication_date.data = pub_record.publication_date
+        form.doi.data = pub_record.doi
+        if hasattr(pub_record, 'authors'):
+            form.authors.data = pub_record.authors
+        if hasattr(pub_record, 'author_single'):
+            form.author_single.data = pub_record.author_single
+        if hasattr(pub_record, 'edition'):
+            form.edition.data = pub_record.edition
+        if hasattr(pub_record, 'city'):
+            form.city.data = pub_record.city
+        if hasattr(pub_record, 'publisher'):
+            form.publisher.data = pub_record.publisher
+        if hasattr(pub_record, 'pages'):
+            form.pages.data = pub_record.pages
+        if hasattr(pub_record, 'journal_name'):
+            form.journal_name.data = pub_record.journal_name
+        if hasattr(pub_record, 'issue'):
+            form.issue.data = pub_record.issue
+        if hasattr(pub_record, 'collection_title'):
+            form.collection_title.data = pub_record.collection_title
+        if hasattr(pub_record, 'degree'):
+            form.degree.data = pub_record.degree
+        if hasattr(pub_record, 'field'):
+            form.field.data = pub_record.field
+        if hasattr(pub_record, 'specialty_code'):
+            form.specialty_code.data = pub_record.specialty_code
+        if hasattr(pub_record, 'site_name'):
+            form.site_name.data = pub_record.site_name
+        if hasattr(pub_record, 'url'):
+            form.url.data = pub_record.url
+        if hasattr(pub_record, 'access_date'):
+            form.access_date.data = pub_record.access_date
+        if hasattr(pub_record, 'newspaper_name'):
+            form.newspaper_name.data = pub_record.newspaper_name
+        if hasattr(pub_record, 'newspaper_date'):
+            form.newspaper_date.data = pub_record.newspaper_date
+
+    return render_template('rating/publication_form.html', form=form, title='Редактировать публикацию', publication=pub_record, pub_type_label=PUB_TYPE_LABELS.get(form_pub_type, form_pub_type))
+
+
+def _get_publication_by_id(pub_id, pub_type=None):
+    if pub_type and pub_type in PUB_MODELS:
+        return PUB_MODELS[pub_type].query.get(pub_id)
+    for model in PUB_MODELS.values():
+        pub = model.query.get(pub_id)
+        if pub:
+            return pub
+    return None
 
 
 @rating_bp.route('/publications/<int:pub_id>', methods=['GET'])
 @jwt_required()
 def view_publication(pub_id):
-    """Просмотр полной информации о публикации"""
     user_id = get_jwt_identity()
-    current_user = User.query.get_or_404(user_id)
-    publication = Publication.query.get_or_404(pub_id)
-    if publication.user_id != current_user.id:
+    pub_type = request.args.get('pub_type', '')
+    publication = _get_publication_by_id(pub_id, pub_type)
+    if not publication:
+        flash('Публикация не найдена', 'danger')
+        return redirect(url_for('rating.publications_list'))
+    if publication.user_id != user_id:
         flash('У вас нет доступа', 'danger')
         return redirect(url_for('rating.publications_list'))
-    
-    return render_template('rating/publication_view.html', publication=publication)
+
+    pub_type_key = None
+    for key, model in PUB_MODELS.items():
+        if isinstance(publication, model):
+            pub_type_key = key
+            break
+
+    return render_template('rating/publication_view.html', publication=publication, pub_type_key=pub_type_key)
 
 
 @rating_bp.route('/publications/<int:pub_id>/delete', methods=['POST'])
 @jwt_required()
 def delete_publication(pub_id):
-    """Удаление публикации"""
     user_id = get_jwt_identity()
-    current_user = User.query.get_or_404(user_id)
-    publication = Publication.query.get_or_404(pub_id)
-    if publication.user_id != current_user.id:
+    pub_type = request.args.get('pub_type', '')
+    publication = _get_publication_by_id(pub_id, pub_type)
+    if not publication:
+        flash('Публикация не найдена', 'danger')
+        return redirect(url_for('rating.publications_list'))
+    if publication.user_id != user_id:
         flash('У вас нет доступа', 'danger')
         return redirect(url_for('rating.publications_list'))
-    
+
     db.session.delete(publication)
     db.session.commit()
     flash('Публикация удалена!', 'success')
@@ -366,43 +613,48 @@ def delete_publication(pub_id):
 @rating_bp.route('/conferences')
 @jwt_required()
 def conferences_list():
-    """Список конференций"""
     user_id = get_jwt_identity()
-    current_user = User.query.get_or_404(user_id)
+    User.query.get_or_404(user_id)
     search_form = SearchFilterForm()
     page = request.args.get('page', 1, type=int)
-    
-    query = Conference.query.filter_by(user_id=current_user.id, status='active')
-    
+
+    query = Conference.query.filter_by(user_id=user_id, status='active')
+
     search_query = request.args.get('search_query', '')
     if search_query:
         query = query.filter(or_(
             Conference.name.ilike(f'%{search_query}%'),
             Conference.paper_title.ilike(f'%{search_query}%')
         ))
-    
-    sort_by = request.args.get('sort_by', 'date_desc')
-    if sort_by == 'date_desc':
-        query = query.order_by(desc(Conference.conference_date))
-    elif sort_by == 'date_asc':
-        query = query.order_by(Conference.conference_date)
-    elif sort_by == 'title':
-        query = query.order_by(Conference.name)
-    
+
+    date_range = request.args.get('date_range', 'all')
+    date_from, date_to = parse_date_args(request.args.get('date_from'), request.args.get('date_to'))
+    query = apply_date_filter(query, Conference.conference_date, date_range, date_from, date_to)
+
+    sort_column = request.args.get('sort_column', 'conference_date')
+    sort_dir = request.args.get('sort_dir', 'desc')
+    col_map = {
+        'name': Conference.name,
+        'role': Conference.role,
+        'paper_title': Conference.paper_title,
+        'conference_date': Conference.conference_date,
+        'coauthors': Conference.coauthors,
+    }
+    col = col_map.get(sort_column, Conference.conference_date)
+    query = query.order_by(col.desc() if sort_dir == 'desc' else col.asc())
+
     conferences = query.paginate(page=page, per_page=10)
-    
+
     return render_template('rating/conferences.html', conferences=conferences, search_form=search_form)
 
 @rating_bp.route('/conferences/add', methods=['GET', 'POST'])
 @jwt_required()
 def add_conference():
-    """Добавление конференции"""
     user_id = get_jwt_identity()
-    current_user = User.query.get_or_404(user_id)
     form = ConferenceForm()
     if form.validate_on_submit():
         conference = Conference(
-            user_id=current_user.id,
+            user_id=user_id,
             name=form.name.data,
             role=form.role.data,
             paper_title=form.paper_title.data,
@@ -422,11 +674,9 @@ def add_conference():
 @rating_bp.route('/conferences/<int:conf_id>/edit', methods=['GET', 'POST'])
 @jwt_required()
 def edit_conference(conf_id):
-    """Редактирование конференции"""
     user_id = get_jwt_identity()
-    current_user = User.query.get_or_404(user_id)
     conference = Conference.query.get_or_404(conf_id)
-    if conference.user_id != current_user.id:
+    if conference.user_id != user_id:
         flash('У вас нет доступа', 'danger')
         return redirect(url_for('rating.conferences_list'))
     
@@ -459,11 +709,9 @@ def edit_conference(conf_id):
 @rating_bp.route('/conferences/<int:conf_id>/delete', methods=['POST'])
 @jwt_required()
 def delete_conference(conf_id):
-    """Удаление конференции"""
     user_id = get_jwt_identity()
-    current_user = User.query.get_or_404(user_id)
     conference = Conference.query.get_or_404(conf_id)
-    if conference.user_id != current_user.id:
+    if conference.user_id != user_id:
         flash('У вас нет доступа', 'danger')
         return redirect(url_for('rating.conferences_list'))
     
@@ -478,43 +726,48 @@ def delete_conference(conf_id):
 @rating_bp.route('/trainings')
 @jwt_required()
 def trainings_list():
-    """Список повышений квалификации"""
     user_id = get_jwt_identity()
-    current_user = User.query.get_or_404(user_id)
+    User.query.get_or_404(user_id)
     search_form = SearchFilterForm()
     page = request.args.get('page', 1, type=int)
-    
-    query = Training.query.filter_by(user_id=current_user.id, status='active')
-    
+
+    query = Training.query.filter_by(user_id=user_id, status='active')
+
     search_query = request.args.get('search_query', '')
     if search_query:
         query = query.filter(or_(
             Training.title.ilike(f'%{search_query}%'),
             Training.organization.ilike(f'%{search_query}%')
         ))
-    
-    sort_by = request.args.get('sort_by', 'date_desc')
-    if sort_by == 'date_desc':
-        query = query.order_by(desc(Training.start_date))
-    elif sort_by == 'date_asc':
-        query = query.order_by(Training.start_date)
-    elif sort_by == 'title':
-        query = query.order_by(Training.title)
-    
+
+    date_range = request.args.get('date_range', 'all')
+    date_from, date_to = parse_date_args(request.args.get('date_from'), request.args.get('date_to'))
+    query = apply_date_filter(query, Training.end_date, date_range, date_from, date_to)
+
+    sort_column = request.args.get('sort_column', 'end_date')
+    sort_dir = request.args.get('sort_dir', 'desc')
+    col_map = {
+        'title': Training.title,
+        'organization': Training.organization,
+        'end_date': Training.end_date,
+        'city': Training.city,
+        'level': Training.level,
+    }
+    col = col_map.get(sort_column, Training.end_date)
+    query = query.order_by(col.desc() if sort_dir == 'desc' else col.asc())
+
     trainings = query.paginate(page=page, per_page=10)
-    
+
     return render_template('rating/trainings.html', trainings=trainings, search_form=search_form)
 
 @rating_bp.route('/trainings/add', methods=['GET', 'POST'])
 @jwt_required()
 def add_training():
-    """Добавление повышения квалификации"""
     user_id = get_jwt_identity()
-    current_user = User.query.get_or_404(user_id)
     form = TrainingForm()
     if form.validate_on_submit():
         training = Training(
-            user_id=current_user.id,
+            user_id=user_id,
             title=form.title.data,
             organization=form.organization.data,
             city=form.city.data,
@@ -525,23 +778,22 @@ def add_training():
             certificate_number=form.certificate_number.data,
             certificate_url=form.certificate_url.data,
             description=form.description.data,
-            level=form.level.data
+            level=form.level.data,
+            state_issued=form.state_issued.data
         )
         db.session.add(training)
         db.session.commit()
         flash('Повышение квалификации добавлено!', 'success')
         return redirect(url_for('rating.trainings_list'))
-    
+
     return render_template('rating/training_form.html', form=form, title='Добавить повышение квалификации')
 
 @rating_bp.route('/trainings/<int:training_id>/edit', methods=['GET', 'POST'])
 @jwt_required()
 def edit_training(training_id):
-    """Редактирование повышения квалификации"""
     user_id = get_jwt_identity()
-    current_user = User.query.get_or_404(user_id)
     training = Training.query.get_or_404(training_id)
-    if training.user_id != current_user.id:
+    if training.user_id != user_id:
         flash('У вас нет доступа', 'danger')
         return redirect(url_for('rating.trainings_list'))
     
@@ -558,6 +810,7 @@ def edit_training(training_id):
         training.certificate_url = form.certificate_url.data
         training.description = form.description.data
         training.level = form.level.data
+        training.state_issued = form.state_issued.data
         db.session.commit()
         flash('Повышение квалификации обновлено!', 'success')
         return redirect(url_for('rating.trainings_list'))
@@ -574,17 +827,16 @@ def edit_training(training_id):
         form.certificate_url.data = training.certificate_url
         form.description.data = training.description
         form.level.data = training.level
+        form.state_issued.data = training.state_issued
     
     return render_template('rating/training_form.html', form=form, title='Редактировать повышение квалификации', training=training)
 
 @rating_bp.route('/trainings/<int:training_id>/delete', methods=['POST'])
 @jwt_required()
 def delete_training(training_id):
-    """Удаление повышения квалификации"""
     user_id = get_jwt_identity()
-    current_user = User.query.get_or_404(user_id)
     training = Training.query.get_or_404(training_id)
-    if training.user_id != current_user.id:
+    if training.user_id != user_id:
         flash('У вас нет доступа', 'danger')
         return redirect(url_for('rating.trainings_list'))
     
@@ -593,15 +845,179 @@ def delete_training(training_id):
     flash('Повышение квалификации удалено!', 'success')
     return redirect(url_for('rating.trainings_list'))
 
+# ==================== TEMPLATES (AJAX + Management) ====================
+
+ENTITY_TYPE_CHOICES = {
+    'publication': 'Публикация',
+    'award': 'Награда',
+    'conference': 'Конференция',
+    'training': 'Повышение квалификации',
+}
+
+@rating_bp.route('/publications/api/templates', methods=['GET'])
+@jwt_required()
+def api_list_templates():
+    entity_type = request.args.get('entity_type', '')
+    sub_type = request.args.get('sub_type', '')
+    query = RatingTemplate.query
+    if entity_type:
+        query = query.filter(RatingTemplate.entity_type == entity_type)
+    if sub_type:
+        query = query.filter(RatingTemplate.sub_type == sub_type)
+    templates = query.order_by(RatingTemplate.name).all()
+    return jsonify([{
+        'id': t.id,
+        'name': t.name,
+        'entity_type': t.entity_type,
+        'sub_type': t.sub_type,
+        'created_at': t.created_at.strftime('%d.%m.%Y %H:%M'),
+    } for t in templates])
+
+
+@rating_bp.route('/publications/api/templates', methods=['POST'])
+@jwt_required()
+def api_save_template():
+    data = request.get_json()
+    if not data or not data.get('name') or not data.get('entity_type'):
+        return jsonify({'error': 'Не указано имя или тип шаблона'}), 400
+    template = RatingTemplate(
+        name=data['name'],
+        entity_type=data['entity_type'],
+        sub_type=data.get('sub_type', ''),
+        template_data=data.get('template_data', {}),
+    )
+    db.session.add(template)
+    db.session.commit()
+    return jsonify({'id': template.id, 'name': template.name})
+
+
+@rating_bp.route('/publications/api/templates/<int:template_id>', methods=['GET'])
+@jwt_required()
+def api_get_template(template_id):
+    template = RatingTemplate.query.get_or_404(template_id)
+    return jsonify({
+        'id': template.id,
+        'name': template.name,
+        'entity_type': template.entity_type,
+        'sub_type': template.sub_type,
+        'template_data': template.template_data,
+    })
+
+
+@rating_bp.route('/publications/api/templates/<int:template_id>', methods=['PUT'])
+@jwt_required()
+def api_update_template(template_id):
+    template = RatingTemplate.query.get_or_404(template_id)
+    data = request.get_json()
+    if data.get('name'):
+        template.name = data['name']
+    if data.get('template_data'):
+        template.template_data = data['template_data']
+    if data.get('sub_type') is not None:
+        template.sub_type = data['sub_type']
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
+@rating_bp.route('/publications/api/templates/<int:template_id>', methods=['DELETE', 'POST'])
+@jwt_required()
+def api_delete_template(template_id):
+    if request.method == 'POST' and request.form.get('_method') != 'DELETE':
+        if not request.is_json:
+            return jsonify({'error': 'Method not allowed'}), 405
+    template = RatingTemplate.query.get_or_404(template_id)
+    db.session.delete(template)
+    db.session.commit()
+    if request.is_json or request.method == 'DELETE':
+        return jsonify({'ok': True})
+    flash('Шаблон удалён', 'success')
+    return redirect(url_for('rating.templates_list'))
+
+
+@rating_bp.route('/templates/create', methods=['GET', 'POST'])
+@jwt_required()
+def create_template():
+    entity_type = request.args.get('entity_type', 'award')
+    sub_type = request.args.get('sub_type', '')
+
+    form_map = {
+        'publication': (PublicationForm, 'rating/publication_form.html'),
+        'award': (AwardForm, 'rating/award_form.html'),
+        'conference': (ConferenceForm, 'rating/conference_form.html'),
+        'training': (TrainingForm, 'rating/training_form.html'),
+    }
+
+    if entity_type not in form_map:
+        flash('Неизвестный тип', 'danger')
+        return redirect(url_for('rating.templates_list'))
+
+    form_class, tmpl = form_map[entity_type]
+    form = form_class()
+
+    if request.method == 'POST':
+        for field in form:
+            field.validators = [Optional()]
+        if form.validate_on_submit():
+            template_data = {}
+            for field in form:
+                fname = field.name
+                if fname in ('submit', 'csrf_token'):
+                    continue
+                if fname == 'publication_type':
+                    sub_type = field.data or ''
+                    continue
+                val = field.data
+                if val is not None:
+                    if isinstance(val, date):
+                        val = val.isoformat()
+                    template_data[fname] = val
+
+            template = RatingTemplate(
+                name=request.form.get('template_name', 'Новый шаблон'),
+                entity_type=entity_type,
+                sub_type=sub_type if entity_type == 'publication' else '',
+                template_data=template_data,
+            )
+            db.session.add(template)
+            db.session.commit()
+            flash('Шаблон «{}» сохранён!'.format(template.name), 'success')
+            return redirect(url_for('rating.templates_list'))
+
+    return render_template(tmpl,
+        form=form,
+        title='Создать шаблон — {}'.format(ENTITY_TYPE_CHOICES.get(entity_type, entity_type)),
+        template_mode=True,
+        cancel_url=url_for('rating.templates_list'),
+        entity_type=entity_type)
+
+
+@rating_bp.route('/templates')
+@jwt_required()
+def templates_list():
+    templates = RatingTemplate.query.order_by(RatingTemplate.updated_at.desc()).all()
+    return render_template('rating/templates.html', templates=templates, entity_labels=ENTITY_TYPE_CHOICES)
+
+
 """Экспорт в Excel"""
 
 @rating_bp.route('/awards/export/excel')
 @jwt_required()
 def export_awards_excel():
-    """Экспорт наград в Excel"""
     user_id = get_jwt_identity()
-    current_user = User.query.get_or_404(user_id)
-    awards = Award.query.filter_by(user_id=current_user.id, status='active').all()
+    query = Award.query.filter_by(user_id=user_id, status='active')
+
+    search_query = request.args.get('search_query', '')
+    if search_query:
+        query = query.filter(or_(
+            Award.title.ilike(f'%{search_query}%'),
+            Award.description.ilike(f'%{search_query}%')
+        ))
+
+    date_range = request.args.get('date_range', 'all')
+    date_from, date_to = parse_date_args(request.args.get('date_from'), request.args.get('date_to'))
+    query = apply_date_filter(query, Award.date_received, date_range, date_from, date_to)
+
+    awards = query.all()
     
     wb = Workbook()
     ws = wb.active
@@ -650,50 +1066,112 @@ def export_awards_excel():
 @rating_bp.route('/publications/export/excel', methods=['GET'])
 @jwt_required()
 def export_publications_excel():
-    """Export publications to Excel - simple list with links"""
     user_id = get_jwt_identity()
-    current_user = User.query.get_or_404(user_id)
-    publications = Publication.query.filter_by(user_id=current_user.id, status='active').all()
-    
+    pub_type = request.args.get('pub_type', '')
+    search_query = request.args.get('search_query', '')
+    date_range = request.args.get('date_range', 'all')
+    date_from, date_to = parse_date_args(request.args.get('date_from'), request.args.get('date_to'))
+
+    models_to_query = list(PUB_MODELS.values()) if not pub_type else [PUB_MODELS[pub_type]]
+    all_publications = []
+
+    for model in models_to_query:
+        query = model.query.filter_by(user_id=user_id)
+
+        if search_query:
+            author_fields = []
+            if hasattr(model, 'authors'):
+                author_fields.append(model.authors.ilike(f'%{search_query}%'))
+            if hasattr(model, 'author_single'):
+                author_fields.append(model.author_single.ilike(f'%{search_query}%'))
+            if author_fields:
+                query = query.filter(or_(model.title.ilike(f'%{search_query}%'), or_(*author_fields)))
+            else:
+                query = query.filter(model.title.ilike(f'%{search_query}%'))
+
+        if date_range != 'all' and hasattr(model, 'publication_date'):
+            if date_range == '3':
+                cutoff = datetime.now() - timedelta(days=90)
+                query = query.filter(model.publication_date >= cutoff.date())
+            elif date_range == '6':
+                cutoff = datetime.now() - timedelta(days=180)
+                query = query.filter(model.publication_date >= cutoff.date())
+            elif date_range == '12':
+                cutoff = datetime.now() - timedelta(days=365)
+                query = query.filter(model.publication_date >= cutoff.date())
+            elif date_range == '24':
+                cutoff = datetime.now() - timedelta(days=730)
+                query = query.filter(model.publication_date >= cutoff.date())
+            elif date_range == '60':
+                cutoff = datetime.now() - timedelta(days=1825)
+                query = query.filter(model.publication_date >= cutoff.date())
+            elif date_range == 'custom':
+                if date_from:
+                    query = query.filter(model.publication_date >= date_from)
+                if date_to:
+                    query = query.filter(model.publication_date <= date_to)
+
+        all_publications.extend(query.all())
+
+    if date_range != 'all':
+        cutoff_date = None
+        if date_range == '3':
+            cutoff_date = datetime.now() - timedelta(days=90)
+        elif date_range == '6':
+            cutoff_date = datetime.now() - timedelta(days=180)
+        elif date_range == '12':
+            cutoff_date = datetime.now() - timedelta(days=365)
+        elif date_range == '24':
+            cutoff_date = datetime.now() - timedelta(days=730)
+        elif date_range == '60':
+            cutoff_date = datetime.now() - timedelta(days=1825)
+
+        filtered = []
+        for pub in all_publications:
+            if pub.publication_date is None:
+                continue
+            if cutoff_date and pub.publication_date < cutoff_date.date():
+                continue
+            if date_range == 'custom' and date_from and pub.publication_date < date_from:
+                continue
+            if date_range == 'custom' and date_to and pub.publication_date > date_to:
+                continue
+            filtered.append(pub)
+        all_publications = filtered
+
     wb = Workbook()
     ws = wb.active
     ws.title = 'Публикации'
-    
-    # Заголовки
-    headers = ['№', 'Название', 'ГОСТ-строка','Тип']
+
+    headers = ['№', 'Тип', 'Название', 'ГОСТ-строка']
     ws.append(headers)
-    
-    # Стиль заголовка
+
     header_fill = PatternFill(start_color='28A745', end_color='28A745', fill_type='solid')
     header_font = Font(bold=True, color='FFFFFF')
-    
+
     for cell in ws[1]:
         cell.fill = header_fill
         cell.font = header_font
         cell.alignment = Alignment(horizontal='center', vertical='center')
-    
-    # Данные
-    for idx, pub in enumerate(publications, 1):
-        gost = pub.gost_string or pub.title or ''
-        ws.append([
-            idx,
-            pub.title or '',
-            gost,
-            pub.publication_type or '',
-        ])
-    
-    # Ширина колонок
-    ws.column_dimensions['A'].width = 5
-    ws.column_dimensions['B'].width = 35
-    ws.column_dimensions['C'].width = 40
-    ws.column_dimensions['D'].width = 15
 
-    
-    # Сохранение
+    for idx, pub in enumerate(all_publications, 1):
+        pub_type_label = ''
+        for key, model in PUB_MODELS.items():
+            if isinstance(pub, model):
+                pub_type_label = PUB_TYPE_LABELS.get(key, key)
+                break
+        gost = pub.gost_string or pub.title or ''
+        ws.append([idx, pub_type_label, pub.title or '', gost])
+
+    ws.column_dimensions['A'].width = 5
+    ws.column_dimensions['B'].width = 15
+    ws.column_dimensions['C'].width = 35
+    ws.column_dimensions['D'].width = 60
+
     bytes_stream = BytesIO()
     wb.save(bytes_stream)
     bytes_stream.seek(0)
-    
+
     return send_file(
         bytes_stream,
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -705,10 +1183,21 @@ def export_publications_excel():
 @rating_bp.route('/conferences/export/excel')
 @jwt_required()
 def export_conferences_excel():
-    """Экспорт конференций в Excel"""
     user_id = get_jwt_identity()
-    current_user = User.query.get_or_404(user_id)
-    conferences = Conference.query.filter_by(user_id=current_user.id, status='active').all()
+    query = Conference.query.filter_by(user_id=user_id, status='active')
+
+    search_query = request.args.get('search_query', '')
+    if search_query:
+        query = query.filter(or_(
+            Conference.name.ilike(f'%{search_query}%'),
+            Conference.paper_title.ilike(f'%{search_query}%')
+        ))
+
+    date_range = request.args.get('date_range', 'all')
+    date_from, date_to = parse_date_args(request.args.get('date_from'), request.args.get('date_to'))
+    query = apply_date_filter(query, Conference.conference_date, date_range, date_from, date_to)
+
+    conferences = query.all()
     
     wb = Workbook()
     ws = wb.active
@@ -761,10 +1250,21 @@ def export_conferences_excel():
 @rating_bp.route('/awards/export/word')
 @jwt_required()
 def export_awards_word():
-    """Экспорт наград в Word"""
     user_id = get_jwt_identity()
-    current_user = User.query.get_or_404(user_id)
-    awards = Award.query.filter_by(user_id=current_user.id, status='active').all()
+    query = Award.query.filter_by(user_id=user_id, status='active')
+
+    search_query = request.args.get('search_query', '')
+    if search_query:
+        query = query.filter(or_(
+            Award.title.ilike(f'%{search_query}%'),
+            Award.description.ilike(f'%{search_query}%')
+        ))
+
+    date_range = request.args.get('date_range', 'all')
+    date_from, date_to = parse_date_args(request.args.get('date_from'), request.args.get('date_to'))
+    query = apply_date_filter(query, Award.date_received, date_range, date_from, date_to)
+
+    awards = query.all()
     
     doc = Document()
     
@@ -815,69 +1315,130 @@ def export_awards_word():
     )
 
 
-
-
 @rating_bp.route('/publications/export/word', methods=['GET'])
 @jwt_required()
 def export_publications_word():
-    """Export publications to Word - simple list with links"""
     user_id = get_jwt_identity()
-    current_user = User.query.get_or_404(user_id)
-    publications = Publication.query.filter_by(user_id=current_user.id, status='active').all()
-    
+    pub_type = request.args.get('pub_type', '')
+    search_query = request.args.get('search_query', '')
+    date_range = request.args.get('date_range', 'all')
+    date_from, date_to = parse_date_args(request.args.get('date_from'), request.args.get('date_to'))
+
+    models_to_query = list(PUB_MODELS.values()) if not pub_type else [PUB_MODELS[pub_type]]
+    all_publications = []
+
+    for model in models_to_query:
+        query = model.query.filter_by(user_id=user_id)
+
+        if search_query:
+            author_fields = []
+            if hasattr(model, 'authors'):
+                author_fields.append(model.authors.ilike(f'%{search_query}%'))
+            if hasattr(model, 'author_single'):
+                author_fields.append(model.author_single.ilike(f'%{search_query}%'))
+            if author_fields:
+                query = query.filter(or_(model.title.ilike(f'%{search_query}%'), or_(*author_fields)))
+            else:
+                query = query.filter(model.title.ilike(f'%{search_query}%'))
+
+        if date_range != 'all' and hasattr(model, 'publication_date'):
+            if date_range == '3':
+                cutoff = datetime.now() - timedelta(days=90)
+                query = query.filter(model.publication_date >= cutoff.date())
+            elif date_range == '6':
+                cutoff = datetime.now() - timedelta(days=180)
+                query = query.filter(model.publication_date >= cutoff.date())
+            elif date_range == '12':
+                cutoff = datetime.now() - timedelta(days=365)
+                query = query.filter(model.publication_date >= cutoff.date())
+            elif date_range == '24':
+                cutoff = datetime.now() - timedelta(days=730)
+                query = query.filter(model.publication_date >= cutoff.date())
+            elif date_range == '60':
+                cutoff = datetime.now() - timedelta(days=1825)
+                query = query.filter(model.publication_date >= cutoff.date())
+            elif date_range == 'custom':
+                if date_from:
+                    query = query.filter(model.publication_date >= date_from)
+                if date_to:
+                    query = query.filter(model.publication_date <= date_to)
+
+        all_publications.extend(query.all())
+
+    if date_range != 'all':
+        cutoff_date = None
+        if date_range == '3':
+            cutoff_date = datetime.now() - timedelta(days=90)
+        elif date_range == '6':
+            cutoff_date = datetime.now() - timedelta(days=180)
+        elif date_range == '12':
+            cutoff_date = datetime.now() - timedelta(days=365)
+        elif date_range == '24':
+            cutoff_date = datetime.now() - timedelta(days=730)
+        elif date_range == '60':
+            cutoff_date = datetime.now() - timedelta(days=1825)
+
+        filtered = []
+        for pub in all_publications:
+            if pub.publication_date is None:
+                continue
+            if cutoff_date and pub.publication_date < cutoff_date.date():
+                continue
+            if date_range == 'custom' and date_from and pub.publication_date < date_from:
+                continue
+            if date_range == 'custom' and date_to and pub.publication_date > date_to:
+                continue
+            filtered.append(pub)
+        all_publications = filtered
+
     doc = Document()
-    
-    # Заголовок
+
     title = doc.add_heading('Публикации', 0)
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    
-    # Дата
+
     date_para = doc.add_paragraph(f'Дата: {datetime.now().strftime("%d.%m.%Y %H:%M")}')
     date_para.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    
+
     doc.add_paragraph()
-    
-    # Таблица
-    if publications:
+
+    if all_publications:
         table = doc.add_table(rows=1, cols=4)
         table.style = 'Light Grid Accent 1'
-        
-        # Заголовки
+
         header_cells = table.rows[0].cells
         header_cells[0].text = '№'
-        header_cells[1].text = 'Название'
-        header_cells[2].text = 'ГОСТ-строка'
-        header_cells[3].text = 'Год'
-        
-        # Данные
-        for idx, pub in enumerate(publications, 1):
+        header_cells[1].text = 'Тип'
+        header_cells[2].text = 'Название'
+        header_cells[3].text = 'ГОСТ-строка'
+
+        for idx, pub in enumerate(all_publications, 1):
             row_cells = table.add_row().cells
             row_cells[0].text = str(idx)
-            
-            # Название с ссылкой (если есть URL)
-            if pub.url:
-                para = row_cells[1].paragraphs[0]
+
+            pub_type_label = ''
+            for key, model in PUB_MODELS.items():
+                if isinstance(pub, model):
+                    pub_type_label = PUB_TYPE_LABELS.get(key, key)
+                    break
+            row_cells[1].text = pub_type_label
+
+            if hasattr(pub, 'url') and pub.url:
+                para = row_cells[2].paragraphs[0]
                 run = para.add_run(pub.title or 'Публикация')
-                # run.font.color.rgb = RGBColor(0, 0, 255)
+                run.font.color.rgb = RGBColor(0, 0, 255)
                 run.font.underline = True
-                # Добавляем ссылку в скобках
                 para.add_run(f' ({pub.url})')
             else:
-                row_cells[1].text = pub.title or ''
-            
-            # ГОСТ-строка
-            row_cells[2].text = pub.gost_string or pub.title or ''
-            
-            # Год
-            row_cells[3].text = str(pub.year) if pub.year else ''
+                row_cells[2].text = pub.title or ''
+
+            row_cells[3].text = pub.gost_string or pub.title or ''
     else:
         doc.add_paragraph('Публикаций не найдено.')
-    
-    # Сохранение
+
     output = BytesIO()
     doc.save(output)
     output.seek(0)
-    
+
     return send_file(
         output,
         mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -886,14 +1447,24 @@ def export_publications_word():
     )
 
 
-
 @rating_bp.route('/conferences/export/word')
 @jwt_required()
 def export_conferences_word():
-    """Экспорт конференций в Word"""
     user_id = get_jwt_identity()
-    current_user = User.query.get_or_404(user_id)
-    conferences = Conference.query.filter_by(user_id=current_user.id, status='active').all()
+    query = Conference.query.filter_by(user_id=user_id, status='active')
+
+    search_query = request.args.get('search_query', '')
+    if search_query:
+        query = query.filter(or_(
+            Conference.name.ilike(f'%{search_query}%'),
+            Conference.paper_title.ilike(f'%{search_query}%')
+        ))
+
+    date_range = request.args.get('date_range', 'all')
+    date_from, date_to = parse_date_args(request.args.get('date_from'), request.args.get('date_to'))
+    query = apply_date_filter(query, Conference.conference_date, date_range, date_from, date_to)
+
+    conferences = query.all()
     
     doc = Document()
     
@@ -946,25 +1517,32 @@ def export_conferences_word():
 
 # ==================== ЭКСПОРТ ПОВЫШЕНИЙ КВАЛИФИКАЦИЙ ====================
 
-# В app/routes/rating.py найдите функцию export_qualifications_excel и замените полностью:
-
 @rating_bp.route('/qualifications/export/excel', methods=['GET'])
 @jwt_required()
 def export_qualifications_excel():
-    """Экспорт тренингов в Excel"""
     user_id = get_jwt_identity()
-    current_user = User.query.get_or_404(user_id)
-    trainings = Training.query.filter_by(user_id=current_user.id, status='active').all()
+    query = Training.query.filter_by(user_id=user_id, status='active')
+
+    search_query = request.args.get('search_query', '')
+    if search_query:
+        query = query.filter(or_(
+            Training.title.ilike(f'%{search_query}%'),
+            Training.organization.ilike(f'%{search_query}%')
+        ))
+
+    date_range = request.args.get('date_range', 'all')
+    date_from, date_to = parse_date_args(request.args.get('date_from'), request.args.get('date_to'))
+    query = apply_date_filter(query, Training.end_date, date_range, date_from, date_to)
+
+    trainings = query.all()
     
     wb = Workbook()
     ws = wb.active
     ws.title = "Тренинги"
     
-    # Заголовки
-    headers = ['Дата начала', 'Дата окончания', 'Название курса', 'Организатор', 'Город', "Уровень", 'Часы', 'Номер сертификата']
+    headers = ['Дата начала', 'Дата окончания', 'Название курса', 'Организатор', 'Город', "Уровень", 'Часы', 'Номер сертификата', 'Гос. образца']
     ws.append(headers)
     
-    # Данные
     for training in trainings:
         ws.append([
             training.start_date.strftime('%d.%m.%Y') if training.start_date else '',
@@ -974,10 +1552,10 @@ def export_qualifications_excel():
             training.city or '',
             training.level or '',
             training.duration_hours or 0,
-            training.certificate_number or ''
+            training.certificate_number or '',
+            'Да' if training.state_issued else 'Нет'
         ])
     
-    # Форматирование
     for row in ws.iter_rows(min_row=1, max_row=ws.max_row):
         for cell in row:
             cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
@@ -990,9 +1568,8 @@ def export_qualifications_excel():
     ws.column_dimensions['F'].width = 15
     ws.column_dimensions['G'].width = 12
     ws.column_dimensions['H'].width = 20
-
+    ws.column_dimensions['I'].width = 14
     
-    # Отправка
     output = BytesIO()
     wb.save(output)
     output.seek(0)
@@ -1001,17 +1578,28 @@ def export_qualifications_excel():
         output,
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         as_attachment=True,
-        download_name=f'trainings_{current_user.id}_{datetime.now().strftime("%Y%m%d")}.xlsx'
+        download_name=f'trainings_{user_id}_{datetime.now().strftime("%Y%m%d")}.xlsx'
     )
 
 
 @rating_bp.route('/qualifications/export/word', methods=['GET'])
 @jwt_required()
 def export_qualifications_word():
-    """Экспорт тренингов в Word"""
     user_id = get_jwt_identity()
-    current_user = User.query.get_or_404(user_id)
-    trainings = Training.query.filter_by(user_id=current_user.id, status='active').all()
+    query = Training.query.filter_by(user_id=user_id, status='active')
+
+    search_query = request.args.get('search_query', '')
+    if search_query:
+        query = query.filter(or_(
+            Training.title.ilike(f'%{search_query}%'),
+            Training.organization.ilike(f'%{search_query}%')
+        ))
+
+    date_range = request.args.get('date_range', 'all')
+    date_from, date_to = parse_date_args(request.args.get('date_from'), request.args.get('date_to'))
+    query = apply_date_filter(query, Training.end_date, date_range, date_from, date_to)
+
+    trainings = query.all()
     
     doc = Document()
     doc.add_heading('Тренинги и повышение квалификации', 0)
@@ -1019,16 +1607,14 @@ def export_qualifications_word():
     if not trainings:
         doc.add_paragraph('Нет данных для экспорта.')
     else:
-        table = doc.add_table(rows=1, cols=8)
+        table = doc.add_table(rows=1, cols=9)
         table.style = 'Light Grid Accent 1'
         
-        # Заголовки
         header_cells = table.rows[0].cells
-        headers = ['Дата начала', 'Дата окончания', 'Название курса', 'Организатор', 'Город', "Уровень", 'Часы', 'Сертификат']
+        headers = ['Дата начала', 'Дата окончания', 'Название курса', 'Организатор', 'Город', "Уровень", 'Часы', 'Сертификат', 'Гос. образца']
         for i, header in enumerate(headers):
             header_cells[i].text = header
         
-        # Данные
         for training in trainings:
             row_cells = table.add_row().cells
             row_cells[0].text = training.start_date.strftime('%d.%m.%Y') if training.start_date else ''
@@ -1039,8 +1625,8 @@ def export_qualifications_word():
             row_cells[5].text = training.level or ''
             row_cells[6].text = str(training.duration_hours) if training.duration_hours else '0'
             row_cells[7].text = training.certificate_number or ''
+            row_cells[8].text = 'Да' if training.state_issued else 'Нет'
     
-    # Отправка
     output = BytesIO()
     doc.save(output)
     output.seek(0)
@@ -1049,5 +1635,5 @@ def export_qualifications_word():
         output,
         mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         as_attachment=True,
-        download_name=f'trainings_{current_user.id}_{datetime.now().strftime("%Y%m%d")}.docx'
+        download_name=f'trainings_{user_id}_{datetime.now().strftime("%Y%m%d")}.docx'
     )
