@@ -1,20 +1,18 @@
-<div class="card mb-4" style="border: 1px solid #e8e0f0; border-radius: 8px;">
-    <div class="card-body" style="padding: 16px 20px;">
-        <div class="row align-items-end g-2">
-            <div class="col-md-5">
-                <label class="form-label" style="font-weight: 600; font-size: 13px; color: #4a2c7a; margin-bottom: 4px;">Загрузить шаблон</label>
-                <select id="template-select" class="form-select form-select-sm"
-                        data-base-url="{{ url_for('rating.api_get_template', template_id=0) }}">
-                    <option value="">— Без шаблона —</option>
-                </select>
-            </div>
-            <div class="col-md-7 d-flex gap-2">
-                <button type="button" id="save-template-btn" class="btn btn-sm btn-outline-primary">Сохранить как шаблон</button>
-                <a href="{{ url_for('rating.templates_list') }}" class="btn btn-sm btn-outline-secondary">Управление шаблонами</a>
-            </div>
+<div class="template-toolbar">
+    <div class="template-toolbar-row">
+        <div class="template-toolbar-field">
+            <label class="form-label template-toolbar-label">Загрузить шаблон</label>
+            <select id="template-select" class="form-select form-select-sm"
+                    data-base-url="{{ url_for('rating.api_get_template', template_id=0) }}">
+                <option value="">— Без шаблона —</option>
+            </select>
         </div>
-        <div id="template-toast" style="display: none; margin-top: 8px; padding: 6px 12px; border-radius: 4px; font-size: 13px;"></div>
+        <div class="template-toolbar-actions">
+            <button type="button" id="save-template-btn" class="btn btn-sm btn-outline-primary">Сохранить как шаблон</button>
+            <a href="{{ url_for('rating.templates_list') }}" class="btn btn-sm btn-outline-secondary">Управление шаблонами</a>
+        </div>
     </div>
+    <div id="template-toast" class="template-toast"></div>
 </div>
 
 <script>

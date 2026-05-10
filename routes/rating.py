@@ -4,7 +4,7 @@ from extensions import db
 from decorators.roles import roles_required
 from models.user import User
 from models.award import Award, Book, JournalArticle, CollectionArticle, Dissertation, Abstract, Internet, NewspaperArticle, Conference, Training, RatingTemplate, EntityCoauthor
-from forms.rating import AwardForm, PublicationForm, ConferenceForm, TrainingForm, SearchFilterForm
+from forms.rating import AwardForm, PublicationForm, ConferenceForm, TrainingForm, SearchFilterForm, PUBLICATION_TYPES, AWARD_TYPES, CONFERENCE_ROLES, AWARD_LEVELS, DEGREES, FIELDS_OF_STUDY
 from sqlalchemy import or_
 from wtforms.validators import Optional
 from datetime import datetime, timedelta, date
@@ -920,6 +920,80 @@ ENTITY_TYPE_CHOICES = {
     'training': 'Повышение квалификации',
 }
 
+FIELD_LABELS = {
+    'publication': {
+        'publication_type': 'Тип публикации',
+        'title': 'Название',
+        'year': 'Год',
+        'publication_date': 'Дата публикации',
+        'doi': 'DOI',
+        'authors': 'Авторы',
+        'author_single': 'Автор',
+        'edition': 'Номер издания',
+        'city': 'Город издания',
+        'publisher': 'Издательство',
+        'pages': 'Страницы',
+        'journal_name': 'Название журнала',
+        'issue': 'Номер выпуска',
+        'collection_title': 'Название сборника',
+        'degree': 'Учёная степень',
+        'field': 'Отрасль наук',
+        'specialty_code': 'Код специальности',
+        'site_name': 'Название сайта',
+        'url': 'Гиперссылка',
+        'access_date': 'Дата обращения',
+        'newspaper_name': 'Название газеты',
+        'newspaper_date': 'Дата выхода газеты',
+    },
+    'award': {
+        'title': 'Название награды',
+        'description': 'Описание',
+        'award_type': 'Тип награды',
+        'issuer': 'Выдавшая организация',
+        'date_received': 'Дата получения',
+        'points': 'Очки рейтинга',
+        'level': 'Уровень награды',
+    },
+    'conference': {
+        'name': 'Название конференции',
+        'role': 'Роль',
+        'paper_title': 'Название доклада/статьи',
+        'conference_date': 'Дата конференции',
+        'location': 'Место проведения',
+        'conference_url': 'Сайт конференции',
+        'description': 'Описание',
+        'points': 'Очки рейтинга',
+        'coauthors': 'Соавторы',
+    },
+    'training': {
+        'title': 'Название курса/тренинга',
+        'organization': 'Организация',
+        'city': 'Город проведения',
+        'training_type': 'Тип обучения',
+        'start_date': 'Дата начала',
+        'end_date': 'Дата окончания',
+        'duration_hours': 'Продолжительность (часов)',
+        'certificate_number': 'Номер сертификата',
+        'certificate_url': 'Ссылка на сертификат',
+        'description': 'Описание',
+        'points': 'Очки рейтинга',
+        'level': 'Уровень',
+        'state_issued': 'Государственного образца',
+    },
+}
+
+PUBLICATION_TYPE_LABELS = dict(PUBLICATION_TYPES)
+AWARD_TYPE_LABELS = dict(AWARD_TYPES)
+CONFERENCE_ROLE_LABELS = dict(CONFERENCE_ROLES)
+TRAINING_TYPE_LABELS = dict([
+    ('course', 'Курс'),
+    ('workshop', 'Мастер-класс'),
+    ('seminar', 'Семинар'),
+    ('webinar', 'Вебинар'),
+    ('certification', 'Сертификация'),
+])
+LEVEL_LABELS = dict(AWARD_LEVELS)
+
 @rating_bp.route('/publications/api/templates', methods=['GET'])
 @jwt_required()
 def api_list_templates():
@@ -1071,7 +1145,44 @@ def templates_list():
     user_id = get_jwt_identity()
     user = User.query.get_or_404(user_id)
     templates = RatingTemplate.query.order_by(RatingTemplate.updated_at.desc()).all()
-    return render_template('rating/templates.html', templates=templates, entity_labels=ENTITY_TYPE_CHOICES, role=user.role)
+    return render_template('rating/templates.html', templates=templates, entity_labels=ENTITY_TYPE_CHOICES, role=user.role, PUBLICATION_TYPE_LABELS=PUBLICATION_TYPE_LABELS)
+
+
+@rating_bp.route('/templates/<int:template_id>')
+@jwt_required()
+def template_view(template_id):
+    template = RatingTemplate.query.get_or_404(template_id)
+    labels = FIELD_LABELS.get(template.entity_type, {})
+
+    choice_labels = {}
+    if template.entity_type == 'publication':
+        choice_labels = {
+            'publication_type': PUBLICATION_TYPE_LABELS,
+            'degree': dict(DEGREES),
+            'field': dict(FIELDS_OF_STUDY),
+        }
+    elif template.entity_type == 'award':
+        choice_labels = {
+            'award_type': AWARD_TYPE_LABELS,
+            'level': LEVEL_LABELS,
+        }
+    elif template.entity_type == 'conference':
+        choice_labels = {
+            'role': CONFERENCE_ROLE_LABELS,
+        }
+    elif template.entity_type == 'training':
+        choice_labels = {
+            'training_type': TRAINING_TYPE_LABELS,
+            'level': LEVEL_LABELS,
+        }
+
+    return render_template('rating/template_view.html',
+        template=template,
+        labels=labels,
+        choice_labels=choice_labels,
+        entity_label=ENTITY_TYPE_CHOICES.get(template.entity_type, template.entity_type),
+        PUBLICATION_TYPE_LABELS=PUBLICATION_TYPE_LABELS,
+    )
 
 
 """Экспорт в Excel"""

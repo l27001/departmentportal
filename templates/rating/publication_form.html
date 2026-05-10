@@ -4,8 +4,8 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-8">
-        <div style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 30px;">
-            <h3 style="color: #4a2c7a; margin-bottom: 30px;">{{ title }}</h3>
+        <div class="rating-form-card">
+            <h3 class="rating-form-title">{{ title }}</h3>
 
             {% if form.errors %}
             <div class="alert alert-danger">
@@ -261,8 +261,16 @@
                 <hr class="my-4">
                 <div class="mb-3">
                     {{ form.coauthor_ids.label(class="form-label", style="font-weight: 600; color: #4a2c7a;") }}
-                    {{ form.coauthor_ids(class="form-select", size=5) }}
-                    <small class="text-muted">Зажмите Ctrl, чтобы выбрать несколько</small>
+                    <div class="coauthor-selector">
+                        <div class="coauthor-search-wrap">
+                            <svg class="coauthor-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            <input type="text" class="coauthor-search" placeholder="Поиск сотрудников..." autocomplete="off">
+                        </div>
+                        <div class="coauthor-list"></div>
+                        <div class="coauthor-tags"></div>
+                        <div style="display:none;">{{ form.coauthor_ids(class="form-select coauthor-select-hidden") }}</div>
+                    </div>
+                    <small class="text-muted coauthor-hint">Начните вводить имя или выберите из списка</small>
                 </div>
                 {% endif %}
 
@@ -405,6 +413,89 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     showFields();
+
+    // --- Coauthor tag selector ---
+    var coauthorContainer = document.querySelector('.coauthor-selector');
+    if (coauthorContainer) {
+        var hiddenSelect = coauthorContainer.querySelector('.coauthor-select-hidden');
+        var searchInput = coauthorContainer.querySelector('.coauthor-search');
+        var listEl = coauthorContainer.querySelector('.coauthor-list');
+        var tagsEl = coauthorContainer.querySelector('.coauthor-tags');
+        var allOptions = Array.from(hiddenSelect.options);
+
+        function renderList(filter) {
+            filter = filter.toLowerCase().trim();
+            listEl.innerHTML = '';
+            var found = false;
+            allOptions.forEach(function(opt) {
+                var text = opt.textContent.toLowerCase();
+                if (!filter || text.indexOf(filter) !== -1) {
+                    if (opt.selected) return;
+                    found = true;
+                    var item = document.createElement('div');
+                    item.className = 'coauthor-item';
+                    item.textContent = opt.textContent;
+                    item.addEventListener('click', function() {
+                        opt.selected = true;
+                        renderTags();
+                        renderList(searchInput.value);
+                        searchInput.value = '';
+                        searchInput.focus();
+                    });
+                    listEl.appendChild(item);
+                }
+            });
+            if (!found && filter) {
+                var empty = document.createElement('div');
+                empty.className = 'coauthor-item coauthor-item-empty';
+                empty.textContent = 'Ничего не найдено';
+                listEl.appendChild(empty);
+            }
+        }
+
+        function renderTags() {
+            tagsEl.innerHTML = '';
+            allOptions.forEach(function(opt) {
+                if (opt.selected) {
+                    var tag = document.createElement('span');
+                    tag.className = 'coauthor-tag';
+                    tag.innerHTML = opt.textContent + '<span class="coauthor-tag-remove">&times;</span>';
+                    tag.querySelector('.coauthor-tag-remove').addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        opt.selected = false;
+                        renderTags();
+                        renderList(searchInput.value);
+                    });
+                    tagsEl.appendChild(tag);
+                }
+            });
+        }
+
+        searchInput.addEventListener('input', function() {
+            renderList(this.value);
+            if (this.value.trim()) {
+                listEl.classList.add('visible');
+            } else {
+                listEl.classList.remove('visible');
+            }
+        });
+
+        searchInput.addEventListener('focus', function() {
+            renderList(this.value);
+            if (this.value.trim() || allOptions.some(function(o) { return !o.selected; })) {
+                listEl.classList.add('visible');
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!coauthorContainer.contains(e.target)) {
+                listEl.innerHTML = '';
+                listEl.classList.remove('visible');
+            }
+        });
+
+        renderTags();
+    }
 });
 </script>
 {% endblock %}

@@ -293,10 +293,24 @@ def create_app():
     app.register_blueprint(web_meetings_bp)
     app.register_blueprint(web_chat_bp)
 
+    @app.context_processor
+    def inject_user():
+        try:
+            from flask_jwt_extended import get_jwt_identity
+            user_id = get_jwt_identity()
+            if user_id:
+                user = User.query.get(user_id)
+                if user:
+                    return {'current_user': user}
+        except:
+            pass
+        return {'current_user': None}
+
     @app.route('/')
     @jwt_required()
     def index():
-        return render_template("index.html")
+        recent_news = News.query.filter_by(is_deleted=False).order_by(News.is_pinned.desc(), News.created_at.desc()).limit(5).all()
+        return render_template("index.html", news=recent_news)
         # return redirect(url_for("tasks.list_tasks"))
 
     @app.route('/token-refresh', methods=['GET'])

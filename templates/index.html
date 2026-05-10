@@ -3,48 +3,80 @@
 {% block title %}Главная{% endblock %}
 
 {% block content %}
-<div class="container-fluid mt-4">
-    <div class="rating-cards">
-        <!-- Карточка 1: Рейтинговая система -->
-        <div>
-            <div class="rating-main-card" style="text-align: center; height: 100%;">
-                <div style="font-size: 40px; margin-bottom: 15px;">📊</div>
-                <h4 style="color: #007BFF; font-weight: 600; margin-bottom: 10px;">Рейтинговая система</h4>
-                <p style="color: #666; margin-bottom: 20px;">Управление наградами, публикациями, конференциями и повышением квалификации</p>
-                <a href="{{ url_for('rating.awards_list') }}" class="btn btn-primary">Перейти</a>
-            </div>
-        </div>
+<div class="index-hero">
+    <h1>Добро пожаловать{% if current_user %}, {{ current_user.name }}{% endif %}!</h1>
+    <p>Рабочее пространство кафедры ИКСП</p>
+</div>
 
-        <!-- Карточка 2: Информация -->
-        <div>
-            <div class="rating-main-card" style="text-align: center; height: 100%;">
-                <div style="font-size: 40px; margin-bottom: 15px;">ℹ️</div>
-                <h4 style="color: #007BFF; font-weight: 600; margin-bottom: 10px;">Задачи</h4>
-                <p style="color: #666; margin-bottom: 20px;">Текущие задачи, приоритеты, дедлайны и статус выполнения</p>
-                <a href="{{ url_for('tasks.list_tasks') }}" class="btn btn-primary">Перейти</a>
+<div class="main-layout">
+    <div class="news-preview">
+        <h2>Последние новости</h2>
+        {% if news|length > 0 %}
+            {% for item in news %}
+            <div class="news-preview-card" onclick="window.location.href='{{ url_for('web_news.news_details', news_id=item.id) }}'">
+                <div class="news-preview-title">
+                    {% if item.is_pinned %}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/></svg>
+                    {% endif %}
+                    {{ item.title }}
+                </div>
+                <div class="news-preview-date">{{ item.created_at.strftime('%d.%m.%Y') }}</div>
+                {% if item.text %}
+                <div class="news-preview-text">{{ item.text[:120] }}{% if item.text|length > 120 %}...{% endif %}</div>
+                {% endif %}
             </div>
-        </div>
-
-        <!-- Карточка 3: Документы -->
-        <div>
-            <div class="rating-main-card" style="text-align: center; height: 100%;">
-                <div style="font-size: 40px; margin-bottom: 15px;">📄</div>
-                <h4 style="color: #007BFF; font-weight: 600; margin-bottom: 10px;">Документы</h4>
-                <p style="color: #666; margin-bottom: 20px;">Загрузка и скачивание документов по категориям</p>
-                <a href="{{ url_for('documents.documents') }}" class="btn btn-primary">Перейти</a>
-            </div>
-        </div>
-
-        <!-- Карточка 4: Профиль -->
-        <div>
-            <div class="rating-main-card" style="text-align: center; height: 100%;">
-                <div style="font-size: 40px; margin-bottom: 15px;">👤</div>
-                <h4 style="color: #007BFF; font-weight: 600; margin-bottom: 10px;">Мой профиль</h4>
-                <p style="color: #666; margin-bottom: 20px;">Просмотр и редактирование профиля, выход из системы</p>
-                <a href="{{ url_for('users.get_profile') }}" class="btn btn-primary">Перейти</a>
-            </div>
-        </div>
+            {% endfor %}
+        {% else %}
+            <div class="news-preview-empty">Новостей пока нет</div>
+        {% endif %}
     </div>
 
+    <div class="index-card-grid">
+        <a href="{{ url_for('rating.awards_list') }}" class="index-card card-rating">
+            <div class="index-card-bg"></div>
+            <div class="index-card-content">
+                <div class="index-card-icon">
+                    <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                </div>
+                <h3>Рейтинговая система</h3>
+                <p>Управление наградами, публикациями, конференциями и повышением квалификации</p>
+                <span class="index-card-link">Перейти &rarr;</span>
+            </div>
+        </a>
+
+        <a href="{{ url_for('tasks.list_tasks') }}" class="index-card card-tasks">
+            <div class="index-card-bg"></div>
+            <div class="index-card-content">
+                <div class="index-card-icon">
+                    <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 11l3 3L22 4"/>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                    </svg>
+                </div>
+                <h3>Задачи</h3>
+                <p>Текущие задачи, приоритеты, дедлайны и статус выполнения</p>
+                <span class="index-card-link">Перейти &rarr;</span>
+            </div>
+        </a>
+
+        <a href="{{ url_for('documents.documents') }}" class="index-card card-documents">
+            <div class="index-card-bg"></div>
+            <div class="index-card-content">
+                <div class="index-card-icon">
+                    <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                    </svg>
+                </div>
+                <h3>Документы</h3>
+                <p>Загрузка, хранение и скачивание документов кафедры по категориям</p>
+                <span class="index-card-link">Перейти &rarr;</span>
+            </div>
+        </a>
+    </div>
 </div>
 {% endblock %}

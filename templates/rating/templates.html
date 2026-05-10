@@ -31,43 +31,45 @@
             </div>
 
             {% if templates %}
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead>
-                        <tr>
-                            <th>Название</th>
-                            <th>Раздел</th>
-                            <th>Подтип</th>
-                            <th>Создан</th>
-                            <th>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for t in templates %}
-                        <tr>
-                            <td><strong>{{ t.name }}</strong></td>
-                            <td>{{ entity_labels.get(t.entity_type, t.entity_type) }}</td>
-                            <td>{{ t.sub_type if t.sub_type else '—' }}</td>
-                            <td>{{ t.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
-                            <td>
-                                {% if role.name == 'Руководитель' %}
-                                <form method="POST" action="{{ url_for('rating.api_delete_template', template_id=t.id) }}" style="display:inline;" onsubmit="return confirm('Удалить шаблон «{{ t.name }}»?')">
-                                    <input type="hidden" name="_method" value="DELETE">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">Удалить</button>
-                                </form>
-                                {% else %}
-                                <span class="text-muted" style="font-size:13px;">—</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div class="template-grid">
+                {% for t in templates %}
+                <div class="template-card" onclick="window.location.href='{{ url_for('rating.template_view', template_id=t.id) }}'">
+                    <div class="template-card-top">
+                        <div class="template-icon">
+                            {% if t.entity_type == 'publication' %}
+                            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                            {% elif t.entity_type == 'award' %}
+                            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+                            {% elif t.entity_type == 'conference' %}
+                            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                            {% elif t.entity_type == 'training' %}
+                            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                            {% endif %}
+                        </div>
+                        <div class="template-card-info">
+                            <strong class="template-card-name">{{ t.name }}</strong>
+                            <span class="template-card-meta">{{ entity_labels.get(t.entity_type, t.entity_type) }}{% if t.sub_type %} · {{ PUBLICATION_TYPE_LABELS.get(t.sub_type, t.sub_type) }}{% endif %}</span>
+                        </div>
+                    </div>
+                    <div class="template-card-bottom">
+                        <span class="template-card-date">{{ t.created_at.strftime('%d.%m.%Y') }}</span>
+                        {% if role.name == 'Руководитель' %}
+                        <form method="POST" action="{{ url_for('rating.api_delete_template', template_id=t.id) }}" onsubmit="event.stopPropagation(); return confirm('Удалить шаблон «{{ t.name }}»?')" class="template-delete-form">
+                            <input type="hidden" name="_method" value="DELETE">
+                            <button type="submit" class="btn-delete-icon" title="Удалить шаблон">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
             </div>
             {% else %}
-            <div class="text-center py-5" style="color: #9e8fb2;">
-                <p style="font-size: 16px; margin-bottom: 8px;">Шаблонов пока нет</p>
-                <p style="font-size: 13px;">Нажмите «Создать шаблон» выше или заполните форму раздела и нажмите «Сохранить как шаблон»</p>
+            <div class="template-empty">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#9e8fb2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <p>Шаблонов пока нет</p>
+                <span>Заполните форму раздела и нажмите «Сохранить как шаблон»</span>
             </div>
             {% endif %}
         </div>

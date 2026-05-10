@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}{{ template.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-3">
+        <div class="rating-sidebar">
+            <h5>Разделы</h5>
+            <ul>
+                <li><a href="{{ url_for('rating.awards_list') }}">Награды</a></li>
+                <li><a href="{{ url_for('rating.publications_list') }}">Публикации</a></li>
+                <li><a href="{{ url_for('rating.conferences_list') }}">Конференции</a></li>
+                <li><a href="{{ url_for('rating.trainings_list') }}">Повышение квалификации</a></li>
+                <li><a href="{{ url_for('rating.templates_list') }}">Шаблоны</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="col-lg-9">
+        <div class="rating-main-card">
+            <div class="rating-header">
+                <h3>{{ template.name }}</h3>
+                <a href="{{ url_for('rating.templates_list') }}" class="btn btn-sm btn-outline-secondary">← Назад к списку</a>
+            </div>
+
+            <div class="template-meta-bar">
+                <span class="template-meta-badge">{{ entity_label }}</span>
+                {% if template.sub_type %}
+                <span class="template-meta-badge template-meta-badge-sub">{{ PUBLICATION_TYPE_LABELS.get(template.sub_type, template.sub_type) }}</span>
+                {% endif %}
+                <span class="template-meta-date">Создан: {{ template.created_at.strftime('%d.%m.%Y') }}</span>
+                <span class="template-meta-date">Изменён: {{ template.updated_at.strftime('%d.%m.%Y') }}</span>
+            </div>
+
+            {% if template.template_data %}
+            <div class="template-data-section">
+                <h4 class="template-data-title">Данные шаблона</h4>
+                <table class="template-data-table">
+                    <tbody>
+                        {% for field_name, field_value in template.template_data.items() %}
+                        {% if field_value is not none and field_value != '' and field_name != 'csrf_token' and field_name != 'coauthor_ids' %}
+                        <tr>
+                            <td class="template-data-label">{{ labels.get(field_name, field_name) }}</td>
+                            <td class="template-data-value">
+                                {% set choice_map = choice_labels.get(field_name, {}) %}
+                                {% if choice_map %}
+                                    {{ choice_map.get(field_value|string, field_value) }}
+                                {% elif field_value == True or field_value == False %}
+                                    {{ 'Да' if field_value else 'Нет' }}
+                                {% else %}
+                                    {{ field_value }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="template-empty">
+                <p>Шаблон не содержит данных</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
