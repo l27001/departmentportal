@@ -34,7 +34,7 @@ def list_meetings():
     user_id = get_jwt_identity()
     role = Role.query.filter_by(id=get_jwt()["role"]).first()
     page = request.args.get("page", 1, type=int)
-    per_page = 15
+    per_page = 10
     pagination = DepartmentMeeting.query.order_by(DepartmentMeeting.date.desc()).paginate(page=page, per_page=per_page, error_out=False)
 
     if role.name == 'Сотрудник':
