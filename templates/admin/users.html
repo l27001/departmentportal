@@ -1,0 +1,298 @@
+{% extends 'base.html' %}
+{% block title %}Управление пользователями{% endblock %}
+{% block content %}
+<div class="admin-header">
+  <h1>Управление пользователями</h1>
+  <button class="btn btn-primary" onclick="openAddUserModal()">+ Добавить пользователя</button>
+</div>
+
+<div class="admin-filters">
+  <input type="text" id="searchInput" placeholder="Поиск по имени или email..." oninput="loadUsers()">
+</div>
+
+<div class="table-wrapper">
+  <table class="admin-table" id="usersTable">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Имя</th>
+        <th>Email</th>
+        <th>Роль</th>
+        <th>Должность</th>
+        <th>Ставка</th>
+        <th>Статус</th>
+        <th>Действия</th>
+      </tr>
+    </thead>
+    <tbody id="usersBody"></tbody>
+  </table>
+</div>
+
+<div class="pagination" id="usersPagination"></div>
+
+<div id="userModal" class="modal">
+  <div class="modal-content modal-content--wide">
+    <span class="close" onclick="closeModal('userModal')">&times;</span>
+    <h2 id="userModalTitle">Добавить пользователя</h2>
+    <form id="userForm" onsubmit="return saveUser(event)">
+      <input type="hidden" id="editUserId">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Email *</label>
+          <input type="email" id="fieldEmail" required>
+        </div>
+        <div class="form-group">
+          <label>Роль *</label>
+          <select id="fieldRole"></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Имя *</label>
+          <input type="text" id="fieldName" required>
+        </div>
+        <div class="form-group">
+          <label>Пароль <span id="pwLabel">*</span></label>
+          <input type="password" id="fieldPassword" minlength="6">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Должность</label>
+          <input type="text" id="fieldJobTitle">
+        </div>
+        <div class="form-group">
+          <label>Телефон</label>
+          <input type="text" id="fieldPhone">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Учёное звание</label>
+          <input type="text" id="fieldAcademicTitle">
+        </div>
+        <div class="form-group">
+          <label>Учёная степень</label>
+          <input type="text" id="fieldDegree">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Тип ставки</label>
+          <select id="fieldRateType">
+            <option value="основная">Основная</option>
+            <option value="совмещение">Совмещение</option>
+            <option value="почасовая">Почасовая</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Количество ставок</label>
+          <input type="number" id="fieldRateCount" step="0.25" min="0" max="3" value="1">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Дата приёма</label>
+          <input type="date" id="fieldHireDate">
+        </div>
+        <div class="form-group">
+          <label>Дата увольнения</label>
+          <input type="date" id="fieldDismissalDate">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="fieldIsActive" checked>
+            Активен
+          </label>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary" id="userSubmitBtn">Сохранить</button>
+        <button type="button" class="btn btn-secondary" onclick="closeModal('userModal')">Отмена</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extrajs %}
+<script>
+var roles = [];
+
+async function loadRoles() {
+  try {
+    var res = await fetch('/api/groups/roles');
+    roles = await res.json();
+  } catch(e) {
+    roles = [{id:1,name:'Руководитель'},{id:2,name:'Документовед'},{id:3,name:'Сотрудник'}];
+  }
+  var sel = document.getElementById('fieldRole');
+  sel.innerHTML = roles.map(function(r) {
+    return '<option value="'+r.id+'">'+r.name+'</option>';
+  }).join('');
+}
+
+async function loadUsers() {
+  var search = document.getElementById('searchInput').value;
+  var url = '/api/admin/users/?per_page=100';
+  if (search) url += '&search=' + encodeURIComponent(search);
+  try {
+    var res = await fetch(url);
+    var data = await res.json();
+    renderUsers(data.users);
+    renderPagination(data);
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+function renderUsers(users) {
+  var tbody = document.getElementById('usersBody');
+  tbody.innerHTML = users.map(function(u) {
+    var roleName = u.role || '-';
+    var status = u.is_active ? '<span class="badge badge-active">Активен</span>' : '<span class="badge badge-inactive">Неактивен</span>';
+    var rate = u.rate_type + ' (' + u.rate_count + ')';
+    return '<tr>' +
+      '<td>'+u.id+'</td>' +
+      '<td>'+escapeHtml(u.name||'-')+'</td>' +
+      '<td>'+escapeHtml(u.email)+'</td>' +
+      '<td>'+roleName+'</td>' +
+      '<td>'+escapeHtml(u.job_title||'-')+'</td>' +
+      '<td>'+rate+'</td>' +
+      '<td>'+status+'</td>' +
+      '<td class="actions-cell">' +
+        '<button class="btn btn-sm" onclick="openEditUser('+u.id+')">✏️</button> ' +
+        '<button class="btn btn-sm btn-danger" onclick="deactivateUser('+u.id+')">🗑️</button>' +
+      '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+function renderPagination(data) {
+  var el = document.getElementById('usersPagination');
+  var pages = Math.ceil(data.total / data.per_page);
+  if (pages <= 1) { el.innerHTML = ''; return; }
+  var html = '';
+  for (var i = 1; i <= pages; i++) {
+    var active = i === data.page ? ' class="active"' : '';
+    html += '<button'+active+' onclick="loadPage('+i+')">'+i+'</button>';
+  }
+  el.innerHTML = html;
+}
+
+function loadPage(page) {
+  document.getElementById('searchInput').value = '';
+  loadUsers();
+}
+
+function openAddUserModal() {
+  document.getElementById('userModalTitle').textContent = 'Добавить пользователя';
+  document.getElementById('editUserId').value = '';
+  document.getElementById('userForm').reset();
+  document.getElementById('fieldIsActive').checked = true;
+  document.getElementById('fieldPassword').required = true;
+  document.getElementById('pwLabel').textContent = '*';
+  document.getElementById('userSubmitBtn').textContent = 'Создать';
+  document.getElementById('fieldDismissalDate').closest('.form-group').style.display = 'none';
+  openModal('userModal');
+}
+
+async function openEditUser(userId) {
+  document.getElementById('userModalTitle').textContent = 'Редактировать пользователя';
+  document.getElementById('editUserId').value = userId;
+  document.getElementById('fieldPassword').required = false;
+  document.getElementById('pwLabel').textContent = '(оставьте пустым, чтобы не менять)';
+  document.getElementById('userSubmitBtn').textContent = 'Сохранить';
+  document.getElementById('fieldDismissalDate').closest('.form-group').style.display = '';
+  try {
+    var res = await fetch('/api/admin/users/' + userId);
+    var u = await res.json();
+    document.getElementById('fieldName').value = u.name || '';
+    document.getElementById('fieldEmail').value = u.email || '';
+    document.getElementById('fieldRole').value = u.role_id || '';
+    document.getElementById('fieldJobTitle').value = u.job_title || '';
+    document.getElementById('fieldPhone').value = u.phone || '';
+    document.getElementById('fieldAcademicTitle').value = u.academic_title || '';
+    document.getElementById('fieldDegree').value = u.degree || '';
+    document.getElementById('fieldRateType').value = u.rate_type || 'основная';
+    document.getElementById('fieldRateCount').value = u.rate_count || 1;
+    document.getElementById('fieldHireDate').value = u.hire_date || '';
+    document.getElementById('fieldDismissalDate').value = u.dismissal_date || '';
+    document.getElementById('fieldIsActive').checked = u.is_active !== false;
+    document.getElementById('fieldPassword').value = '';
+    openModal('userModal');
+  } catch(e) {
+    console.error(e);
+    alert('Ошибка загрузки данных пользователя');
+  }
+}
+
+async function saveUser(e) {
+  e.preventDefault();
+  var userId = document.getElementById('editUserId').value;
+  var isEdit = !!userId;
+  var data = {
+    name: document.getElementById('fieldName').value,
+    email: document.getElementById('fieldEmail').value,
+    role_id: parseInt(document.getElementById('fieldRole').value),
+    job_title: document.getElementById('fieldJobTitle').value,
+    phone: document.getElementById('fieldPhone').value,
+    academic_title: document.getElementById('fieldAcademicTitle').value,
+    degree: document.getElementById('fieldDegree').value,
+    rate_type: document.getElementById('fieldRateType').value,
+    rate_count: parseFloat(document.getElementById('fieldRateCount').value),
+    hire_date: document.getElementById('fieldHireDate').value || null,
+    dismissal_date: document.getElementById('fieldDismissalDate').value || null,
+    is_active: document.getElementById('fieldIsActive').checked,
+  };
+  var pw = document.getElementById('fieldPassword').value;
+  if (pw) data.password = pw;
+  if (!isEdit && !pw) { alert('Пароль обязателен'); return; }
+
+  try {
+    var url = isEdit ? '/api/admin/users/' + userId : '/api/admin/users/';
+    var method = isEdit ? 'PATCH' : 'POST';
+    var res = await fetch(url, {
+      method: method,
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      var err = await res.json();
+      alert(err.msg || 'Ошибка сохранения');
+      return;
+    }
+    closeModal('userModal');
+    loadUsers();
+  } catch(e) {
+    alert('Ошибка сохранения');
+    console.error(e);
+  }
+}
+
+async function deactivateUser(userId) {
+  if (!confirm('Деактивировать пользователя?')) return;
+  try {
+    var res = await fetch('/api/admin/users/' + userId, {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({is_active: false, dismissal_date: new Date().toISOString().split('T')[0]}),
+    });
+    if (!res.ok) { alert('Ошибка'); return; }
+    loadUsers();
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+function escapeHtml(s) {
+  if (!s) return s;
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+loadRoles();
+loadUsers();
+</script>
+{% endblock %}

@@ -29,6 +29,9 @@
             <li><a href="{{url_for('documents.documents')}}">Документы</a></li>
             <li><a href="{{url_for('web_news.list_news')}}">Информация</a></li>
             <li><a href="{{url_for('chat.chat_page')}}">Чат</a></li>
+            {% if current_user and current_user.role_id == 1 %}
+            <li><a href="{{url_for('admin.users_list')}}">Админка</a></li>
+            {% endif %}
             <li class="nav-profile-item dropdown">
               <a class="dropdown-toggle" href="#">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

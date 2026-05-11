@@ -20,6 +20,8 @@ from routes.api.meetings import meetings_bp as api_meetings_bp
 from routes.meetings import meetings_bp as web_meetings_bp
 from routes.news import news_bp as web_news_bp
 from routes.chat import chat_bp as web_chat_bp
+from routes.admin import admin_bp
+from routes.api.admin_users import admin_users_bp
 from dotenv import load_dotenv
 from flask_cors import CORS
 from flasgger import Swagger
@@ -292,6 +294,8 @@ def create_app():
     app.register_blueprint(api_meetings_bp)
     app.register_blueprint(web_meetings_bp)
     app.register_blueprint(web_chat_bp)
+    app.register_blueprint(admin_bp)
+    app.register_blueprint(admin_users_bp)
 
     @app.context_processor
     def inject_user():
