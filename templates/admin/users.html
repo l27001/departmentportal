@@ -174,13 +174,22 @@ function renderUsers(users) {
 
 function renderPagination(data) {
   var el = document.getElementById('usersPagination');
-  var pages = Math.ceil(data.total / data.per_page);
-  if (pages <= 1) { el.innerHTML = ''; return; }
+  var totalPages = Math.ceil(data.total / data.per_page);
+  if (totalPages <= 1) { el.innerHTML = ''; return; }
+  var cur = data.page;
   var html = '';
-  for (var i = 1; i <= pages; i++) {
-    var active = i === data.page ? ' class="active"' : '';
-    html += '<button'+active+' onclick="loadPage('+i+')">'+i+'</button>';
+  if (cur > 1) html += '<button onclick="loadPage('+(cur-1)+')">&laquo;</button>';
+  for (var i = 1; i <= totalPages; i++) {
+    if (i <= 3 || i > totalPages - 3 || (i >= cur - 2 && i <= cur + 2)) {
+      var active = i === cur ? ' class="active"' : '';
+      html += '<button'+active+' onclick="loadPage('+i+')">'+i+'</button>';
+    } else if (i === 4 && cur > 4) {
+      html += '<span class="ellipsis">...</span>';
+    } else if (i === totalPages - 3 && cur < totalPages - 3) {
+      html += '<span class="ellipsis">...</span>';
+    }
   }
+  if (cur < totalPages) html += '<button onclick="loadPage('+(cur+1)+')">&raquo;</button>';
   el.innerHTML = html;
 }
 

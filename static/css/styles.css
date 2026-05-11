@@ -4868,6 +4868,12 @@ a.status.meeting-linked:hover {
   background: #f0edf5;
 }
 
+.pagination .ellipsis {
+  padding: 6px 8px;
+  font-size: 14px;
+  color: #999;
+}
+
 .modal-content--wide {
   max-width: 700px;
 }
