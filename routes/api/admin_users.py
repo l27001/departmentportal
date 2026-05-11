@@ -31,7 +31,7 @@ def list_users():
       - name: per_page
         in: query
         type: integer
-        default: 50
+        default: 10
       - name: search
         in: query
         type: string
@@ -59,7 +59,7 @@ def list_users():
         return jsonify({"msg": "Доступ запрещён"}), 403
 
     page = request.args.get("page", 1, type=int)
-    per_page = request.args.get("per_page", 50, type=int)
+    per_page = request.args.get("per_page", 10, type=int)
     search = request.args.get("search", "").strip()
 
     query = User.query
@@ -68,7 +68,7 @@ def list_users():
         query = query.filter(
             db.or_(User.name.ilike(like), User.email.ilike(like))
         )
-    query = query.order_by(User.name.asc())
+    query = query.order_by(User.id.asc())
 
     total = query.count()
     users = query.offset((page - 1) * per_page).limit(per_page).all()
