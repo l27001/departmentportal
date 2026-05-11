@@ -15,7 +15,7 @@ news_bp = Blueprint("web_news", __name__, url_prefix="/news")
 def list_news():
     role = Role.query.filter_by(id=get_jwt()["role"]).first()
     page = request.args.get("page", 1, type=int)
-    per_page = 15
+    per_page = 10
     pagination = News.query.filter_by(is_deleted=False).order_by(News.is_pinned.desc(), News.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
     return render_template("news/list.html", news=pagination.items, page=page, total=pagination.total, per_page=per_page, total_pages=pagination.pages, role=role)
 
