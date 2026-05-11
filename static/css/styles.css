@@ -4598,7 +4598,6 @@ a.status.meeting-linked:hover {
   position: absolute;
   bottom: 60px;
   left: 0;
-  width: 320px;
   max-height: 200px;
   overflow-y: auto;
   background: #fff;
