@@ -2250,13 +2250,13 @@ input {
 
 .task-count-badge {
   position: absolute;
-  top: 22px;
+  top: 20px;
   left: 4px;
   right: 4px;
   color: white;
   border-radius: 12px;
   padding: 3px 10px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   z-index: 10;
   text-align: center;
