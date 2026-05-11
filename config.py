@@ -35,7 +35,7 @@ class Config:
     MAX_CONTENT_LENGTH = 20 * 1024 * 1024  # 20 MB
 
     # SMTP
-    SMTP_HOST = os.getenv("SMTP_HOST", "localhost")
+    SMTP_HOST = os.getenv("SMTP_HOST", None)
     SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
     SMTP_USER = os.getenv("SMTP_USER", "")
     SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
