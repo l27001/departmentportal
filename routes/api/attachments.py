@@ -156,6 +156,15 @@ def delete_attachment(id):
     return jsonify({"msg": "Вложение удалено"})
 
 
+_FK_MAP = {
+    "announcements": "announcement_id",
+    "tasks": "task_id",
+    "news": "news_id",
+    "documents": "document_id",
+    "department_meetings": "meeting_id",
+}
+
+
 def _upload_attachment(entity_model, entity_id):
     entity = entity_model.query.get_or_404(entity_id)
     if "file" not in request.files:
@@ -180,7 +189,8 @@ def _upload_attachment(entity_model, entity_id):
 
     mime_type = file.content_type or "application/octet-stream"
 
-    kwargs = {entity_model.__tablename__ + "_id": entity_id}
+    fk_field = _FK_MAP.get(entity_model.__tablename__, entity_model.__tablename__ + "_id")
+    kwargs = {fk_field: entity_id}
     attachment = Attachment(
         **kwargs,
         file_name=original_name,
