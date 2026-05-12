@@ -2250,7 +2250,7 @@ input {
 
 .task-count-badge {
   position: absolute;
-  top: 20px;
+  top: 0px;
   left: 4px;
   right: 4px;
   color: white;
