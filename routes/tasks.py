@@ -77,7 +77,6 @@ def list_tasks():
     def task_sort_key(t):
         if is_leader:
             has_review = int(t.id) in review_task_ids
-            # has_incomplete = any(not a.approved for aid, a in all_assignments.items() if aid == int(t.id))
             if has_review:
                 return 0
             return 1
@@ -113,18 +112,10 @@ def list_tasks():
             'id': task.id,
             'title': task.title,
             'status': status,
-            'priority': task.priority,
             'is_overdue': is_overdue
         })
 
-    days_all_completed = {}
-    days_has_unassigned = {}
-    for day, day_tasks in tasks_by_deadline.items():
-        assigned = [t for t in day_tasks if t['status'] is not None]
-        days_all_completed[day] = len(assigned) > 0 and all(t['status'] in ('завершена', 'на проверке') for t in assigned)
-        days_has_unassigned[day] = any(t['status'] is None for t in day_tasks)
-
-    return render_template("tasks/list.html", tasks=paginated_tasks, role=role, users=users, groups=groups, groups_members=groups_members, user_assignments=user_assignments, assigned_task_ids=assigned_task_ids, user_id=user_id, today=today_date, page=page, total=total, per_page=per_page, announcements=announcements, viewed_ids=viewed_ids, review_task_ids=review_task_ids, is_leader=is_leader, tasks_by_deadline=tasks_by_deadline, days_all_completed=days_all_completed, days_has_unassigned=days_has_unassigned)
+    return render_template("tasks/list.html", tasks=paginated_tasks, role=role, users=users, groups=groups, groups_members=groups_members, user_assignments=user_assignments, assigned_task_ids=assigned_task_ids, user_id=user_id, today=today_date, page=page, total=total, per_page=per_page, announcements=announcements, viewed_ids=viewed_ids, review_task_ids=review_task_ids, is_leader=is_leader, tasks_by_deadline=tasks_by_deadline)
 
 @tasks_bp.route("/", methods=["POST"])
 @jwt_required()

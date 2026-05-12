@@ -315,7 +315,6 @@ def create_app():
     def index():
         recent_news = News.query.filter_by(is_deleted=False).order_by(News.is_pinned.desc(), News.created_at.desc()).limit(5).all()
         return render_template("index.html", news=recent_news)
-        # return redirect(url_for("tasks.list_tasks"))
 
     @app.route('/token-refresh', methods=['GET'])
     @jwt_required()

@@ -7,6 +7,19 @@
   #calendar {
     max-width: 100%;
   }
+  .task-count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #b0aeb7;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 2px;
+  }
 </style>
 {% endblock %}
 
@@ -171,8 +184,6 @@ var calendarInstance = null;
 function initCalendar() {
   var calendarEl = document.getElementById('calendar');
   var tasksByDeadline = {{ tasks_by_deadline | tojson }};
-  var daysAllCompleted = {{ days_all_completed | tojson }};
-  var daysHasUnassigned = {{ days_has_unassigned | tojson }};
 
   calendarInstance = new FullCalendar.Calendar(calendarEl, {
     initialView: 'dayGridMonth',
@@ -187,44 +198,10 @@ function initCalendar() {
       var d = arg.date;
       var dateStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
       if (tasksByDeadline[dateStr]) {
-        var dayTasks = tasksByDeadline[dateStr];
-        var count = dayTasks.length;
-        var hasOverdue = dayTasks.some(function(t) { return t.is_overdue; });
-        var allDone = daysAllCompleted[dateStr];
-        var hasUnassigned = daysHasUnassigned[dateStr];
+        var count = tasksByDeadline[dateStr].length;
         var badge = document.createElement('div');
         badge.className = 'task-count-badge';
-        if (allDone) {
-          badge.classList.add('all-completed');
-        }
-        var suffix = 'задач';
-        if (count === 1) suffix = 'задача';
-        else if (count >= 2 && count <= 4) suffix = 'задачи';
-        badge.textContent = count + ' ' + suffix;
-        if (hasOverdue) {
-          badge.style.background = 'linear-gradient(135deg, #c62828, #e53935)';
-        } else if (allDone) {
-          badge.style.background = 'linear-gradient(135deg, #2e7d32, #43a047)';
-        } else if (hasUnassigned) {
-          badge.style.background = 'linear-gradient(135deg, #78909c, #90a4ae)';
-        } else {
-          var today = new Date();
-          today.setHours(0, 0, 0, 0);
-          var deadline = new Date(d);
-          deadline.setHours(0, 0, 0, 0);
-          var daysDiff = Math.ceil((deadline - today) / (1000 * 60 * 60 * 24));
-          if (daysDiff <= 0) {
-            badge.style.background = 'linear-gradient(135deg, #c62828, #e53935)';
-          } else if (daysDiff === 1) {
-            badge.style.background = 'linear-gradient(135deg, #ef6c00, #fb8c00)';
-          } else if (daysDiff <= 3) {
-            badge.style.background = 'linear-gradient(135deg, #f9a825, #fdd835)';
-          } else if (daysDiff <= 7) {
-            badge.style.background = 'linear-gradient(135deg, #00838f, #26c6da)';
-          } else {
-            badge.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
-          }
-        }
+        badge.textContent = count;
         var frame = arg.el.querySelector('.fc-daygrid-day-frame');
         if (frame) {
           frame.appendChild(badge);
