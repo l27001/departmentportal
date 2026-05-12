@@ -43,13 +43,13 @@ def list_tasks():
     is_leader = role.name in ("Документовед", "Руководитель")
 
     if is_leader:
-        users = User.query.filter(User.dismissal_date.is_(None)).all()
+        users = User.query.filter(User.dismissal_date.is_(None), ~User.role_id.in_([1, 2])).all()
         groups = Group.query.all()
         for group in groups:
             members = (
                 db.session.query(User)
                 .join(UserGroup, UserGroup.user_id == User.id)
-                .filter(UserGroup.group_id == group.id, User.dismissal_date.is_(None))
+                .filter(UserGroup.group_id == group.id, User.dismissal_date.is_(None), ~User.role_id.in_([1, 2]))
                 .all()
             )
             groups_members[group.id] = [{"id": m.id, "name": m.name} for m in members]
@@ -68,6 +68,15 @@ def list_tasks():
         int(a.task_id): a
         for a in TaskUserAssignment.query.all()
     }
+
+    task_stats = {}
+    for task in tasks:
+        task_assignments = TaskUserAssignment.query.filter_by(task_id=task.id).all()
+        task_stats[task.id] = {
+            "total": len(task_assignments),
+            "completed": sum(1 for a in task_assignments if a.approved),
+            "review": sum(1 for a in task_assignments if a.status == 'на проверке' and not a.approved)
+        }
 
     review_task_ids = set()
     for tid, a in all_assignments.items():
@@ -115,7 +124,7 @@ def list_tasks():
             'is_overdue': is_overdue
         })
 
-    return render_template("tasks/list.html", tasks=paginated_tasks, role=role, users=users, groups=groups, groups_members=groups_members, user_assignments=user_assignments, assigned_task_ids=assigned_task_ids, user_id=user_id, today=today_date, page=page, total=total, per_page=per_page, announcements=announcements, viewed_ids=viewed_ids, review_task_ids=review_task_ids, is_leader=is_leader, tasks_by_deadline=tasks_by_deadline)
+    return render_template("tasks/list.html", tasks=paginated_tasks, role=role, users=users, groups=groups, groups_members=groups_members, user_assignments=user_assignments, assigned_task_ids=assigned_task_ids, user_id=user_id, today=today_date, page=page, total=total, per_page=per_page, announcements=announcements, viewed_ids=viewed_ids, review_task_ids=review_task_ids, is_leader=is_leader, tasks_by_deadline=tasks_by_deadline, task_stats=task_stats)
 
 @tasks_bp.route("/", methods=["POST"])
 @jwt_required()

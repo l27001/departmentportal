@@ -21,7 +21,7 @@ def _get_groups_data():
     for group in groups:
         members = (
             User.query.join(UserGroup, UserGroup.user_id == User.id)
-            .filter(UserGroup.group_id == group.id, User.is_active == True, User.dismissal_date.is_(None))
+            .filter(UserGroup.group_id == group.id, User.is_active == True, User.dismissal_date.is_(None), ~User.role_id.in_([1, 2]))
             .all()
         )
         groups_members[str(group.id)] = [{"id": m.id, "name": m.name} for m in members]

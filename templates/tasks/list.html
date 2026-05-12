@@ -44,15 +44,22 @@
         {% set asgn = user_assignments.get(tid) %}
         {% set is_completed = asgn and asgn.approved %}
         {% set is_review = asgn and asgn.status == 'на проверке' %}
-        <div class="task-item {% if is_completed %}task-completed{% endif %} {% if is_review %}task-review{% endif %}" data-task-id="{{ task.id }}">
+        <div class="task-item {% if is_completed %}task-completed{% endif %} {% if is_review %}task-review{% endif %}" data-task-id="{{ task.id }}" onclick="openTaskDetails({{ task.id }}); return false;">
             <div class="task-info">
                 <h3 class="task-title">{{ task.title }}</h3>
             </div>
-            {% if tid in assigned_task_ids %}
+            {% set is_leader = role.name in ('Руководитель', 'Документовед') %}
+            {% if is_leader and task_stats[tid] and task_stats[tid].total > 0 %}
+            {% set st = task_stats[tid] %}
+            <div class="task-btn task-stats">
+              <span class="task-completion-count {% if st.completed == st.total %}all-done{% elif st.review > 0 %}has-review{% endif %}">
+                {{ st.completed }} / {{ st.total }}
+              </span>
+            </div>
+            {% elif tid in assigned_task_ids %}
             <div class="task-btn">
               {% set is_approved = asgn and asgn.approved %}
-              {% set is_leader = role.name in ('Руководитель', 'Документовед') %}
-              <select autocomplete="off" onchange="updateTaskStatus(this, {{ task.id }})">
+              <select autocomplete="off" onchange="updateTaskStatus(this, {{ task.id }})" onclick="event.stopPropagation()">
                 {% if is_approved %}
                 <option selected>Завершена</option>
                 {% elif asgn %}
@@ -86,15 +93,17 @@
                 {% if is_leader and tid in review_task_ids %}
                     <span class="status awaiting-review">Ожидает проверки</span>
                 {% endif %}
-                {% if task.deadline_at < today and (tid in assigned_task_ids and asgn and asgn.status not in ('завершена', 'на проверке')) %}
+                {% set has_overdue = task.deadline_at < today and (
+                  (is_leader and task_stats[tid] and task_stats[tid].completed < task_stats[tid].total)
+                  or
+                  (tid in assigned_task_ids and asgn and asgn.status not in ('завершена', 'на проверке'))
+                ) %}
+                {% if has_overdue %}
                   <span class="status expired">Дедлайн просрочен</span>
                 {% endif %}
             </div>
             <div class="task-dates">
-                <p><strong>Дедлайн:</strong> {{ task.deadline_at.strftime('%d.%m.%Y') }}</p>
-            </div>
-            <div class="task-btn">
-                <a class="view-details-btn" href="#" onclick="openTaskDetails({{task.id}}); return false;">Просмотр</a>
+                <p><strong>Срок:</strong> {{ task.deadline_at.strftime('%d.%m.%Y') }}</p>
             </div>
         </div>
         {% else %}

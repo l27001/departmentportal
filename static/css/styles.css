@@ -482,6 +482,11 @@ select:focus {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   border-left: 3px solid transparent;
   transition: opacity 0.3s, border-color 0.3s;
+  cursor: pointer;
+}
+
+.task-item:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 .task-item.task-completed {
@@ -521,6 +526,25 @@ select:focus {
   max-height: fit-content;
   margin: 10px;
   align-items: center;
+}
+
+.task-completion-count {
+  font-size: 15px;
+  font-weight: 700;
+  color: #888;
+  padding: 4px 12px;
+  border-radius: 6px;
+  background: #f5f5f5;
+}
+
+.task-completion-count.all-done {
+  color: #2e7d32;
+  background: #e8f5e9;
+}
+
+.task-completion-count.has-review {
+  color: #e65100;
+  background: #fff3e0;
 }
 
 div.header-btns {
