@@ -4,9 +4,6 @@
   .container {
     max-width: 1500px;
   }
-  #calendar {
-    max-width: 100%;
-  }
   .task-count-badge {
     display: inline-flex;
     align-items: center;
@@ -28,16 +25,23 @@
   <section id="tasks" class="task-section task-main">
       <div class="task-header">
         <h2>{% block title %}Таск менеджер{% endblock %}</h2>
-        <a href="{{ url_for('web_meetings.list_meetings') }}" class="meetings-tab-link">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          Заседания
-        </a>
+        <div class="task-header-actions">
+          <a href="{{ url_for('web_meetings.list_meetings') }}" class="meetings-tab-link">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Заседания
+          </a>
+          <button class="calendar-header-btn" id="calendarToggleBtn" onclick="toggleCalendar()" title="Календарь">📅</button>
+        </div>
       </div>
       {% if is_leader %}
       <div class="task-controls">
         <button class="btn btn-primary add-task-btn" onclick="openModal('addTask')">Добавить задачу</button>
       </div>
       {% endif %}
+      <div class="task-tabs">
+        <a href="{{ url_for('tasks.list_tasks', archive=0) }}" class="task-tab {% if not show_archive %}active{% endif %}">Активные</a>
+        <a href="{{ url_for('tasks.list_tasks', archive=1) }}" class="task-tab {% if show_archive %}active{% endif %}">Архив{% if archived_count > 0 %} ({{ archived_count }}){% endif %}</a>
+      </div>
       <div id="taskListView" class="task-list">
         {% for task in tasks %}
         {% set tid = task.id|int %}
@@ -107,20 +111,20 @@
             </div>
         </div>
         {% else %}
-        <p>У вас нет задач.</p>
+        <p>{% if show_archive %}В архиве нет задач{% else %}У вас нет задач{% endif %}.</p>
         {% endfor %}
       </div>
       <div class="pagination">
         {% set total_pages = (total + per_page - 1) // per_page %}
         {% if total_pages > 1 %}
           {% if page > 1 %}
-            <a href="{{ url_for('tasks.list_tasks', page=page - 1) }}" class="page-link">&laquo;</a>
+            <a href="{{ url_for('tasks.list_tasks', page=page - 1, archive=show_archive) }}" class="page-link">&laquo;</a>
           {% endif %}
           {% for p in range(1, total_pages + 1) %}
             {% if p == page %}
               <span class="page-link page-item active">{{ p }}</span>
             {% elif p <= 3 or p > total_pages - 3 or (p >= page - 2 and p <= page + 2) %}
-              <a href="{{ url_for('tasks.list_tasks', page=p) }}" class="page-link">{{ p }}</a>
+              <a href="{{ url_for('tasks.list_tasks', page=p, archive=show_archive) }}" class="page-link">{{ p }}</a>
             {% elif p == 4 and page > 4 %}
               <span class="page-link">...</span>
             {% elif p == total_pages - 3 and page < total_pages - 3 %}
@@ -128,14 +132,14 @@
             {% endif %}
           {% endfor %}
           {% if page < total_pages %}
-            <a href="{{ url_for('tasks.list_tasks', page=page + 1) }}" class="page-link">&raquo;</a>
+            <a href="{{ url_for('tasks.list_tasks', page=page + 1, archive=show_archive) }}" class="page-link">&raquo;</a>
           {% endif %}
         {% endif %}
       </div>
     </section>
 
     <section class="task-sidebar">
-      <div class="calendar-sidebar-container">
+      <div class="calendar-sidebar-container" id="calendarContainer" style="display:none;">
         <div id="calendar"></div>
         <div id="dayTasksModal" class="modal">
           <div class="modal-content">
@@ -189,6 +193,25 @@
 <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/interaction@6.1.19/index.global.min.js"></script>
 <script>
 var calendarInstance = null;
+var calendarInitialized = false;
+
+function toggleCalendar() {
+  var container = document.getElementById('calendarContainer');
+  var btn = document.getElementById('calendarToggleBtn');
+  if (container.style.display === 'none') {
+    container.style.display = 'block';
+    btn.classList.add('active');
+    if (!calendarInitialized) {
+      initCalendar();
+      calendarInitialized = true;
+    } else {
+      calendarInstance.updateSize();
+    }
+  } else {
+    container.style.display = 'none';
+    btn.classList.remove('active');
+  }
+}
 
 function initCalendar() {
   var calendarEl = document.getElementById('calendar');
@@ -288,10 +311,6 @@ window.onclick = function(event) {
     modal.style.display = 'none';
   }
 };
-
-document.addEventListener('DOMContentLoaded', function() {
-  initCalendar();
-});
 </script>
 {% endblock %}
 

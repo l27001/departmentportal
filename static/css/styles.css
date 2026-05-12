@@ -418,7 +418,7 @@ select:focus {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   flex-wrap: wrap;
   gap: 12px;
 }
@@ -581,27 +581,34 @@ div.view-details {
 
 .task-tabs {
   display: flex;
-  gap: 8px;
+  gap: 0;
+  margin-bottom: 16px;
+  background: #f0f0f5;
+  border-radius: 10px;
+  padding: 3px;
+  width: fit-content;
 }
 
 .task-tab {
-  padding: 8px 20px;
+  padding: 7px 22px;
   border-radius: 8px;
-  background: #e9ecef;
-  color: #495057;
+  background: transparent;
+  color: #666;
   text-decoration: none;
   font-size: 14px;
   font-weight: 500;
   transition: 0.2s;
+  white-space: nowrap;
 }
 
 .task-tab:hover {
-  background: #dee2e6;
+  color: #333;
 }
 
 .task-tab.active {
-  background: #4a2c7a;
-  color: #fff;
+  background: #fff;
+  color: #667eea;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 span.status {
@@ -2261,10 +2268,25 @@ input {
    КАЛЕНДАРЬ — МОДАЛЬНОЕ ОКНО
 ============================== */
 
-#calendar {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 10px 0;
+.calendar-sidebar-container {
+  padding: 16px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  margin-bottom: 16px;
+}
+
+.calendar-sidebar-container #calendar {
+  max-width: 100%;
+  min-height: 500px;
+}
+
+.calendar-sidebar-container .fc-toolbar-title {
+  font-size: 1em;
+}
+
+.calendar-sidebar-container .fc-daygrid-day-number {
+  font-size: 0.85em;
 }
 
 .fc-daygrid-day {
@@ -2582,26 +2604,6 @@ input {
   display: flex;
   flex-direction: column;
   gap: 20px;
-}
-
-.calendar-sidebar-container {
-  padding: 16px;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-.calendar-sidebar-container #calendar {
-  max-width: 100%;
-  min-height: 500px;
-}
-
-.calendar-sidebar-container .fc-toolbar-title {
-  font-size: 1em;
-}
-
-.calendar-sidebar-container .fc-daygrid-day-number {
-  font-size: 0.85em;
 }
 
 .announcements-section {
@@ -4015,6 +4017,38 @@ a.status.meeting-linked:hover {
 
 .meetings-tab-link svg {
   flex-shrink: 0;
+}
+
+.task-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.calendar-header-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  border: none;
+  border-radius: 12px;
+  background: #f0f0f5;
+  color: #666;
+  font-size: 20px;
+  cursor: pointer;
+  transition: 0.2s;
+  line-height: 1;
+}
+
+.calendar-header-btn:hover {
+  background: #e0e0e8;
+  color: #333;
+}
+
+.calendar-header-btn.active {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  box-shadow: 0 3px 12px rgba(102, 126, 234, 0.35);
 }
 
 @media (max-width: 992px) {

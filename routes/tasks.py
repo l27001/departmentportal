@@ -31,6 +31,7 @@ def list_tasks():
     groups_members = {}
     page = request.args.get("page", 1, type=int)
     per_page = 10
+    show_archive = request.args.get("archive", 0, type=int)
 
     user_assignments = {
         int(a.task_id): a
@@ -100,10 +101,22 @@ def list_tasks():
 
     tasks = sorted(tasks, key=task_sort_key)
 
-    total = len(tasks)
+    if is_leader:
+        active_tasks = [t for t in tasks if task_stats[t.id]["completed"] < task_stats[t.id]["total"]]
+        archived_tasks = [t for t in tasks if task_stats[t.id]["total"] > 0 and task_stats[t.id]["completed"] == task_stats[t.id]["total"]]
+    else:
+        active_tasks = [t for t in tasks if t.id not in user_assignments or not user_assignments[t.id].approved]
+        archived_tasks = [t for t in tasks if t.id in user_assignments and user_assignments[t.id].approved]
+
+    if show_archive:
+        filtered_tasks = archived_tasks
+    else:
+        filtered_tasks = active_tasks
+
+    total = len(filtered_tasks)
     start = (page - 1) * per_page
     end = start + per_page
-    paginated_tasks = tasks[start:end]
+    paginated_tasks = filtered_tasks[start:end]
 
     today_date = date.today()
     announcements = Announcement.query.filter(Announcement.is_deleted == False, Announcement.deadline >= today_date).order_by(Announcement.created_at.desc()).limit(15).all()
@@ -124,7 +137,7 @@ def list_tasks():
             'is_overdue': is_overdue
         })
 
-    return render_template("tasks/list.html", tasks=paginated_tasks, role=role, users=users, groups=groups, groups_members=groups_members, user_assignments=user_assignments, assigned_task_ids=assigned_task_ids, user_id=user_id, today=today_date, page=page, total=total, per_page=per_page, announcements=announcements, viewed_ids=viewed_ids, review_task_ids=review_task_ids, is_leader=is_leader, tasks_by_deadline=tasks_by_deadline, task_stats=task_stats)
+    return render_template("tasks/list.html", tasks=paginated_tasks, role=role, users=users, groups=groups, groups_members=groups_members, user_assignments=user_assignments, assigned_task_ids=assigned_task_ids, user_id=user_id, today=today_date, page=page, total=total, per_page=per_page, announcements=announcements, viewed_ids=viewed_ids, review_task_ids=review_task_ids, is_leader=is_leader, tasks_by_deadline=tasks_by_deadline, task_stats=task_stats, show_archive=show_archive, archived_count=len(archived_tasks))
 
 @tasks_bp.route("/", methods=["POST"])
 @jwt_required()
