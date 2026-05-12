@@ -40,7 +40,7 @@
       {% endif %}
       <div class="task-tabs">
         <a href="{{ url_for('tasks.list_tasks', archive=0) }}" class="task-tab {% if not show_archive %}active{% endif %}">Активные</a>
-        <a href="{{ url_for('tasks.list_tasks', archive=1) }}" class="task-tab {% if show_archive %}active{% endif %}">Архив{% if archived_count > 0 %} ({{ archived_count }}){% endif %}</a>
+        <a href="{{ url_for('tasks.list_tasks', archive=1) }}" class="task-tab {% if show_archive %}active{% endif %}">Архив</a>
       </div>
       <div id="taskListView" class="task-list">
         <div class="task-list-header">

@@ -137,7 +137,7 @@ def list_tasks():
             'is_overdue': is_overdue
         })
 
-    return render_template("tasks/list.html", tasks=paginated_tasks, role=role, users=users, groups=groups, groups_members=groups_members, user_assignments=user_assignments, assigned_task_ids=assigned_task_ids, user_id=user_id, today=today_date, page=page, total=total, per_page=per_page, announcements=announcements, viewed_ids=viewed_ids, review_task_ids=review_task_ids, is_leader=is_leader, tasks_by_deadline=tasks_by_deadline, task_stats=task_stats, show_archive=show_archive, archived_count=len(archived_tasks))
+    return render_template("tasks/list.html", tasks=paginated_tasks, role=role, users=users, groups=groups, groups_members=groups_members, user_assignments=user_assignments, assigned_task_ids=assigned_task_ids, user_id=user_id, today=today_date, page=page, total=total, per_page=per_page, announcements=announcements, viewed_ids=viewed_ids, review_task_ids=review_task_ids, is_leader=is_leader, tasks_by_deadline=tasks_by_deadline, task_stats=task_stats, show_archive=show_archive)
 
 @tasks_bp.route("/", methods=["POST"])
 @jwt_required()

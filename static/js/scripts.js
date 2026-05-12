@@ -192,7 +192,7 @@ function loadRsvpSection(id, roleId) {
   })
   .then(r => r.json())
   .then(status => {
-    var btnText = status.rsvped ? '✅ Отмечено' : '☐ Отметить участие';
+    var btnText = status.rsvped ? '✅ Отмечено' : 'Отметить участие';
     var btnClass = status.rsvped ? 'rsvp-btn active' : 'rsvp-btn';
     var html = '<div class="rsvp-section"><div class="rsvp-header"><span class="rsvp-count">' + status.rsvp_count + ' ' + pluralize(status.rsvp_count, 'отметка', 'отметки', 'отметок') + '</span></div><div class="rsvp-actions"><button class="' + btnClass + '" onclick="toggleRsvp(' + id + ')">' + btnText + '</button></div><div id="rsvpUserList"></div></div>';
     div.innerHTML = html;
