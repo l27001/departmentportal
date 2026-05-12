@@ -43,25 +43,34 @@
         <a href="{{ url_for('tasks.list_tasks', archive=1) }}" class="task-tab {% if show_archive %}active{% endif %}">Архив{% if archived_count > 0 %} ({{ archived_count }}){% endif %}</a>
       </div>
       <div id="taskListView" class="task-list">
+        <div class="task-list-header">
+          <span class="col-title">Название</span>
+          <span class="col-status">Статус</span>
+          <span class="col-date">Срок</span>
+        </div>
         {% for task in tasks %}
         {% set tid = task.id|int %}
         {% set asgn = user_assignments.get(tid) %}
+        {% set is_leader = role.name in ('Руководитель', 'Документовед') %}
         {% set is_completed = asgn and asgn.approved %}
         {% set is_review = asgn and asgn.status == 'на проверке' %}
+        {% set has_overdue = task.deadline_at < today and (
+          (is_leader and task_stats[tid] and task_stats[tid].completed < task_stats[tid].total)
+          or
+          (tid in assigned_task_ids and asgn and asgn.status not in ('завершена', 'на проверке'))
+        ) %}
         <div class="task-item {% if is_completed %}task-completed{% endif %} {% if is_review %}task-review{% endif %}" data-task-id="{{ task.id }}" onclick="openTaskDetails({{ task.id }}); return false;">
-            <div class="task-info">
-                <h3 class="task-title">{{ task.title }}</h3>
+            <div class="col-title">
+                <span class="prio-dot prio-{{ task.priority }}" title="{% if task.priority == 'low' %}Низкий{% elif task.priority == 'medium' %}Средний{% else %}Высокий{% endif %}"></span>
+                <span class="task-title">{{ task.title }}</span>
             </div>
-            {% set is_leader = role.name in ('Руководитель', 'Документовед') %}
-            {% if is_leader and task_stats[tid] and task_stats[tid].total > 0 %}
-            {% set st = task_stats[tid] %}
-            <div class="task-btn task-stats">
+            <div class="col-status">
+              {% if is_leader and task_stats[tid] and task_stats[tid].total > 0 %}
+              {% set st = task_stats[tid] %}
               <span class="task-completion-count {% if st.completed == st.total %}all-done{% elif st.review > 0 %}has-review{% endif %}">
                 {{ st.completed }} / {{ st.total }}
               </span>
-            </div>
-            {% elif tid in assigned_task_ids %}
-            <div class="task-btn">
+              {% elif tid in assigned_task_ids %}
               {% set is_approved = asgn and asgn.approved %}
               <select autocomplete="off" onchange="updateTaskStatus(this, {{ task.id }})" onclick="event.stopPropagation()">
                 {% if is_approved %}
@@ -84,30 +93,16 @@
                 {% endif %}
                 {% endif %}
               </select>
+              {% if is_leader and tid in review_task_ids %}
+                <span class="status awaiting-review">ждёт</span>
+              {% endif %}
+              {% endif %}
             </div>
-            {% endif %}
-            <div class="task-btn">
-                {% if task.priority == 'low' %}
-                    <span class="status low">Низкий приоритет</span>
-                {% elif task.priority == 'medium' %}
-                    <span class="status medium">Средний приоритет</span>
-                {% else %}
-                    <span class="status high">Высокий приоритет</span>
-                {% endif %}
-                {% if is_leader and tid in review_task_ids %}
-                    <span class="status awaiting-review">Ожидает проверки</span>
-                {% endif %}
-                {% set has_overdue = task.deadline_at < today and (
-                  (is_leader and task_stats[tid] and task_stats[tid].completed < task_stats[tid].total)
-                  or
-                  (tid in assigned_task_ids and asgn and asgn.status not in ('завершена', 'на проверке'))
-                ) %}
+            <div class="col-date">
+                <span>{{ task.deadline_at.strftime('%d.%m.%Y') }}</span>
                 {% if has_overdue %}
-                  <span class="status expired">Дедлайн просрочен</span>
+                  <span class="status expired" title="Просрочено">!</span>
                 {% endif %}
-            </div>
-            <div class="task-dates">
-                <p><strong>Срок:</strong> {{ task.deadline_at.strftime('%d.%m.%Y') }}</p>
             </div>
         </div>
         {% else %}
@@ -487,14 +482,17 @@ function openTaskDetails(taskId) {
     var body = document.getElementById('taskDetailsBody');
     var html = '';
 
-    html += '<div class="td-description"><strong>Описание:</strong> ' + (data.task.description || '—').replace(/\n/g, '<br>') + '</div>';
+    html += '<div class="td-description">' + (data.task.description || '—').replace(/\n/g, '<br>') + '</div>';
+
+    html += '<div class="td-meta-list">';
 
     if (data.is_assigned && data.user_assignment) {
-      html += '<div class="td-section"><strong>Статус:</strong> <select id="tdStatusSelect" onchange="updateTaskStatus(this, ' + taskId + ')">';
+      html += '<div class="td-meta-item"><span class="td-meta-label">Статус</span> <span class="td-meta-value">';
       var ua = data.user_assignment;
       if (ua.approved) {
-        html += '<option selected>Завершена</option>';
+        html += 'Завершена';
       } else {
+        html += '<select id="tdStatusSelect" onchange="updateTaskStatus(this, ' + taskId + ')">';
         html += '<option' + (ua.status === 'не начата' ? ' selected' : '') + '>Не начата</option>';
         if (data.task.no_review || data.is_leader) {
           html += '<option' + (ua.status === 'завершена' ? ' selected' : '') + '>Завершена</option>';
@@ -502,27 +500,28 @@ function openTaskDetails(taskId) {
         if (!data.task.no_review && !data.is_leader) {
           html += '<option' + (ua.status === 'на проверке' ? ' selected' : '') + '>На проверке</option>';
         }
+        html += '</select>';
       }
-      html += '</select></div>';
+      html += '</span></div>';
     }
 
-    html += '<div class="td-section"><strong>Приоритет:</strong>';
-    if (data.is_overdue) {
-      html += ' <span class="status expired">Дедлайн просрочен</span>';
-    }
-    var priorityLabels = { low: 'Низкий приоритет', medium: 'Средний приоритет', high: 'Высокий приоритет' };
-    html += ' <span class="status ' + data.task.priority + '">' + priorityLabels[data.task.priority] + '</span>';
-    html += '</div>';
+    html += '<div class="td-meta-item"><span class="td-meta-label">Приоритет</span> <span class="td-meta-value"><span class="prio-dot prio-' + data.task.priority + '" title="' + (data.task.priority === 'low' ? 'Низкий' : data.task.priority === 'medium' ? 'Средний' : 'Высокий') + '"></span> ' + (data.task.priority === 'low' ? 'Низкий' : data.task.priority === 'medium' ? 'Средний' : 'Высокий') + '</span></div>';
 
     var parts = data.task.deadline_at.split('T')[0].split('-');
-    html += '<div class="td-section"><strong>Дедлайн:</strong> ' + parts[2] + '.' + parts[1] + '.' + parts[0] + '</div>';
+    html += '<div class="td-meta-item"><span class="td-meta-label">Срок</span> <span class="td-meta-value">' + parts[2] + '.' + parts[1] + '.' + parts[0] + '</span>';
+    if (data.is_overdue) {
+      html += ' <span class="status expired" title="Просрочено">!</span>';
+    }
+    html += '</div>';
 
     if (data.meeting) {
-      html += '<div class="td-section"><strong>Заседание:</strong> <a href="/meetings/' + data.meeting.id + '" class="meeting-link-badge">' + data.meeting.title + '</a></div>';
+      html += '<div class="td-meta-item"><span class="td-meta-label">Заседание</span> <span class="td-meta-value"><a href="/meetings/' + data.meeting.id + '" class="meeting-link-badge">' + data.meeting.title + '</a></span></div>';
     }
 
+    html += '</div>';
+
     if (data.attachments && data.attachments.length > 0) {
-      html += '<h3 class="td-heading">Файлы:</h3>';
+      html += '<h3 class="td-heading">Файлы</h3>';
       html += '<div class="attachment-list">';
       data.attachments.forEach(function(a) {
         html += '<div class="attachment-card">';
@@ -534,32 +533,36 @@ function openTaskDetails(taskId) {
     }
 
     if (data.is_leader && data.assignees.length > 0) {
-      html += '<h3 class="td-heading">Исполнители:</h3>';
-      html += '<div class="assignee-grid-compact">';
+      html += '<div class="read-status-section">';
+      var groups = { 'не начата': [], 'на проверке': [], 'завершена': [] };
       data.assignees.forEach(function(a) {
-        var statusClass = '';
-        var statusLabel = '';
-        if (a.status === 'не начата') {
-          statusClass = 'status-not-done';
-          statusLabel = 'Не выполнена';
-        } else if (a.status === 'завершена') {
-          statusClass = 'status-done';
-          statusLabel = 'Выполнена';
-        } else {
-          statusClass = 'status-on-review';
-          statusLabel = 'На проверке';
-        }
-        html += '<div class="assignee-card-mini">';
-        html += '<span class="assignee-card-name">' + a.user_name + '</span>';
-        html += '<span class="assignee-card-status ' + statusClass + '">' + statusLabel + '</span>';
-        if (a.status === 'на проверке') {
+        if (groups[a.status]) groups[a.status].push(a);
+      });
+      if (groups['завершена'].length > 0) {
+        html += '<h4>Выполнено</h4><div class="read-status-grid">';
+        groups['завершена'].forEach(function(a) {
+          html += '<div class="read-status-card read"><span class="read-status-name">' + a.user_name + '</span><span class="read-status-badge">✓</span></div>';
+        });
+        html += '</div>';
+      }
+      if (groups['на проверке'].length > 0) {
+        html += '<h4>На проверке</h4><div class="read-status-grid">';
+        groups['на проверке'].forEach(function(a) {
+          html += '<div class="read-status-card unread"><span class="read-status-name">' + a.user_name + '</span>';
           html += '<div class="card-review-actions">';
           html += '<button class="btn-ck" onclick="reviewAssignment(' + taskId + ', ' + a.user_id + ', true)">✓</button>';
           html += '<button class="btn-ck btn-ck-reject" onclick="reviewAssignment(' + taskId + ', ' + a.user_id + ', false)">✕</button>';
-          html += '</div>';
-        }
+          html += '</div></div>';
+        });
         html += '</div>';
-      });
+      }
+      if (groups['не начата'].length > 0) {
+        html += '<h4>Не выполнено</h4><div class="read-status-grid">';
+        groups['не начата'].forEach(function(a) {
+          html += '<div class="read-status-card unread"><span class="read-status-name">' + a.user_name + '</span></div>';
+        });
+        html += '</div>';
+      }
       html += '</div>';
     }
 

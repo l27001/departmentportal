@@ -165,11 +165,11 @@ function openAnnouncement(id, roleId) {
         var statusDiv = document.getElementById('announcementReadStatus');
         var html = '<div class="read-status-section"><h4>Прочитано</h4><div class="read-status-grid">';
         data.read.forEach(function(u) {
-          html += '<div class="read-status-card read"><span class="read-status-name">' + u.user_name + '</span><span class="read-status-badge">Прочитано</span></div>';
+          html += '<div class="read-status-card read"><span class="read-status-name">' + u.user_name + '</span><span class="read-status-badge">✓</span></div>';
         });
         html += '</div><h4>Не прочитано</h4><div class="read-status-grid">';
         data.unread.forEach(function(u) {
-          html += '<div class="read-status-card unread"><span class="read-status-name">' + u.user_name + '</span><span class="read-status-badge">Не прочитано</span></div>';
+          html += '<div class="read-status-card unread"><span class="read-status-name">' + u.user_name + '</span></div>';
         });
         html += '</div></div>';
         statusDiv.innerHTML = html;

@@ -626,11 +626,16 @@ def task_details_modal(task_id):
             meeting_info = {"id": m.id, "title": m.title}
 
     today = date.today()
-    is_overdue = (
-        user_assignment
-        and user_assignment.status not in ('завершена', 'на проверке')
-        and task.deadline_at < today
-    )
+    is_leader = role.name in ('Руководитель', 'Документовед')
+    if is_leader:
+        all_approved = all(a.approved for a in assignees_raw)
+        is_overdue = not all_approved and task.deadline_at < today
+    else:
+        is_overdue = (
+            user_assignment
+            and user_assignment.status not in ('завершена', 'на проверке')
+            and task.deadline_at < today
+        )
 
     return jsonify({
         "task": task.to_dict(),
@@ -640,7 +645,7 @@ def task_details_modal(task_id):
             "approved": user_assignment.approved,
         } if user_assignment else None,
         "assignees": assignees,
-        "is_leader": role.name in ('Руководитель', 'Документовед'),
+        "is_leader": is_leader,
         "is_overdue": is_overdue,
         "meeting": meeting_info,
         "attachments": [
