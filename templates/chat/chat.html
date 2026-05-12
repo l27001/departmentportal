@@ -2,6 +2,14 @@
 
 {% block title %}Чат{% endblock %}
 
+{% block extracss %}
+<style>
+  .container {
+    max-width: 600px;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="chat-layout">
   <div class="chat-header">
@@ -20,6 +28,11 @@
     <button class="chat-send-btn" id="chatSendBtn" onclick="sendMessage()">Отправить</button>
   </div>
 </div>
+
+<div id="imagePreviewModal" class="modal" style="align-items:center;justify-content:center;background-color:rgba(0,0,0,0.85);" onclick="closeModal('imagePreviewModal')">
+  <span class="close" onclick="closeModal('imagePreviewModal')" style="position:fixed;top:20px;right:30px;z-index:1001;font-size:40px;color:#fff;cursor:pointer;opacity:0.8;line-height:1;">&times;</span>
+  <img id="imagePreviewImg" src="" alt="" style="max-width:90vw;max-height:90vh;object-fit:contain;box-shadow:0 4px 20px rgba(0,0,0,0.5);border-radius:4px;" onclick="event.stopPropagation()">
+</div>
 {% endblock %}
 
 {% block extrajs %}
@@ -27,6 +40,7 @@
 var currentUserId = null;
 var pollInterval = null;
 var pendingFiles = [];
+var knownMessageIds = new Set();
 
 function loadUserId() {
   fetch('/api/auth/me', {
@@ -50,58 +64,61 @@ function loadMessages() {
   })
   .then(function(r) { return r.json(); })
   .then(function(data) {
-    renderMessages(data.messages || data);
+    var messages = data.messages || data;
+    var container = document.getElementById('chatMessages');
+    var wasAtBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 50;
+    var firstLoad = knownMessageIds.size === 0;
+    if (!messages || messages.length === 0) {
+      if (firstLoad) container.innerHTML = '<div class="chat-empty">Сообщений пока нет</div>';
+      return;
+    }
+    if (firstLoad) container.innerHTML = '';
+    messages.forEach(function(m) {
+      if (!knownMessageIds.has(m.id)) {
+        knownMessageIds.add(m.id);
+        container.insertAdjacentHTML('beforeend', renderOneMessage(m));
+      }
+    });
+    if (wasAtBottom || firstLoad) {
+      container.scrollTop = container.scrollHeight;
+    }
   });
 }
 
-function renderMessages(messages) {
-  var container = document.getElementById('chatMessages');
-  var wasAtBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 50;
-  if (!messages || messages.length === 0) {
-    container.innerHTML = '<div class="chat-empty">Сообщений пока нет</div>';
-    return;
+function renderOneMessage(m) {
+  var isOwn = m.author_id === currentUserId;
+  var date = new Date(m.created_at);
+  var time = date.toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  var html = '<div class="chat-message ' + (isOwn ? 'chat-message-own' : 'chat-message-other') + '">';
+  html += '<div class="chat-message-author">' + m.author_name + '</div>';
+  if (m.text) {
+    html += '<div class="chat-message-text">' + escapeHtml(m.text) + '</div>';
   }
-  var html = '';
-  for (var i = 0; i < messages.length; i++) {
-    var m = messages[i];
-    var isOwn = m.author_id === currentUserId;
-    var date = new Date(m.created_at);
-    var time = date.toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-    html += '<div class="chat-message ' + (isOwn ? 'chat-message-own' : 'chat-message-other') + '">';
-    html += '<div class="chat-message-author">' + m.author_name + '</div>';
-    if (m.text) {
-      html += '<div class="chat-message-text">' + escapeHtml(m.text) + '</div>';
-    }
-    if (m.attachments && m.attachments.length > 0) {
-      html += '<div class="chat-attachments">';
-      for (var j = 0; j < m.attachments.length; j++) {
-        var a = m.attachments[j];
-        var isImage = a.mime_type && a.mime_type.startsWith('image/');
-        html += '<div class="chat-attachment">';
-        if (isImage) {
-          html += '<a href="/api/attachments/' + a.id + '" target="_blank" class="chat-attach-image-link">';
-          html += '<img src="/api/attachments/' + a.id + '" class="chat-attach-image" alt="' + escapeHtml(a.file_name) + '">';
-          html += '</a>';
-        }
+  if (m.attachments && m.attachments.length > 0) {
+    html += '<div class="chat-attachments">';
+    for (var j = 0; j < m.attachments.length; j++) {
+      var a = m.attachments[j];
+      var isImage = a.mime_type && a.mime_type.startsWith('image/');
+      html += '<div class="chat-attachment">';
+      if (isImage) {
+        html += '<img src="/api/attachments/' + a.id + '" class="chat-attach-image" alt="' + escapeHtml(a.file_name) + '" onclick="previewImage(' + a.id + ')" width="200" height="150">';
+      } else {
         html += '<a href="/api/attachments/' + a.id + '" target="_blank" class="chat-attach-file">';
         html += '<span class="chat-attach-icon">📄</span>';
         html += '<span class="chat-attach-name">' + escapeHtml(a.file_name) + '</span>';
         html += '<span class="chat-attach-size">' + formatSize(a.size) + '</span>';
         html += '</a>';
-        html += '</div>';
       }
       html += '</div>';
     }
-    html += '<div class="chat-message-time">' + time + '</div>';
-    if (isOwn) {
-      html += '<button class="chat-delete-btn" onclick="deleteMessage(' + m.id + ')">✕</button>';
-    }
     html += '</div>';
   }
-  container.innerHTML = html;
-  if (wasAtBottom) {
-    container.scrollTop = container.scrollHeight;
+  html += '<div class="chat-message-time">' + time + '</div>';
+  if (isOwn) {
+    html += '<button class="chat-delete-btn" onclick="deleteMessage(' + m.id + ')">✕</button>';
   }
+  html += '</div>';
+  return html;
 }
 
 function formatSize(bytes) {
@@ -175,6 +192,13 @@ function escapeHtml(str) {
   var div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
+}
+
+function previewImage(attachmentId) {
+  var modal = document.getElementById('imagePreviewModal');
+  var img = document.getElementById('imagePreviewImg');
+  img.src = '/api/attachments/' + attachmentId;
+  img.onload = function() { modal.style.display = 'flex'; };
 }
 
 document.addEventListener('DOMContentLoaded', function() {
