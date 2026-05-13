@@ -12,7 +12,7 @@ class TaskComment(db.Model):
     text = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    task = db.relationship("Task", backref="comments")
+    task = db.relationship("Task", backref=db.backref("comments", cascade="all, delete-orphan", passive_deletes=True))
     author = db.relationship("User", foreign_keys=[author_id])
     recipient = db.relationship("User", foreign_keys=[recipient_id])
 
