@@ -349,6 +349,18 @@ def create_app():
         flash("Требуется авторизация", "warning")
         return redirect(url_for("auth.login"))
 
+    @app.errorhandler(404)
+    def not_found(error):
+        if request.path.startswith("/api/"):
+            return jsonify({"msg": "Не найдено"}), 404
+        return render_template("errors/404.html"), 404
+
+    @app.errorhandler(500)
+    def server_error(error):
+        if request.path.startswith("/api/"):
+            return jsonify({"msg": "Внутренняя ошибка сервера"}), 500
+        return render_template("errors/500.html"), 500
+
     return app
 
 

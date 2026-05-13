@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block title %}Ошибка сервера{% endblock %}
+{% block content %}
+<div style="text-align:center;padding:80px 20px;">
+  <h1 style="font-size:72px;margin:0;color:#667eea;">500</h1>
+  <p style="font-size:18px;color:#6b7280;">Внутренняя ошибка сервера</p>
+  <a href="{{ url_for('index') }}" class="btn btn-primary" style="margin-top:20px;">На главную</a>
+</div>
+{% endblock %}
