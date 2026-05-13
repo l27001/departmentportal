@@ -24,7 +24,7 @@
       <input type="file" id="chatFileInput" multiple hidden>
       <span>📎</span>
     </label>
-    <textarea id="chatInput" placeholder="Напишите сообщение..." onkeydown="if(event.key==='Enter'&&!event.shiftKey) { event.preventDefault(); sendMessage(); }" style="flex:1;resize:none;overflow-y:hidden;min-height:42px;max-height:150px;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit;line-height:1.4;box-sizing:border-box;" oninput="autoResizeChatInput()"></textarea>
+    <textarea id="chatInput" placeholder="Напишите сообщение..." onkeydown="if(event.key==='Enter'&&!event.shiftKey) { event.preventDefault(); sendMessage(); }" oninput="autoResizeChatInput()"></textarea>
     <button class="chat-send-btn" id="chatSendBtn" onclick="sendMessage()">Отправить</button>
   </div>
 </div>
