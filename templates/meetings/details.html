@@ -115,7 +115,12 @@ function openMeetingTaskDetails(taskId) {
         html += 'Завершена';
       } else {
         html += '<select id="mtdStatusSelect" onchange="updateMeetingTaskStatus(this, ' + taskId + ')">';
-        html += '<option' + (ua.status === 'не начата' ? ' selected' : '') + '>Не начата</option>';
+        if (ua.status === 'на доработке') {
+          html += '<option selected>На доработке</option>';
+        }
+        if (ua.status !== 'на доработке') {
+          html += '<option' + (ua.status === 'не начата' ? ' selected' : '') + '>Не начата</option>';
+        }
         if (data.task.no_review || data.is_leader) {
           html += '<option' + (ua.status === 'завершена' ? ' selected' : '') + '>Завершена</option>';
         }
@@ -123,6 +128,9 @@ function openMeetingTaskDetails(taskId) {
           html += '<option' + (ua.status === 'на проверке' ? ' selected' : '') + '>На проверке</option>';
         }
         html += '</select>';
+        if (ua.status === 'на доработке') {
+          html += '<span class="status-dot returned"></span>';
+        }
       }
       html += '</span></div>';
     }
@@ -142,6 +150,15 @@ function openMeetingTaskDetails(taskId) {
 
     html += '</div>';
 
+    if (!data.is_leader && data.comments && data.comments.length > 0) {
+      html += '<div class="td-comments-section"><div class="td-comments-header">Комментарии</div>';
+      data.comments.forEach(function(c) {
+        var dateParts = c.created_at.split('T')[0].split('-');
+        html += '<div class="td-comment-item"><span class="td-comment-author">' + c.author_name + '</span> <span class="td-comment-text">' + c.text.replace(/\n/g, '<br>') + '</span> <span class="td-comment-date">' + dateParts[2] + '.' + dateParts[1] + '.' + dateParts[0] + '</span></div>';
+      });
+      html += '</div>';
+    }
+
     if (data.attachments && data.attachments.length > 0) {
       html += '<h3 class="td-heading">Файлы</h3><div class="attachment-list">';
       data.attachments.forEach(function(a) {
@@ -152,7 +169,7 @@ function openMeetingTaskDetails(taskId) {
 
     if (data.is_leader && data.assignees.length > 0) {
       html += '<div class="read-status-section">';
-      var groups = { 'не начата': [], 'на проверке': [], 'завершена': [] };
+      var groups = { 'не начата': [], 'на проверке': [], 'завершена': [], 'на доработке': [] };
       data.assignees.forEach(function(a) {
         if (groups[a.status]) groups[a.status].push(a);
       });
@@ -167,10 +184,18 @@ function openMeetingTaskDetails(taskId) {
         html += '<h4>На проверке</h4><div class="read-status-grid">';
         groups['на проверке'].forEach(function(a) {
           html += '<div class="read-status-card unread"><span class="read-status-name">' + a.user_name + '</span>';
-          html += '<div class="card-review-actions">';
+          html += '<div class="card-review-actions" data-task-id="' + taskId + '" data-assignee-id="' + a.user_id + '">';
           html += '<button class="btn-ck" onclick="reviewMeetingAssignment(' + taskId + ', ' + a.user_id + ', true)">✓</button>';
-          html += '<button class="btn-ck btn-ck-reject" onclick="reviewMeetingAssignment(' + taskId + ', ' + a.user_id + ', false)">✕</button>';
+          html += '<button class="btn-ck btn-ck-reject" onclick="meetingRejectWithComment(' + taskId + ', ' + a.user_id + ', this)">✕</button>';
+          html += '<input type="text" class="reject-comment-input" placeholder="Причина..." style="display:none;width:130px;font-size:11px;padding:2px 6px;border:1px solid #ddd;border-radius:4px;">';
           html += '</div></div>';
+        });
+        html += '</div>';
+      }
+      if (groups['на доработке'].length > 0) {
+        html += '<h4>На доработке</h4><div class="read-status-grid">';
+        groups['на доработке'].forEach(function(a) {
+          html += '<div class="read-status-card unread"><span class="read-status-name">' + a.user_name + '</span></div>';
         });
         html += '</div>';
       }
@@ -204,18 +229,65 @@ function updateMeetingTaskStatus(el, id) {
   });
 }
 
-function reviewMeetingAssignment(taskId, assigneeId, approved) {
+function reviewMeetingAssignment(taskId, assigneeId, approved, comment) {
+  var body = { approved: approved };
+  if (comment) {
+    body.comment = comment;
+  }
   fetch(`/api/tasks/${taskId}/assignees/${assigneeId}/approve`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({ approved: approved }),
+    body: JSON.stringify(body),
   })
   .then(function(response) {
     if (response.ok) {
       openMeetingTaskDetails(taskId);
     }
   });
+}
+
+function meetingRejectWithComment(taskId, assigneeId, btn) {
+  var container = btn.parentElement;
+  var input = container.querySelector('.reject-comment-input');
+  var approveBtn = container.querySelector('.btn-ck:not(.btn-ck-reject)');
+
+  container.dataset.rejectMode = '1';
+  input.style.display = 'inline-block';
+  input.focus();
+  approveBtn.textContent = 'Отмена';
+  approveBtn.className = 'btn-ck btn-ck-cancel';
+  approveBtn.onclick = function() { cancelMeetingReject(container, taskId, assigneeId); };
+  btn.textContent = '→';
+  btn.className = 'btn-ck btn-ck-send';
+  btn.onclick = function() { submitMeetingRejectComment(container, taskId, assigneeId); };
+  input.onkeydown = function(e) {
+    if (e.key === 'Enter' && input.value.trim()) {
+      submitMeetingRejectComment(container, taskId, assigneeId);
+    }
+  };
+}
+
+function cancelMeetingReject(container, taskId, assigneeId) {
+  var input = container.querySelector('.reject-comment-input');
+  var approveBtn = container.querySelector('.btn-ck-cancel');
+  var rejectBtn = container.querySelector('.btn-ck-send');
+  input.style.display = 'none';
+  input.value = '';
+  input.onkeydown = null;
+  delete container.dataset.rejectMode;
+  approveBtn.textContent = '✓';
+  approveBtn.className = 'btn-ck';
+  approveBtn.onclick = function() { reviewMeetingAssignment(taskId, assigneeId, true); };
+  rejectBtn.textContent = '✕';
+  rejectBtn.className = 'btn-ck btn-ck-reject';
+  rejectBtn.onclick = function() { meetingRejectWithComment(taskId, assigneeId, rejectBtn); };
+}
+
+function submitMeetingRejectComment(container, taskId, assigneeId) {
+  var input = container.querySelector('.reject-comment-input');
+  var comment = input.value.trim();
+  reviewMeetingAssignment(taskId, assigneeId, false, comment || undefined);
 }
 </script>
 {% endblock %}

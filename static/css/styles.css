@@ -646,6 +646,23 @@ span.status.awaiting-review {
   animation: pulse-review 2s infinite;
 }
 
+span.status.returned {
+  background-color: #e65100;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.status-dot.returned {
+  background: #e65100;
+}
+
 span.status.expired {
   display: inline-flex;
   align-items: center;
@@ -2467,6 +2484,10 @@ input {
 .btn-ck:hover { background: #10b98130; transform: scale(1.1); }
 .btn-ck-reject { background: #ef444418; color: #dc2626; }
 .btn-ck-reject:hover { background: #ef444430; }
+.btn-ck-cancel { background: #6b728018; color: #6b7280; width:auto; padding:0 6px; font-size:11px; }
+.btn-ck-cancel:hover { background: #6b728030; }
+.btn-ck-send { background: #10b98118; color: #059669; width:auto; padding:0 6px; font-size:13px; }
+.btn-ck-send:hover { background: #10b98130; }
 
 .assignee-card-status.status-read { background: #e8f5e9; color: #2e7d32; }
 .assignee-card-status.status-unread { background: #fce4ec; color: #c62828; }
@@ -4381,6 +4402,53 @@ a.status.meeting-linked:hover {
   margin-top: 20px;
   padding-top: 16px;
   border-top: 1px solid #e5e7eb;
+}
+
+.td-comments-section {
+  margin-top: 20px;
+  padding: 12px 14px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border-left: 3px solid #667eea;
+}
+
+.td-comments-header {
+  font-size: 13px;
+  font-weight: 700;
+  color: #667eea;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.td-comment-item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 13px;
+}
+
+.td-comment-item:last-child {
+  border-bottom: none;
+}
+
+.td-comment-author {
+  font-weight: 600;
+  color: #667eea;
+}
+
+.td-comment-text {
+  color: #374151;
+  flex: 1 1 100%;
+}
+
+.td-comment-date {
+  color: #9ca3af;
+  font-size: 12px;
 }
 
 .meeting-link-badge {

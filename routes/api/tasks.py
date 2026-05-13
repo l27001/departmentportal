@@ -4,6 +4,7 @@ from datetime import datetime, date
 from sqlalchemy import desc, asc
 from extensions import db
 from models.task import Task, TaskUserAssignment
+from models.task_comment import TaskComment
 from models.user import User
 from models.group import Group, UserGroup
 from models.attachment import Attachment
@@ -409,7 +410,7 @@ def update_status(task_id):
     role = Role.query.get(role_id)
     data = request.json
 
-    allowed_statuses = ["не начата", "завершена", "на проверке"]
+    allowed_statuses = ["не начата", "завершена", "на проверке", "на доработке"]
     new_status = data.get("status", "").strip().lower()
 
     if new_status not in allowed_statuses:
@@ -422,6 +423,8 @@ def update_status(task_id):
 
     task = Task.query.get_or_404(task_id)
 
+    if new_status == "на доработке" and role.name not in ("Руководитель", "Документовед"):
+        return jsonify({"msg": "Недопустимый статус"}), 400
     if new_status == "завершена" and not task.no_review and role.name not in ("Руководитель", "Документовед"):
         task_status.status = "на проверке"
         task_status.marked_complete = True
@@ -486,8 +489,17 @@ def approve_assignee(task_id, assignee_id):
         assignment.status = "завершена"
     else:
         assignment.approved = False
-        assignment.status = "не начата"
+        assignment.status = "на доработке"
         assignment.marked_complete = False
+        comment_text = (data.get("comment") or "").strip()
+        if comment_text:
+            comment = TaskComment(
+                task_id=task_id,
+                author_id=get_jwt_identity(),
+                recipient_id=assignee_id,
+                text=comment_text
+            )
+            db.session.add(comment)
 
     db.session.commit()
     return jsonify({"msg": "Status updated"})
@@ -583,10 +595,33 @@ def task_details_modal(task_id):
               type: array
               items:
                 type: object
-      403:
-        description: Доступ запрещён
-      404:
-        description: Не найдено
+            comments:
+              type: array
+              description: Комментарии (для руководителя/документоведа — все, для сотрудника — только адресованные ему)
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  task_id:
+                    type: integer
+                  author_id:
+                    type: integer
+                  author_name:
+                    type: string
+                  recipient_id:
+                    type: integer
+                  recipient_name:
+                    type: string
+                  text:
+                    type: string
+                  created_at:
+                    type: string
+                    format: date-time
+       403:
+         description: Доступ запрещён
+       404:
+         description: Не найдено
     """
     user_id = get_jwt_identity()
     role = Role.query.filter_by(id=get_jwt()["role"]).first()
@@ -604,7 +639,7 @@ def task_details_modal(task_id):
     assignees = []
     if role.name in ('Руководитель', 'Документовед'):
         assignees_raw = TaskUserAssignment.query.filter_by(task_id=task_id).all()
-        status_order = {'завершена': 0, 'на проверке': 1, 'не начата': 2}
+        status_order = {'завершена': 0, 'на проверке': 1, 'на доработке': 2, 'не начата': 3}
         assignees_raw.sort(key=lambda a: (status_order.get(a.status, 4), a.user.name))
         assignees = [
             {
@@ -624,6 +659,11 @@ def task_details_modal(task_id):
         m = DepartmentMeeting.query.get(mt.meeting_id)
         if m:
             meeting_info = {"id": m.id, "title": m.title}
+
+    if role.name in ('Руководитель', 'Документовед'):
+        comments = TaskComment.query.filter_by(task_id=task_id).order_by(TaskComment.created_at.asc()).all()
+    else:
+        comments = TaskComment.query.filter_by(task_id=task_id, recipient_id=user_id).order_by(TaskComment.created_at.asc()).all()
 
     today = date.today()
     is_leader = role.name in ('Руководитель', 'Документовед')
@@ -656,5 +696,6 @@ def task_details_modal(task_id):
             }
             for a in attachments
         ],
+        "comments": [c.to_dict() for c in comments],
     })
 
