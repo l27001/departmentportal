@@ -24,7 +24,7 @@
       <input type="file" id="chatFileInput" multiple hidden>
       <span>📎</span>
     </label>
-    <input type="text" id="chatInput" placeholder="Напишите сообщение..." onkeydown="if(event.key==='Enter') sendMessage()" style="flex:1;">
+    <textarea id="chatInput" placeholder="Напишите сообщение..." onkeydown="if(event.key==='Enter'&&!event.shiftKey) { event.preventDefault(); sendMessage(); }" style="flex:1;resize:none;overflow-y:hidden;min-height:42px;max-height:150px;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit;line-height:1.4;box-sizing:border-box;" oninput="autoResizeChatInput()"></textarea>
     <button class="chat-send-btn" id="chatSendBtn" onclick="sendMessage()">Отправить</button>
   </div>
 </div>
@@ -128,6 +128,12 @@ function formatSize(bytes) {
   return (bytes / 1048576).toFixed(1) + ' MB';
 }
 
+function autoResizeChatInput() {
+  var el = document.getElementById('chatInput');
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 150) + 'px';
+}
+
 function sendMessage() {
   var input = document.getElementById('chatInput');
   var text = input.value.trim();
@@ -150,6 +156,7 @@ function sendMessage() {
     .then(function(r) { return r.json(); })
     .then(function() {
       input.value = '';
+      autoResizeChatInput();
       clearPendingFiles();
       btn.disabled = false;
       loadMessages();
@@ -167,6 +174,7 @@ function sendMessage() {
     .then(function(r) { return r.json(); })
     .then(function() {
       input.value = '';
+      autoResizeChatInput();
       btn.disabled = false;
       loadMessages();
     })
