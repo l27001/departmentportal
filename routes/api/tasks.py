@@ -618,9 +618,9 @@ def task_details_modal(task_id):
                   created_at:
                     type: string
                     format: date-time
-       403:
+      403:
          description: Доступ запрещён
-       404:
+      404:
          description: Не найдено
     """
     user_id = get_jwt_identity()
