@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from extensions import db
 from models.news import News
+from models.role import Role
 
 news_bp = Blueprint("api_news", __name__, url_prefix="/api/news")
 
@@ -115,7 +116,9 @@ def create_news():
       400:
         description: Ошибка валидации
     """
-    user_id = get_jwt_identity()
+    role = Role.query.filter_by(id=get_jwt()["role"]).first()
+    if role.name not in ("Руководитель", "Документовед", "Ответственный"):
+        return jsonify({"msg": "Доступ запрещён"}), 403
 
     data = request.json
     title = data.get("title")
@@ -135,7 +138,7 @@ def create_news():
 @news_bp.route("/<int:id>", methods=["PATCH"])
 @jwt_required()
 def update_news(id):
-    """Обновить новость (только Руководитель/Документовед)
+    """Обновить новость (только Руководитель/Документовед/Ответственный)
     ---
     tags: [News]
     security:
@@ -165,8 +168,8 @@ def update_news(id):
       403:
         description: Доступ запрещён
     """
-    role = get_jwt()["role"]
-    if role not in (1, 2):
+    role = Role.query.filter_by(id=get_jwt()["role"]).first()
+    if role.name not in ("Руководитель", "Документовед", "Ответственный"):
         return jsonify({"msg": "Доступ запрещён"}), 403
 
     news = News.query.filter_by(id=id, is_deleted=False).first_or_404()
@@ -202,8 +205,8 @@ def delete_news(id):
       403:
         description: Доступ запрещён
     """
-    role = get_jwt()["role"]
-    if role not in (1, 2):
+    role = Role.query.filter_by(id=get_jwt()["role"]).first()
+    if role.name not in ("Руководитель", "Документовед", "Ответственный"):
         return jsonify({"msg": "Доступ запрещён"}), 403
 
     news = News.query.filter_by(id=id, is_deleted=False).first_or_404()

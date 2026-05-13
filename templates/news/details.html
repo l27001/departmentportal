@@ -12,7 +12,7 @@
             {{ news.title }}
         </h2>
         <div class="news-details-actions">
-            {% if role.name in ('Руководитель', 'Документовед') %}
+            {% if role.name in ('Руководитель', 'Документовед', 'Ответственный') %}
             <a href="{{ url_for('web_news.edit_news', news_id=news.id) }}" class="btn btn-primary">Редактировать</a>
             {% endif %}
             <a href="{{ url_for('web_news.list_news') }}" class="btn btn-cancel">Назад</a>

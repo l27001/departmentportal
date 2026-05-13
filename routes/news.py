@@ -24,6 +24,9 @@ def list_news():
 @jwt_required()
 def create_news():
     role = Role.query.filter_by(id=get_jwt()["role"]).first()
+    if role.name not in ("Руководитель", "Документовед", "Ответственный"):
+        flash("Доступ запрещён", "danger")
+        return redirect(url_for("web_news.list_news"))
 
     if request.method == "POST":
         title = request.form.get("title")
@@ -85,7 +88,7 @@ def news_details(news_id):
 @jwt_required()
 def edit_news(news_id):
     role = Role.query.filter_by(id=get_jwt()["role"]).first()
-    if role.name not in ("Руководитель", "Документовед"):
+    if role.name not in ("Руководитель", "Документовед", "Ответственный"):
         flash("Доступ запрещён", "danger")
         return redirect(url_for("web_news.list_news"))
 
@@ -142,7 +145,7 @@ def edit_news(news_id):
 @jwt_required()
 def delete_news(news_id):
     role = Role.query.filter_by(id=get_jwt()["role"]).first()
-    if role.name not in ("Руководитель", "Документовед"):
+    if role.name not in ("Руководитель", "Документовед", "Ответственный"):
         flash("Доступ запрещён", "danger")
         return redirect(url_for("web_news.list_news"))
 
