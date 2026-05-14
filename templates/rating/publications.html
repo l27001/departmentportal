@@ -24,104 +24,131 @@
                 <a href="{{ url_for('rating.add_publication') }}" class="btn btn-primary">Добавить публикацию</a>
             </div>
 
-            <div class="rating-info-block publications">
-                <span class="info-label">Скачать</span>
-                <div class="rating-export-buttons">
-                    <a href="{{ url_for('rating.export_publications_excel', search_query=request.args.get('search_query',''), author_id=request.args.get('author_id',''), pub_type=request.args.get('pub_type',''), date_range=request.args.get('date_range',''), date_from=request.args.get('date_from',''), date_to=request.args.get('date_to','')) }}" class="btn btn-sm btn-success">📊 Excel</a>
-                    <a href="{{ url_for('rating.export_publications_word', search_query=request.args.get('search_query',''), author_id=request.args.get('author_id',''), pub_type=request.args.get('pub_type',''), date_range=request.args.get('date_range',''), date_from=request.args.get('date_from',''), date_to=request.args.get('date_to','')) }}" class="btn btn-sm btn-info">📄 Word</a>
-                </div>
-            </div>
-
             <form method="GET" class="rating-search-form" id="search-form">
                 <input type="hidden" name="sort_column" value="{{ request.args.get('sort_column', 'year') }}">
                 <input type="hidden" name="sort_dir" value="{{ request.args.get('sort_dir', 'desc') }}">
-                <div class="row g-2">
-                    <div class="col-md-3">
-                        <input type="text" name="search_query" class="form-control"
-                               placeholder="Поиск по названию/авторам..."
-                               value="{{ request.args.get('search_query', '') }}">
+                <div class="filter-panel">
+                    <div class="filter-row">
+                        <div class="filter-group filter-group-grow">
+                            <label class="filter-label">Поиск</label>
+                            <input type="text" name="search_query" class="form-control form-control-sm"
+                                   placeholder="Название, авторы..."
+                                   value="{{ request.args.get('search_query', '') }}">
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">Тип</label>
+                            <select name="pub_type" class="form-select form-select-sm">
+                                <option value="">Все</option>
+                                <option value="book" {% if request.args.get('pub_type') == 'book' %}selected{% endif %}>Книга</option>
+                                <option value="journal_article" {% if request.args.get('pub_type') == 'journal_article' %}selected{% endif %}>Журнал</option>
+                                <option value="collection_article" {% if request.args.get('pub_type') == 'collection_article' %}selected{% endif %}>Сборник научных статей</option>
+                                <option value="dissertation" {% if request.args.get('pub_type') == 'dissertation' %}selected{% endif %}>Диссертация</option>
+                                <option value="abstract" {% if request.args.get('pub_type') == 'abstract' %}selected{% endif %}>Автореферат</option>
+                                <option value="internet" {% if request.args.get('pub_type') == 'internet' %}selected{% endif %}>Интернет</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">Индекс</label>
+                            <select name="index_type" class="form-select form-select-sm">
+                                <option value="">Все</option>
+                                <option value="scopus" {% if request.args.get('index_type') == 'scopus' %}selected{% endif %}>Scopus</option>
+                                <option value="vak" {% if request.args.get('index_type') == 'vak' %}selected{% endif %}>ВАК</option>
+                                <option value="none" {% if request.args.get('index_type') == 'none' %}selected{% endif %}>Без индекса</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">Доклад</label>
+                            <select name="student_report" class="form-select form-select-sm">
+                                <option value="">Все</option>
+                                <option value="yes" {% if request.args.get('student_report') == 'yes' %}selected{% endif %}>Студенческие</option>
+                                <option value="no" {% if request.args.get('student_report') == 'no' %}selected{% endif %}>Не студенческие</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">Тип книги</label>
+                            <select name="book_type" class="form-select form-select-sm">
+                                <option value="">Все</option>
+                                <option value="textbook" {% if request.args.get('book_type') == 'textbook' %}selected{% endif %}>Учебное пособие</option>
+                                <option value="monograph" {% if request.args.get('book_type') == 'monograph' %}selected{% endif %}>Монография</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">Период</label>
+                            <select name="date_range" class="form-select form-select-sm" id="date-range">
+                                <option value="all" {% if request.args.get('date_range', 'all') == 'all' %}selected{% endif %}>Всё время</option>
+                                <option value="3" {% if request.args.get('date_range') == '3' %}selected{% endif %}>3 мес.</option>
+                                <option value="6" {% if request.args.get('date_range') == '6' %}selected{% endif %}>6 мес.</option>
+                                <option value="12" {% if request.args.get('date_range') == '12' %}selected{% endif %}>Год</option>
+                                <option value="36" {% if request.args.get('date_range') == '36' %}selected{% endif %}>3 года</option>
+                                <option value="60" {% if request.args.get('date_range') == '60' %}selected{% endif %}>5 лет</option>
+                                <option value="academic_year" {% if request.args.get('date_range') == 'academic_year' %}selected{% endif %}>Учебный год</option>
+                                <option value="custom" {% if request.args.get('date_range') == 'custom' %}selected{% endif %}>Свой</option>
+                            </select>
+                        </div>
+                        <div class="filter-group filter-actions">
+                            <label class="filter-label">&nbsp;</label>
+                            <button type="submit" class="btn btn-primary btn-sm w-100">Поиск</button>
+                        </div>
                     </div>
-                    <div class="col-md-2">
-                        <div class="author-filter">
-                            <button type="button" class="btn btn-outline-secondary btn-sm w-100" onclick="toggleAuthorFilter(this)">
-                                Авторы ▾
-                            </button>
-                            <div class="author-filter-dropdown" style="display: none;">
-                                <div class="author-filter-actions">
-                                    <a href="#" onclick="selectAllAuthors(event)">Все</a>
-                                    <a href="#" onclick="clearAllAuthors(event)">Снять</a>
+                    <div class="filter-row" id="custom-dates" style="display: none;">
+                        <div class="filter-group">
+                            <label class="filter-label">Дата от</label>
+                            <input type="date" name="date_from" class="form-control form-control-sm" value="{{ request.args.get('date_from', '') }}">
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">Дата до</label>
+                            <input type="date" name="date_to" class="form-control form-control-sm" value="{{ request.args.get('date_to', '') }}">
+                        </div>
+                    </div>
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label class="filter-label">Автор</label>
+                            <div class="author-filter">
+                                <button type="button" class="btn btn-outline-secondary btn-sm w-100" onclick="toggleAuthorFilter(this)">
+                                    Выбрать ▾
+                                </button>
+                                <div class="author-filter-dropdown" style="display: none;">
+                                    <div class="author-filter-actions">
+                                        <a href="#" onclick="selectAllAuthors(event)">Все</a>
+                                        <a href="#" onclick="clearAllAuthors(event)">Снять</a>
+                                    </div>
+                                    {% for u in users_list %}
+                                    <label class="author-filter-item">
+                                        <input type="checkbox" name="author_ids" value="{{ u.id }}"
+                                            {% if not author_ids or u.id in author_ids %}checked{% endif %}>
+                                        {{ u.name }}
+                                    </label>
+                                    {% endfor %}
                                 </div>
-                                {% for u in users_list %}
-                                <label class="author-filter-item">
-                                    <input type="checkbox" name="author_ids" value="{{ u.id }}"
-                                        {% if not author_ids or u.id in author_ids %}checked{% endif %}>
-                                    {{ u.name }}
-                                </label>
-                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">Сортировка</label>
+                            <div class="filter-sort">
+                                <select class="form-select form-select-sm" onchange="sortBy(this.value)">
+                                    <option value="year" {% if sort_col == 'year' %}selected{% endif %}>По году</option>
+                                    <option value="title" {% if sort_col == 'title' %}selected{% endif %}>По названию</option>
+                                    <option value="type" {% if sort_col == 'type' %}selected{% endif %}>По типу</option>
+                                </select>
+                                <a href="#" onclick="toggleDir(); return false;" class="btn btn-sm btn-outline-secondary sort-dir-btn" title="Изменить направление">
+                                    {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                                </a>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-2">
-                        <select name="pub_type" class="form-select">
-                            <option value="">Все типы</option>
-                            <option value="book" {% if request.args.get('pub_type') == 'book' %}selected{% endif %}>Книга</option>
-                            <option value="journal_article" {% if request.args.get('pub_type') == 'journal_article' %}selected{% endif %}>Журнал</option>
-                            <option value="collection_article" {% if request.args.get('pub_type') == 'collection_article' %}selected{% endif %}>Сборник научных статей</option>
-                            <option value="dissertation" {% if request.args.get('pub_type') == 'dissertation' %}selected{% endif %}>Диссертация</option>
-                            <option value="abstract" {% if request.args.get('pub_type') == 'abstract' %}selected{% endif %}>Автореферат</option>
-                            <option value="internet" {% if request.args.get('pub_type') == 'internet' %}selected{% endif %}>Интернет</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <select name="index_type" class="form-select">
-                            <option value="">Все индексы</option>
-                            <option value="scopus" {% if request.args.get('index_type') == 'scopus' %}selected{% endif %}>Scopus</option>
-                            <option value="vak" {% if request.args.get('index_type') == 'vak' %}selected{% endif %}>ВАК</option>
-                            <option value="none" {% if request.args.get('index_type') == 'none' %}selected{% endif %}>Без индекса</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <select name="student_report" class="form-select">
-                            <option value="">Все доклады</option>
-                            <option value="yes" {% if request.args.get('student_report') == 'yes' %}selected{% endif %}>Студенческие</option>
-                            <option value="no" {% if request.args.get('student_report') == 'no' %}selected{% endif %}>Не студенческие</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <select name="book_type" class="form-select">
-                            <option value="">Все книги</option>
-                            <option value="textbook" {% if request.args.get('book_type') == 'textbook' %}selected{% endif %}>Учебное пособие</option>
-                            <option value="monograph" {% if request.args.get('book_type') == 'monograph' %}selected{% endif %}>Монография</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <select name="date_range" class="form-select" id="date-range">
-                            <option value="all" {% if request.args.get('date_range', 'all') == 'all' %}selected{% endif %}>За всё время</option>
-                            <option value="3" {% if request.args.get('date_range') == '3' %}selected{% endif %}>За 3 месяца</option>
-                            <option value="6" {% if request.args.get('date_range') == '6' %}selected{% endif %}>За полгода</option>
-                            <option value="12" {% if request.args.get('date_range') == '12' %}selected{% endif %}>За год</option>
-                            <option value="36" {% if request.args.get('date_range') == '36' %}selected{% endif %}>За 3 года</option>
-                            <option value="60" {% if request.args.get('date_range') == '60' %}selected{% endif %}>За 5 лет</option>
-                            <option value="academic_year" {% if request.args.get('date_range') == 'academic_year' %}selected{% endif %}>За учебный год</option>
-                            <option value="custom" {% if request.args.get('date_range') == 'custom' %}selected{% endif %}>Выбрать период</option>
-                        </select>
-                    </div>
-                    <div class="col-md-1">
-                        <button type="submit" class="btn btn-primary w-100">Найти</button>
-                    </div>
-                    <div class="col-md-2">
-                        <button type="submit" class="btn btn-primary w-100">Найти</button>
-                    </div>
-                </div>
-                <div class="row g-2 mt-1" id="custom-dates" style="display: none;">
-                    <div class="col-md-3">
-                        <input type="date" name="date_from" class="form-control" value="{{ request.args.get('date_from', '') }}">
-                    </div>
-                    <div class="col-md-3">
-                        <input type="date" name="date_to" class="form-control" value="{{ request.args.get('date_to', '') }}">
-                    </div>
                 </div>
             </form>
+
+            <div class="pub-toolbar">
+                <div class="pub-toolbar-left">
+                    <span class="pub-toolbar-title">Скачать:</span>
+                    <a href="{{ url_for('rating.export_publications_excel', search_query=request.args.get('search_query',''), author_id=request.args.get('author_id',''), pub_type=request.args.get('pub_type',''), date_range=request.args.get('date_range',''), date_from=request.args.get('date_from',''), date_to=request.args.get('date_to','')) }}" class="btn btn-sm btn-success">Excel</a>
+                    <a href="{{ url_for('rating.export_publications_word', search_query=request.args.get('search_query',''), author_id=request.args.get('author_id',''), pub_type=request.args.get('pub_type',''), date_range=request.args.get('date_range',''), date_from=request.args.get('date_from',''), date_to=request.args.get('date_to','')) }}" class="btn btn-sm btn-info">Word</a>
+                </div>
+                {% if publications.items %}
+                <span class="pub-toolbar-count">Всего: {{ publications.total }}</span>
+                {% endif %}
+            </div>
 
             {% set type_names = {
                 'publication_books': 'Книга',
@@ -143,74 +170,57 @@
             {% set sort_col = request.args.get('sort_column', 'year') %}
             {% set sort_dir = request.args.get('sort_dir', 'desc') %}
 
-            <div class="rating-sort-bar">
-                <span class="sort-label">Сортировка:</span>
-                <select class="form-select form-select-sm sort-select" onchange="sortBy(this.value)">
-                    <option value="year" {% if sort_col == 'year' %}selected{% endif %}>По году</option>
-                    <option value="title" {% if sort_col == 'title' %}selected{% endif %}>По названию</option>
-                    <option value="type" {% if sort_col == 'type' %}selected{% endif %}>По типу</option>
-                </select>
-                <a href="#" onclick="toggleDir(); return false;" class="btn btn-sm btn-outline-secondary sort-dir-btn" title="Изменить направление">
-                    {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
-                </a>
-            </div>
-
             {% if publications.items %}
-                <small class="text-muted d-block mb-2">Всего: {{ publications.total }}</small>
-
-                <div class="rating-cards">
+                <div class="pub-list">
                 {% for pub in publications.items %}
                     {% set pub_type_key = pub_type_map.get(pub.__tablename__, 'book') %}
-                    <div class="item-card">
-                        <div class="item-card-body">
-                            <div class="item-card-top">
-                                <div class="item-card-title-group">
-                                    <h5 class="item-card-title">
-                                        <a href="{{ url_for('rating.view_publication', pub_id=pub.id, pub_type=pub_type_key) }}" style="color: #2c2c2c; text-decoration: none;">
-                                            {{ pub.title }}
-                                        </a>
-                                    </h5>
-                                    <div class="item-card-gost" style="font-family: 'Courier New', monospace; font-size: 12px; color: #666; margin-top: 4px;">
-                                        {{ pub.gost_string or '' }}
-                                    </div>
-                                </div>
-                                <div class="item-card-actions">
-                                    <a href="{{ url_for('rating.edit_publication', pub_id=pub.id, pub_type=pub_type_key) }}" class="btn-action btn-action-edit">Изменить</a>
-                                    <form method="POST" action="{{ url_for('rating.delete_publication', pub_id=pub.id, pub_type=pub_type_key) }}" style="display:inline;">
-                                        <button type="submit" class="btn-action btn-action-delete" onclick="return confirm('Удалить публикацию?')">Удалить</button>
-                                    </form>
-                                </div>
+                    <div class="pub-list-item">
+                        <div class="pub-list-main">
+                            <a href="{{ url_for('rating.view_publication', pub_id=pub.id, pub_type=pub_type_key) }}" class="pub-list-title">
+                                {{ pub.title }}
+                            </a>
+                            <div class="pub-list-gost">
+                                {{ pub.gost_string or '' }}
                             </div>
-                            <div class="item-card-badges">
-                                <span class="badge bg-primary">{{ type_names.get(pub.__tablename__, pub.__tablename__) }}</span>
-                                <span class="badge bg-secondary">{{ pub.year }}</span>
-                                {% if pub.student_report %}
-                                <span class="badge bg-info text-dark">Студ.</span>
-                                {% endif %}
+                            <div class="pub-list-meta">
+                                <span class="pub-badge">{{ type_names.get(pub.__tablename__, pub.__tablename__) }}</span>
+                                <span class="pub-badge">{{ pub.year }}</span>
                                 {% if pub.__tablename__ == 'publication_journal_articles' and pub.scopus %}
-                                <span class="badge bg-warning text-dark">Scopus</span>
+                                <span class="pub-badge pub-badge-scopus">Scopus</span>
                                 {% endif %}
                                 {% if pub.__tablename__ == 'publication_journal_articles' and pub.vak %}
-                                <span class="badge bg-danger">ВАК</span>
+                                <span class="pub-badge pub-badge-vak">ВАК</span>
                                 {% endif %}
-                            </div>
-                            <div class="item-card-meta">
-                                <span class="meta-item">👤 {{ pub.user.name }}</span>
+                                {% if pub.student_report %}
+                                <span class="pub-badge pub-badge-student">Студ.</span>
+                                {% endif %}
+                                <span class="pub-meta-sep">|</span>
+                                <span>{{ pub.user.name }}</span>
                                 {% if pub.authors %}
-                                <span class="meta-item">✏️ {{ pub.authors }}</span>
+                                <span class="pub-meta-sep">|</span>
+                                <span>{{ pub.authors }}</span>
                                 {% endif %}
                                 {% if pub.author_single %}
-                                <span class="meta-item">✏️ {{ pub.author_single }}</span>
+                                <span class="pub-meta-sep">|</span>
+                                <span>{{ pub.author_single }}</span>
                                 {% endif %}
                                 {% set co = coauthors_map.get((pub.__tablename__, pub.id), []) %}
                                 {% if co %}
-                                <span class="meta-item">✏️ Соавторы: {{ co | map(attribute='name') | join(', ') }}</span>
+                                <span class="pub-meta-sep">|</span>
+                                <span>Соавт.: {{ co | map(attribute='name') | join(', ') }}</span>
                                 {% endif %}
                                 {% set sv = supervisors_map.get((pub.__tablename__, pub.id), []) %}
                                 {% if sv %}
-                                <span class="meta-item">🎓 Научный руководитель: {{ sv | map(attribute='name') | join(', ') }}</span>
+                                <span class="pub-meta-sep">|</span>
+                                <span>Науч. рук.: {{ sv | map(attribute='name') | join(', ') }}</span>
                                 {% endif %}
                             </div>
+                        </div>
+                        <div class="pub-list-side">
+                            <a href="{{ url_for('rating.edit_publication', pub_id=pub.id, pub_type=pub_type_key) }}" class="pub-action">Изменить</a>
+                            <form method="POST" action="{{ url_for('rating.delete_publication', pub_id=pub.id, pub_type=pub_type_key) }}">
+                                <button type="submit" class="pub-action pub-action-del" onclick="return confirm('Удалить публикацию?')">Удалить</button>
+                            </form>
                         </div>
                     </div>
                 {% endfor %}
@@ -255,129 +265,52 @@
 </div>
 
 <style>
-.rating-sort-bar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 16px;
-    padding: 10px 14px;
+.filter-panel {
     background: #f8f9fa;
-    border-radius: 8px;
     border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
 }
-.sort-label {
-    font-size: 13px;
-    color: #666;
-    white-space: nowrap;
+.filter-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+}
+.filter-row + .filter-row {
+    margin-top: 8px;
+}
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 130px;
+    flex-shrink: 0;
+}
+.filter-group-grow {
+    flex: 1;
+    min-width: 180px;
+}
+.filter-label {
+    font-size: 11px;
+    color: #888;
     font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
 }
-.sort-select {
-    width: auto;
-    min-width: 160px;
+.filter-actions {
+    min-width: auto;
+}
+.filter-sort {
+    display: flex;
+    gap: 6px;
+    align-items: center;
 }
 .sort-dir-btn {
     font-size: 14px;
     line-height: 1;
     padding: 4px 10px;
-}
-
-.sortable { cursor: pointer; user-select: none; }
-.sortable:hover { background-color: #f0f0f0; }
-.sort-indicator { color: #999; }
-.sort-active .sort-indicator { color: #333; font-weight: bold; }
-
-.item-card {
-    background: #fff;
-    border: 1px solid #e0e0e0;
-    border-radius: 10px;
-    margin-bottom: 12px;
-    transition: box-shadow 0.2s, border-color 0.2s;
-}
-.item-card:hover {
-    border-color: #c5d5f0;
-    box-shadow: 0 2px 12px rgba(74,44,122,0.08);
-}
-.item-card-body {
-    padding: 16px 20px;
-}
-.item-card-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 12px;
-}
-.item-card-title-group {
-    flex: 1;
-    min-width: 0;
-}
-.item-card-title {
-    margin: 0;
-    color: #2c2c2c;
-    font-size: 16px;
-    font-weight: 600;
-}
-.item-card-title a:hover {
-    text-decoration: underline !important;
-}
-.item-card-actions {
-    display: flex;
-    gap: 6px;
-    flex-shrink: 0;
-}
-.btn-action {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 5px 14px;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 500;
-    text-decoration: none;
-    border: none;
-    cursor: pointer;
-    transition: background 0.2s, box-shadow 0.2s;
-}
-.btn-action-edit {
-    background: #e8f0fe;
-    color: #4a2c7a;
-}
-.btn-action-edit:hover {
-    background: #d4e2fc;
-    color: #3a1e6a;
-    text-decoration: none;
-}
-.btn-action-delete {
-    background: #fde8e8;
-    color: #c0392b;
-}
-.btn-action-delete:hover {
-    background: #fbd0d0;
-    color: #a93226;
-    text-decoration: none;
-}
-.item-card-badges {
-    margin-top: 8px;
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-.item-card-badges .badge {
-    font-size: 12px;
-    padding: 4px 10px;
-    font-weight: 500;
-}
-.item-card-meta {
-    margin-top: 8px;
-    display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
-    color: #666;
-    font-size: 13px;
-}
-.meta-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
 }
 .author-filter {
     position: relative;
@@ -386,7 +319,7 @@
     position: absolute;
     top: 100%;
     left: 0;
-    right: 0;
+    width: 240px;
     z-index: 100;
     background: #fff;
     border: 1px solid #ccc;
@@ -427,6 +360,134 @@
 }
 .author-filter-item input {
     margin: 0;
+}
+
+.pub-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 14px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+.pub-toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.pub-toolbar-title {
+    font-size: 13px;
+    color: #666;
+    font-weight: 500;
+}
+.pub-toolbar-count {
+    font-size: 13px;
+    color: #888;
+}
+.pub-list {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+}
+.pub-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 12px 16px;
+    border-bottom: 1px solid #eee;
+    gap: 12px;
+}
+.pub-list-item:last-child {
+    border-bottom: none;
+}
+.pub-list-item:hover {
+    background: #fafbfc;
+}
+.pub-list-main {
+    flex: 1;
+    min-width: 0;
+}
+.pub-list-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #2c2c2c;
+    text-decoration: none;
+    line-height: 1.4;
+}
+.pub-list-title:hover {
+    color: #4a2c7a;
+    text-decoration: underline;
+}
+.pub-list-gost {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #666;
+    margin-top: 4px;
+    word-break: break-word;
+}
+.pub-list-meta {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #888;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+}
+.pub-meta-sep {
+    color: #ddd;
+    margin: 0 1px;
+}
+.pub-badge {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 500;
+    background: #eef0f4;
+    color: #555;
+}
+.pub-badge-scopus {
+    background: #fff3cd;
+    color: #856404;
+}
+.pub-badge-vak {
+    background: #f8d7da;
+    color: #721c24;
+}
+.pub-badge-student {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+.pub-list-side {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex-shrink: 0;
+}
+.pub-action {
+    font-size: 12px;
+    color: #4a2c7a;
+    text-decoration: none;
+    background: none;
+    border: none;
+    padding: 2px 0;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.pub-action:hover {
+    text-decoration: underline;
+    color: #3a1e6a;
+}
+.pub-action-del {
+    color: #c0392b;
+}
+.pub-action-del:hover {
+    color: #a93226;
 }
 </style>
 
