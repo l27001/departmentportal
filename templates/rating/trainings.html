@@ -123,6 +123,9 @@
                                 <span class="badge bg-primary">{{ training.get_level_display() if training.get_level_display else training.level or '—' }}</span>
                                 {% if training.state_issued %}
                                 <span class="badge bg-success">Государственного образца</span>
+                                {% if training.certificate_number %}
+                                <span class="badge bg-info">{{ training.certificate_number }}</span>
+                                {% endif %}
                                 {% endif %}
                             </div>
                             <div class="item-card-meta">

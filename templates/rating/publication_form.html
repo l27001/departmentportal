@@ -245,10 +245,10 @@
                 <hr class="my-4">
 
                 <div class="mb-3">
-                    {{ form.doi.label(class="form-label") }}
-                    {{ form.doi(class="form-control" + (" is-invalid" if form.doi.errors else ""), placeholder="10.1000/xyz123") }}
-                    {% if form.doi.errors %}
-                    <div class="invalid-feedback d-block">{{ form.doi.errors[0] }}</div>
+                    {{ form.isbn.label(class="form-label") }}
+                    {{ form.isbn(class="form-control" + (" is-invalid" if form.isbn.errors else ""), placeholder="978-5-1234-5678-9") }}
+                    {% if form.isbn.errors %}
+                    <div class="invalid-feedback d-block">{{ form.isbn.errors[0] }}</div>
                     {% endif %}
                 </div>
 
@@ -258,6 +258,20 @@
                 </div>
 
                 {% if not template_mode and users is defined %}
+                {% if user is defined and user.role.name == 'Документовед' %}
+                <hr class="my-4">
+                <div class="mb-3">
+                    {{ form.owner_id.label(class="form-label", style="font-weight: 600; color: #4a2c7a;") }}
+                    {{ form.owner_id(class="form-select") }}
+                    <small class="text-muted">Выберите сотрудника, которому принадлежит запись</small>
+                </div>
+                {% endif %}
+                <hr class="my-4">
+                <div class="mb-3">
+                    {{ form.supervisor_id.label(class="form-label", style="font-weight: 600; color: #4a2c7a;") }}
+                    {{ form.supervisor_id(class="form-select") }}
+                    <small class="text-muted">Если авторы — студенты, укажите научного руководителя</small>
+                </div>
                 <hr class="my-4">
                 <div class="mb-3">
                     {{ form.coauthor_ids.label(class="form-label", style="font-weight: 600; color: #4a2c7a;") }}
@@ -336,7 +350,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         const form = document.querySelector('form');
-        const commonSelectors = '[name="title"], [name="year"], [name="publication_date"], [name="authors"], [name="author_single"], [name="doi"], [name="publication_type"]';
+        const commonSelectors = '[name="title"], [name="year"], [name="publication_date"], [name="authors"], [name="author_single"], [name="isbn"], [name="publication_type"]';
         form.querySelectorAll(commonSelectors).forEach(field => {
             if (field.value && !data[field.name]) {
                 data[field.name] = field.value;

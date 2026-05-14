@@ -8,7 +8,9 @@
             </select>
         </div>
         <div class="template-toolbar-actions">
+            {% if user is defined and user.role.name == 'Документовед' %}
             <button type="button" id="save-template-btn" class="btn btn-sm btn-outline-primary">Сохранить как шаблон</button>
+            {% endif %}
             <a href="{{ url_for('rating.templates_list') }}" class="btn btn-sm btn-outline-secondary">Управление шаблонами</a>
         </div>
     </div>

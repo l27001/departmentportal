@@ -64,6 +64,11 @@ class AwardForm(FlaskForm):
         choices=AWARD_LEVELS,
         validators=[DataRequired(message='Выберите уровень награды')]
     )
+    owner_id = SelectField(
+        'Автор записи',
+        choices=[],
+        validators=[Optional()],
+    )
     submit = SubmitField('Сохранить')
 
 class PublicationForm(FlaskForm):
@@ -71,7 +76,7 @@ class PublicationForm(FlaskForm):
     title = StringField('Название', validators=[DataRequired(), Length(min=5, max=500)])
     year = IntegerField('Год', validators=[DataRequired()])
     publication_date = DateField('Дата публикации', validators=[Optional()])
-    doi = StringField('DOI', validators=[Optional(), Length(max=100)])
+    isbn = StringField('ISBN', validators=[Optional(), Length(max=100)])
 
     authors = StringField('Авторы (Фамилия И.О., через запятую)', validators=[Optional(), Length(max=500)])
     author_single = StringField('Автор (Фамилия И.О.)', validators=[Optional(), Length(max=255)])
@@ -104,6 +109,18 @@ class PublicationForm(FlaskForm):
         render_kw={'class': 'form-select', 'size': 5}
     )
 
+    supervisor_id = SelectField(
+        'Научный руководитель',
+        choices=[],
+        validators=[Optional()],
+    )
+
+    owner_id = SelectField(
+        'Автор записи',
+        choices=[],
+        validators=[Optional()],
+    )
+
     submit = SubmitField('Сохранить')
 
 class ConferenceForm(FlaskForm):
@@ -119,6 +136,11 @@ class ConferenceForm(FlaskForm):
         'Соавторы',
         description='Перечислите через запятую',
         validators=[Optional(), Length(max=255)]
+    )
+    owner_id = SelectField(
+        'Автор записи',
+        choices=[],
+        validators=[Optional()],
     )
     submit = SubmitField('Сохранить')
 
@@ -136,7 +158,7 @@ class TrainingForm(FlaskForm):
     start_date = DateField('Дата начала', validators=[Optional()])
     end_date = DateField('Дата окончания', validators=[DataRequired()])
     duration_hours = IntegerField('Продолжительность (часов)', validators=[Optional()])
-    certificate_number = StringField('Номер сертификата', validators=[Optional(), Length(max=255)])
+    certificate_number = StringField('Номер сертификата / удостоверения', validators=[Optional(), Length(max=255)])
     certificate_url = URLField('Ссылка на сертификат', validators=[Optional()])
     description = TextAreaField('Описание', validators=[Optional(), Length(max=1000)])
     points = IntegerField('Очки рейтинга', default=6, validators=[Optional()])
@@ -146,6 +168,11 @@ class TrainingForm(FlaskForm):
         validators=[Optional()]
     )
     state_issued = BooleanField('Государственного образца')
+    owner_id = SelectField(
+        'Автор записи',
+        choices=[],
+        validators=[Optional()],
+    )
     submit = SubmitField('Сохранить')
 
 class SearchFilterForm(FlaskForm):

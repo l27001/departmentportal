@@ -20,7 +20,7 @@
         <div class="rating-main-card">
             <div class="rating-header">
                 <h3>Шаблоны</h3>
-                {% if role.name == 'Руководитель' %}
+                {% if role.name == 'Документовед' %}
                 <div class="d-flex gap-2">
                     <a href="{{ url_for('rating.create_template', entity_type='publication') }}" class="btn btn-sm btn-outline-primary">Создать шаблон публикации</a>
                     <a href="{{ url_for('rating.create_template', entity_type='award') }}" class="btn btn-sm btn-outline-primary">Создать шаблон награды</a>
@@ -53,7 +53,7 @@
                     </div>
                     <div class="template-card-bottom">
                         <span class="template-card-date">{{ t.created_at.strftime('%d.%m.%Y') }}</span>
-                        {% if role.name == 'Руководитель' %}
+                        {% if role.name == 'Документовед' %}
                         <form method="POST" action="{{ url_for('rating.api_delete_template', template_id=t.id) }}" onsubmit="event.stopPropagation(); return confirm('Удалить шаблон «{{ t.name }}»?')" class="template-delete-form">
                             <input type="hidden" name="_method" value="DELETE">
                             <button type="submit" class="btn-delete-icon" title="Удалить шаблон">

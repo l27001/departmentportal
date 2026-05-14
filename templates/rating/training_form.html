@@ -164,6 +164,14 @@
                     {% endif %}
                 </div>
 
+                {% if user is defined and user.role.name == 'Документовед' %}
+                <div class="mb-3">
+                    {{ form.owner_id.label(class="form-label", style="font-weight: 600; color: #4a2c7a;") }}
+                    {{ form.owner_id(class="form-select") }}
+                    <small class="text-muted">Выберите сотрудника, которому принадлежит запись</small>
+                </div>
+                {% endif %}
+
                 <div class="mb-3">
                     {{ form.description.label(class="form-label") }}
                     {% if form.description.errors %}

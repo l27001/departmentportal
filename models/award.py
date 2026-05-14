@@ -59,7 +59,7 @@ class PublicationBase:
     year = db.Column(db.Integer, nullable=False)
     publication_date = db.Column(db.Date, nullable=True)
     gost_string = db.Column(db.Text, nullable=True)
-    doi = db.Column(db.String(100), nullable=True)
+    isbn = db.Column(db.String(100), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -239,3 +239,20 @@ class EntityCoauthor(db.Model):
 
     def __repr__(self):
         return f'<EntityCoauthor {self.entity_type}:{self.entity_id} user={self.user_id}>'
+
+
+class EntitySupervisor(db.Model):
+    __tablename__ = 'entity_supervisors'
+
+    id = db.Column(db.Integer, primary_key=True)
+    entity_type = db.Column(db.String(50), nullable=False)
+    entity_id = db.Column(db.Integer, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user = db.relationship('User', backref='supervised_entities')
+
+    __table_args__ = (
+        db.UniqueConstraint('entity_type', 'entity_id', 'user_id', name='uq_entity_supervisor'),
+    )
+
+    def __repr__(self):
+        return f'<EntitySupervisor {self.entity_type}:{self.entity_id} user={self.user_id}>'
