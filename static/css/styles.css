@@ -1034,6 +1034,13 @@ span.status.expired {
   font-weight: 600;
 }
 
+.group-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
 .group-badge {
   display: inline-block;
   padding: 2px 10px;
@@ -1041,7 +1048,6 @@ span.status.expired {
   background: #e9ecef;
   color: #495057;
   font-size: 12px;
-  margin-left: 4px;
 }
 
 .profile-edit-card {

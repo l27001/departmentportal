@@ -88,11 +88,11 @@
         {% if user.groups %}
         <div class="detail-row">
           <span class="detail-label">Группы</span>
-          <span class="detail-value">
+          <div class="group-list">
             {% for group in user.groups %}
               <span class="group-badge">{{ group.name }}</span>
             {% endfor %}
-          </span>
+          </div>
         </div>
         {% endif %}
       </div>
