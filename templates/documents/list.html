@@ -3,86 +3,128 @@
 {% block title %}Документы{% endblock %}
 
 {% block content %}
-<section class="documents-section">
-    <div class="documents-header">
-        <h2>Документы кафедры</h2>
-        {% if role.name in ['Руководитель', 'Документовед'] %}
-        <button class="btn btn-primary add-doc-btn" onclick="openModal('uploadDocumentModal')">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Добавить документ
-        </button>
-        {% endif %}
+<div class="row">
+    <div class="col-lg-3">
+        <div class="rating-sidebar">
+            <h5>Категории</h5>
+            <ul>
+                <li><a href="{{ url_for('documents.documents') }}" class="{% if not current_category %}active{% endif %}">Все документы</a></li>
+                <li><a href="{{ url_for('documents.documents', category='нормативный') }}" class="{% if current_category == 'нормативный' %}active{% endif %}">Нормативные</a></li>
+                <li><a href="{{ url_for('documents.documents', category='учебный') }}" class="{% if current_category == 'учебный' %}active{% endif %}">Учебные</a></li>
+                <li><a href="{{ url_for('documents.documents', category='методический') }}" class="{% if current_category == 'методический' %}active{% endif %}">Методические</a></li>
+                <li><a href="{{ url_for('documents.documents', category='прочее') }}" class="{% if current_category == 'прочее' %}active{% endif %}">Прочее</a></li>
+            </ul>
+        </div>
     </div>
 
-    <div class="document-list">
-        {% if documents|length > 0 %}
-            {% for document in documents %}
-                <div class="document-card">
-                    <div class="document-card-content">
-                        <h3 class="document-title">{{ document.title }}</h3>
-                        {% if document.attachments %}
-                        <div class="document-attachments">
-                            {% for attachment in document.attachments %}
-                            <a href="{{ url_for('documents.download_document', document_id=document.id, attachment_id=attachment.id) }}" class="attachment-link" target="_blank">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-                                <span class="attachment-name">{{ attachment.file_name }}</span>
-                                <span class="attachment-size">{{ "%.1f"|format(attachment.size / 1024) }} KB</span>
-                            </a>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                        <div class="document-meta">
-                            <span class="meta-category category-{{ document.category }}">{{ document.category | capitalize }}</span>
-                            <span class="meta-date">{{ document.created_at.strftime('%d.%m.%Y') }}</span>
-                        </div>
-                    </div>
+    <div class="col-lg-9">
+        <section class="documents-section">
+            <div class="documents-header">
+                <h2>Документы кафедры</h2>
+                <div style="display:flex;gap:8px;">
+                    {% if role.name in ['Руководитель', 'Документовед'] %}
+                    <button class="btn btn-primary add-doc-btn" onclick="openModal('uploadDocumentModal')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Добавить документ
+                    </button>
+                    {% endif %}
+                    {% if role.name in ['Руководитель', 'Документовед'] %}
+                    <button class="btn btn-outline-primary add-doc-btn" onclick="openModal('addLinkModal')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                        Добавить ссылку
+                    </button>
+                    {% endif %}
                 </div>
-            {% endfor %}
-        {% else %}
-            <div class="empty-documents">
-                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
-                <p>Документы отсутствуют</p>
             </div>
-        {% endif %}
-    </div>
 
-    {% if total_pages > 1 %}
-    <div class="documents-pagination">
-        {% if page > 1 %}
-            <a href="{{ url_for('documents.documents', page=page - 1) }}" class="page-link">&laquo;</a>
-        {% endif %}
-        {% for p in range(1, total_pages + 1) %}
-            {% if p == page %}
-                <span class="page-link page-item active">{{ p }}</span>
-            {% elif p <= 3 or p > total_pages - 3 or (p >= page - 2 and p <= page + 2) %}
-                <a href="{{ url_for('documents.documents', page=p) }}" class="page-link">{{ p }}</a>
-            {% elif p == 4 and page > 4 %}
-                <span class="page-link ellipsis">...</span>
-            {% elif p == total_pages - 3 and page < total_pages - 3 %}
-                <span class="page-link ellipsis">...</span>
+            {% if current_category %}
+            <div style="margin-bottom:16px;">
+                <span class="meta-category category-{{ current_category }}">{{ current_category | capitalize }}</span>
+            </div>
             {% endif %}
-        {% endfor %}
-        {% if page < total_pages %}
-            <a href="{{ url_for('documents.documents', page=page + 1) }}" class="page-link">&raquo;</a>
-        {% endif %}
+
+            <div class="document-list">
+                {% if documents|length > 0 %}
+                    {% for item in documents %}
+                        <div class="document-card">
+                            <div class="document-card-content">
+                                <h3 class="document-title">{{ item.title }}</h3>
+                                {% if item.type == 'link' and item.url %}
+                                <div class="document-link">
+                                    <a href="{{ item.url }}" target="_blank" class="attachment-link">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                                        <span class="attachment-name">{{ item.url }}</span>
+                                    </a>
+                                </div>
+                                {% elif item.attachments %}
+                                <div class="document-attachments">
+                                    {% for attachment in item.attachments %}
+                                    <a href="{{ url_for('documents.download_document', document_id=item.id, attachment_id=attachment.id) }}" class="attachment-link" target="_blank">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                                        <span class="attachment-name">{{ attachment.file_name }}</span>
+                                        <span class="attachment-size">{{ "%.1f"|format(attachment.size / 1024) }} KB</span>
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <div class="document-meta">
+                                    <span class="meta-category category-{{ item.category }}">{{ item.category | capitalize }}</span>
+                                    <span class="meta-date">{{ item.created_at.strftime('%d.%m.%Y') }}</span>
+                                    <span class="meta-author">{{ item.creator.name }}</span>
+                                </div>
+                            </div>
+                            {% if role.name in ['Руководитель', 'Документовед'] %}
+                            <div class="document-card-actions">
+                                <button class="btn-action btn-action-edit" data-type="{{ item.type }}" data-id="{{ item.id }}" data-title="{{ item.title }}" {% if item.type == 'link' %}data-url="{{ item.url }}"{% endif %} onclick="openEditModal(this)">Изменить</button>
+                                <button class="btn-action btn-action-delete" data-type="{{ item.type }}" data-id="{{ item.id }}" onclick="deleteItem(this)">Удалить</button>
+                            </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-documents">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        <p>Документы отсутствуют</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            {% if total_pages > 1 %}
+            <div class="documents-pagination">
+                {% if page > 1 %}
+                    <a href="{{ url_for('documents.documents', page=page - 1, category=current_category) }}" class="page-link">&laquo;</a>
+                {% endif %}
+                {% for p in range(1, total_pages + 1) %}
+                    {% if p == page %}
+                        <span class="page-link page-item active">{{ p }}</span>
+                    {% elif p <= 3 or p > total_pages - 3 or (p >= page - 2 and p <= page + 2) %}
+                        <a href="{{ url_for('documents.documents', page=p, category=current_category) }}" class="page-link">{{ p }}</a>
+                    {% elif p == 4 and page > 4 %}
+                        <span class="page-link ellipsis">...</span>
+                    {% elif p == total_pages - 3 and page < total_pages - 3 %}
+                        <span class="page-link ellipsis">...</span>
+                    {% endif %}
+                {% endfor %}
+                {% if page < total_pages %}
+                    <a href="{{ url_for('documents.documents', page=page + 1, category=current_category) }}" class="page-link">&raquo;</a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </section>
     </div>
-    {% endif %}
-</section>
+</div>
 {% endblock %}
 
 {% block modals %}
 <div id="uploadDocumentModal" class="modal">
     <div class="modal-content modal-document">
         <span class="close" onclick="closeModal('uploadDocumentModal')">&times;</span>
-
         <h3>Загрузка документа</h3>
-
         <form method="POST" enctype="multipart/form-data" action="{{ url_for('documents.upload_document') }}">
             <div class="input-group">
                 <label for="title">Название документа</label>
                 <input type="text" id="title" name="title" required>
             </div>
-
             <div class="input-group">
                 <label for="doc_type">Тип документа</label>
                 <select id="doc_type" name="doc_type" required>
@@ -93,20 +135,179 @@
                     <option value="Прочее">Прочее</option>
                 </select>
             </div>
-
             <div class="input-group">
                 <label for="file">Файлы документа</label>
                 <input type="file" id="file" name="file" multiple required>
             </div>
-
             <div class="modal-actions">
                 <button type="submit" class="btn btn-primary w-100">Загрузить</button>
-                <button type="button" class="btn btn-cancel"
-                        onclick="closeModal('uploadDocumentModal')">
-                    Отмена
-                </button>
+                <button type="button" class="btn btn-cancel" onclick="closeModal('uploadDocumentModal')">Отмена</button>
             </div>
         </form>
     </div>
 </div>
+
+<div id="addLinkModal" class="modal">
+    <div class="modal-content modal-document">
+        <span class="close" onclick="closeModal('addLinkModal')">&times;</span>
+        <h3>Добавить ссылку</h3>
+        <form method="POST" action="{{ url_for('documents.add_link') }}">
+            <div class="input-group">
+                <label for="link_title">Название</label>
+                <input type="text" id="link_title" name="title" required>
+            </div>
+            <div class="input-group">
+                <label for="link_url">URL</label>
+                <input type="url" id="link_url" name="url" required placeholder="https://...">
+            </div>
+            <div class="input-group">
+                <label for="link_category">Категория</label>
+                <select id="link_category" name="category" required>
+                    <option value="">Выберите категорию</option>
+                    <option value="нормативный">Нормативный</option>
+                    <option value="учебный">Учебный</option>
+                    <option value="методический">Методический</option>
+                    <option value="прочее">Прочее</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button type="submit" class="btn btn-primary w-100">Добавить</button>
+                <button type="button" class="btn btn-cancel" onclick="closeModal('addLinkModal')">Отмена</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="editDocumentModal" class="modal">
+    <div class="modal-content modal-document">
+        <span class="close" onclick="closeModal('editDocumentModal')">&times;</span>
+        <h3 id="edit-modal-title">Редактировать</h3>
+        <form method="POST" id="edit-form">
+            <div class="input-group">
+                <label for="edit_title">Название</label>
+                <input type="text" id="edit_title" name="title" required>
+            </div>
+            <div class="input-group" id="edit-url-group" style="display:none;">
+                <label for="edit_url">URL</label>
+                <input type="url" id="edit_url" name="url" placeholder="https://...">
+            </div>
+            <div class="modal-actions">
+                <button type="submit" class="btn btn-primary w-100">Сохранить</button>
+                <button type="button" class="btn btn-cancel" onclick="closeModal('editDocumentModal')">Отмена</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.documents-section .rating-sidebar {
+    margin-bottom: 20px;
+}
+.document-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+.document-card-content {
+    flex: 1;
+    min-width: 0;
+}
+.document-card-actions {
+    flex-shrink: 0;
+    padding-top: 4px;
+}
+.document-link {
+    margin: 8px 0;
+}
+.document-link .attachment-link {
+    word-break: break-all;
+}
+.meta-author {
+    color: #888;
+    font-size: 12px;
+}
+.btn-outline-primary {
+    background: transparent;
+    border: 1px solid #4a2c7a;
+    color: #4a2c7a;
+}
+.btn-outline-primary:hover {
+    background: #4a2c7a;
+    color: #fff;
+}
+.btn-action-edit,
+.btn-action-delete {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+.btn-action-edit {
+    color: #4a2c7a;
+}
+.btn-action-edit:hover {
+    background: #f0eaff;
+}
+.btn-action-delete {
+    color: #e74c3c;
+}
+.btn-action-delete:hover {
+    background: #fde8e8;
+}
+</style>
+
+<script>
+function openEditModal(btn) {
+    var type = btn.getAttribute('data-type');
+    var id = btn.getAttribute('data-id');
+    var title = btn.getAttribute('data-title');
+    var url = btn.getAttribute('data-url');
+
+    if (type === 'link') {
+        document.getElementById('edit-form').action = '/documents/link/' + id + '/edit';
+        document.getElementById('edit-modal-title').textContent = 'Редактировать ссылку — ' + title;
+        document.getElementById('edit-url-group').style.display = 'block';
+        document.getElementById('edit_url').value = url || '';
+    } else {
+        document.getElementById('edit-form').action = '/documents/' + id + '/edit';
+        document.getElementById('edit-modal-title').textContent = 'Редактировать документ — ' + title;
+        document.getElementById('edit-url-group').style.display = 'none';
+    }
+    document.getElementById('edit_title').value = title;
+    openModal('editDocumentModal');
+}
+
+function openModal(id) {
+    document.getElementById(id).style.display = 'block';
+}
+
+function closeModal(id) {
+    document.getElementById(id).style.display = 'none';
+}
+
+function deleteItem(btn) {
+    var type = btn.getAttribute('data-type');
+    var id = btn.getAttribute('data-id');
+    if (!confirm('Вы уверены, что хотите удалить?')) return;
+
+    var url = type === 'link' ? '/documents/link/' + id : '/documents/' + id;
+    fetch(url, { method: 'DELETE' })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            location.reload();
+        })
+        .catch(function(err) {
+            alert('Ошибка при удалении');
+        });
+}
+
+window.onclick = function(e) {
+    if (e.target.classList.contains('modal')) {
+        e.target.style.display = 'none';
+    }
+}
+</script>
 {% endblock %}

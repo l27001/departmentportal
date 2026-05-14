@@ -38,7 +38,7 @@ from config import Config
 from models.user import User
 from models.role import Role
 from models.task import Task, TaskUserAssignment
-from models.document import Document
+from models.document import Document, DocumentLink
 from models.award import Award
 from models.announcement import Announcement
 from models.news import News
