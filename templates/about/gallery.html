@@ -1,0 +1,186 @@
+<div class="rating-header">
+    <h3>Галерея</h3>
+    <button type="button" class="btn btn-primary" onclick="openAlbumModal()">Создать альбом</button>
+</div>
+
+{% if current_album %}
+
+<div class="gallery-back">
+    <a href="{{ url_for('about.gallery') }}" class="gallery-back">← Все альбомы</a>
+</div>
+
+<div class="rating-header" style="margin-bottom:16px;">
+    <h4>{{ current_album.name }}</h4>
+    <form method="POST" action="{{ url_for('about.upload_photos', album_id=current_album.id) }}" enctype="multipart/form-data" style="display:flex;gap:8px;align-items:center;">
+        <input type="file" name="photos" class="form-control form-control-sm" multiple accept="image/*" required>
+        <button type="submit" class="btn btn-primary btn-sm">Загрузить</button>
+    </form>
+</div>
+
+{% if photos %}
+<div class="gallery-photos">
+    {% for photo in photos %}
+    <div class="gallery-photo-item" onclick="openLightbox({{ photo.id }})" style="cursor:pointer;">
+        <img src="/static/uploads/gallery/{{ photo.image }}" alt="{{ photo.caption or '' }}">
+        {% if photo.caption %}
+        <div class="gallery-photo-caption">{{ photo.caption }}</div>
+        {% endif %}
+        <form method="POST" action="{{ url_for('about.delete_photo', photo_id=photo.id) }}" onclick="event.stopPropagation()">
+            <button type="submit" class="gallery-photo-delete" onclick="return confirm('Удалить фото?')">✕</button>
+        </form>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="about-empty">
+    <p>В альбоме пока нет фотографий</p>
+</div>
+{% endif %}
+
+{% else %}
+
+<div class="gallery-albums">
+    {% for album in albums %}
+    <div class="gallery-album-card">
+        <a href="{{ url_for('about.view_album', album_id=album.id) }}" style="text-decoration:none;color:inherit;">
+            {% set first_photo = album.photos.first() %}
+            <div class="gallery-album-cover">
+                {% if first_photo %}
+                <img src="/static/uploads/gallery/{{ first_photo.image }}" alt="">
+                {% else %}
+                🖼️
+                {% endif %}
+            </div>
+            <div class="gallery-album-body">
+                <div class="gallery-album-name">{{ album.name }}</div>
+                <div class="gallery-album-count">{{ album.photo_count() }} фото</div>
+            </div>
+        </a>
+        <div class="gallery-album-actions" style="padding:0 14px 10px;">
+            <button type="button" class="btn-action btn-action-edit" onclick="openAlbumModal({{ album.id }}, {{ album.name|tojson }}, {{ (album.description or '')|tojson }})">Изменить</button>
+            <form method="POST" action="{{ url_for('about.delete_album', album_id=album.id) }}" style="display:inline;">
+                <button type="submit" class="btn-action btn-action-delete" onclick="return confirm('Удалить альбом со всеми фото?')">Удалить</button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if not albums %}
+<div class="about-empty">
+    <p>Нет альбомов</p>
+    <button type="button" class="btn btn-primary" onclick="openAlbumModal()">Создать первый</button>
+</div>
+{% endif %}
+
+{% endif %}
+
+<!-- Lightbox -->
+<div class="lightbox-overlay" id="lightbox" style="display:none;" onclick="closeLightbox()">
+    <div class="lightbox-content" onclick="event.stopPropagation()">
+        <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+        <button class="lightbox-nav lightbox-prev" id="lb-prev" onclick="navigateLightbox(-1)">‹</button>
+        <button class="lightbox-nav lightbox-next" id="lb-next" onclick="navigateLightbox(1)">›</button>
+        <img class="lightbox-image" id="lb-image" src="" alt="">
+        <div class="lightbox-footer">
+            <span class="lightbox-caption" id="lb-caption"></span>
+            <a class="lightbox-download" id="lb-download" href="" download>Скачать</a>
+        </div>
+    </div>
+</div>
+
+<!-- Album Modal -->
+<div class="modal-overlay" id="album-modal" style="display:none;">
+    <div class="modal-content" style="max-width:450px;">
+        <div class="modal-header">
+            <h5 class="modal-title" id="album-modal-title">Создать альбом</h5>
+            <button type="button" class="modal-close" onclick="closeAlbumModal()">&times;</button>
+        </div>
+        <form method="POST" id="album-form">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Название *</label>
+                    <input type="text" name="name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Описание</label>
+                    <textarea name="description" class="form-control" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeAlbumModal()">Отмена</button>
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Lightbox data
+var lbPhotos = [
+    {% if photos %}
+    {% for photo in photos %}
+    { id: {{ photo.id }}, url: '/static/uploads/gallery/{{ photo.image }}', caption: {{ (photo.caption or '')|tojson }} }{% if not loop.last %},{% endif %}
+    {% endfor %}
+    {% endif %}
+];
+var lbCurrent = 0;
+
+function openLightbox(photoId) {
+    for (var i = 0; i < lbPhotos.length; i++) {
+        if (lbPhotos[i].id === photoId) {
+            lbCurrent = i;
+            break;
+        }
+    }
+    showLightbox();
+}
+
+function showLightbox() {
+    var photo = lbPhotos[lbCurrent];
+    document.getElementById('lb-image').src = photo.url;
+    document.getElementById('lb-caption').textContent = photo.caption || '';
+    document.getElementById('lb-download').href = '/about/gallery/photo/' + photo.id + '/download';
+    document.getElementById('lb-prev').style.display = lbCurrent > 0 ? 'flex' : 'none';
+    document.getElementById('lb-next').style.display = lbCurrent < lbPhotos.length - 1 ? 'flex' : 'none';
+    document.getElementById('lightbox').style.display = 'flex';
+}
+
+function closeLightbox() {
+    document.getElementById('lightbox').style.display = 'none';
+}
+
+function navigateLightbox(dir) {
+    lbCurrent += dir;
+    if (lbCurrent < 0) lbCurrent = 0;
+    if (lbCurrent >= lbPhotos.length) lbCurrent = lbPhotos.length - 1;
+    showLightbox();
+}
+
+document.addEventListener('keydown', function(e) {
+    var lb = document.getElementById('lightbox');
+    if (lb.style.display !== 'flex') return;
+    if (e.key === 'Escape') closeLightbox();
+    if (e.key === 'ArrowLeft') navigateLightbox(-1);
+    if (e.key === 'ArrowRight') navigateLightbox(1);
+});
+
+function openAlbumModal(albumId, name, description) {
+    var form = document.getElementById('album-form');
+    var title = document.getElementById('album-modal-title');
+    form.reset();
+    if (albumId) {
+        title.textContent = 'Редактировать альбом';
+        form.action = '{{ url_for("about.index") }}gallery/album/' + albumId + '/edit';
+        form.querySelector('[name="name"]').value = name || '';
+        form.querySelector('[name="description"]').value = description || '';
+    } else {
+        title.textContent = 'Создать альбом';
+        form.action = '{{ url_for("about.add_album") }}';
+    }
+    document.getElementById('album-modal').style.display = 'flex';
+}
+function closeAlbumModal() {
+    document.getElementById('album-modal').style.display = 'none';
+}
+</script>

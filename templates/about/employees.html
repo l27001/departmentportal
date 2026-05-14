@@ -1,0 +1,82 @@
+<div class="rating-header">
+    <h3>Сотрудники кафедры</h3>
+</div>
+
+{% if employees %}
+    {% for emp in employees %}
+    <div class="about-card">
+        {% if emp.avatar_url %}
+        <img class="about-card-avatar" src="{{ emp.avatar_url }}" alt="{{ emp.name }}">
+        {% else %}
+        <div class="about-card-avatar-placeholder">{{ emp.name[:1] }}</div>
+        {% endif %}
+        <div class="about-card-body">
+            <div class="about-card-name">{{ emp.name }}</div>
+            {% if emp.job_title %}
+            <div class="about-card-position">{{ emp.job_title }}</div>
+            {% endif %}
+            <div class="about-card-meta">
+                {% if emp.degree %}
+                <span>{{ emp.degree }}</span>
+                {% endif %}
+                {% if emp.academic_title %}
+                <span>{{ emp.academic_title }}</span>
+                {% endif %}
+                {% if emp.email %}
+                <span>{{ emp.email }}</span>
+                {% endif %}
+                {% if emp.phone %}
+                <span>{{ emp.phone }}</span>
+                {% endif %}
+                {% if emp.rate_count %}
+                <span>Ставка: {{ emp.rate_count }}</span>
+                {% endif %}
+                {% if emp.birthday %}
+                <span>ДР: {{ emp.birthday.strftime('%d.%m.%Y') }}</span>
+                {% else %}
+                <span class="birthday-empty" style="cursor:pointer;color:#999;" onclick="openBirthdayModal({{ emp.id }}, '{{ emp.name }}')">+ Добавить ДР</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="about-empty">
+        <p>Нет сотрудников</p>
+    </div>
+{% endif %}
+
+<!-- Birthday Modal -->
+<div class="modal-overlay" id="birthday-modal" style="display:none;">
+    <div class="modal-content" style="max-width:400px;">
+        <div class="modal-header">
+            <h5 class="modal-title" id="birthday-modal-title">День рождения</h5>
+            <button type="button" class="modal-close" onclick="closeBirthdayModal()">&times;</button>
+        </div>
+        <form method="POST" id="birthday-form">
+            <div class="modal-body">
+                <p id="birthday-modal-name" style="margin-bottom:12px;color:#555;"></p>
+                <div class="form-group">
+                    <label>Дата рождения</label>
+                    <input type="date" name="birthday" class="form-control">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeBirthdayModal()">Отмена</button>
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openBirthdayModal(userId, userName) {
+    document.getElementById('birthday-modal-title').textContent = 'День рождения — ' + userName;
+    document.getElementById('birthday-modal-name').textContent = userName;
+    document.getElementById('birthday-form').action = '{{ url_for("about.index") }}employees/' + userId + '/edit_birthday';
+    document.getElementById('birthday-modal').style.display = 'flex';
+}
+function closeBirthdayModal() {
+    document.getElementById('birthday-modal').style.display = 'none';
+}
+</script>

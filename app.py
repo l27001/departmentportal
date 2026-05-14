@@ -22,6 +22,7 @@ from routes.news import news_bp as web_news_bp
 from routes.chat import chat_bp as web_chat_bp
 from routes.admin import admin_bp
 from routes.api.admin_users import admin_users_bp
+from routes.about import about_bp
 from dotenv import load_dotenv
 from flask_cors import CORS
 from flasgger import Swagger
@@ -46,6 +47,7 @@ from models.group import Group, UserGroup
 from models.attachment import Attachment
 from models.task_comment import TaskComment
 from models.meeting import DepartmentMeeting, MeetingTask
+from models.about import GalleryAlbum, GalleryPhoto
 
 
 def create_app():
@@ -279,6 +281,7 @@ def create_app():
     app.register_blueprint(documents_bp)
     app.register_blueprint(users_bp)
     app.register_blueprint(rating_bp)
+    app.register_blueprint(about_bp)
 
     app.register_blueprint(api_announcements_bp)
     app.register_blueprint(web_announcements_bp)

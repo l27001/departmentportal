@@ -1,0 +1,406 @@
+{% extends "base.html" %}
+{% block title %}О кафедре{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-3">
+        <div class="rating-sidebar">
+            <h5>О кафедре</h5>
+            <ul>
+                <li><a href="{{ url_for('about.employees') }}" class="{% if active_tab == 'employees' %}active{% endif %}">Сотрудники</a></li>
+                <li><a href="{{ url_for('about.gallery') }}" class="{% if active_tab == 'gallery' %}active{% endif %}">Галерея</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="col-lg-9">
+        <div class="rating-main-card">
+            {% if active_tab == 'employees' %}
+                {% include "about/employees.html" %}
+            {% elif active_tab == 'gallery' %}
+                {% include "about/gallery.html" %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% block about_modals %}{% endblock %}
+
+<style>
+.about-card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 16px;
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    transition: box-shadow 0.2s;
+}
+.about-card:hover {
+    box-shadow: 0 2px 12px rgba(74,44,122,0.08);
+}
+.about-card-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #f0ecf7;
+    flex-shrink: 0;
+}
+.about-card-avatar-placeholder {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: #f0ecf7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: #4a2c7a;
+    flex-shrink: 0;
+}
+.about-card-body {
+    flex: 1;
+    min-width: 0;
+}
+.about-card-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2c2c2c;
+    margin: 0 0 4px;
+}
+.about-card-position {
+    font-size: 13px;
+    color: #4a2c7a;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+.about-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    font-size: 13px;
+    color: #555;
+}
+.about-card-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.about-card-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+.about-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: #888;
+}
+.about-empty p {
+    font-size: 15px;
+    margin-bottom: 16px;
+}
+
+/* Gallery */
+.gallery-albums {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+}
+.gallery-album-card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+}
+.gallery-album-card:hover {
+    box-shadow: 0 2px 12px rgba(74,44,122,0.1);
+}
+.gallery-album-cover {
+    height: 140px;
+    background: #f0ecf7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    color: #4a2c7a;
+}
+.gallery-album-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.gallery-album-body {
+    padding: 12px 14px;
+}
+.gallery-album-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: #2c2c2c;
+    margin: 0 0 2px;
+}
+.gallery-album-count {
+    font-size: 12px;
+    color: #999;
+}
+.gallery-album-actions {
+    display: flex;
+    gap: 4px;
+    margin-top: 8px;
+}
+.gallery-photos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+}
+.gallery-photo-item {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #e0e0e0;
+}
+.gallery-photo-item img {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    display: block;
+}
+.gallery-photo-caption {
+    padding: 6px 10px;
+    font-size: 12px;
+    color: #555;
+    background: #fff;
+}
+.gallery-photo-delete {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(255,255,255,0.9);
+    border: none;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 12px;
+    color: #c0392b;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+.gallery-photo-item:hover .gallery-photo-delete {
+    opacity: 1;
+}
+.gallery-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #4a2c7a;
+    text-decoration: none;
+    margin-bottom: 16px;
+}
+.gallery-back:hover {
+    text-decoration: underline;
+}
+
+/* Modal */
+.modal-overlay {
+    position: fixed;
+    z-index: 1000;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.modal-content {
+    background: #fff;
+    border: 1px solid #e8e0f0;
+    border-radius: 16px;
+    box-shadow: 0 8px 30px rgba(45,27,78,0.12);
+    width: 90%;
+    max-width: 700px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px 0;
+}
+.modal-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c2c2c;
+    margin: 0;
+}
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #999;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+.modal-close:hover {
+    color: #333;
+}
+.modal-body {
+    padding: 16px 24px;
+}
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 0 24px 20px;
+}
+.form-group {
+    margin-bottom: 12px;
+}
+.form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: #555;
+    margin-bottom: 4px;
+}
+
+/* Button actions (matching rating templates) */
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s;
+}
+.btn-action-edit {
+    background: #e8f0fe;
+    color: #4a2c7a;
+}
+.btn-action-edit:hover {
+    background: #d4e2fc;
+    color: #3a1e6a;
+    text-decoration: none;
+}
+.btn-action-delete {
+    background: #fde8e8;
+    color: #c0392b;
+}
+.btn-action-delete:hover {
+    background: #fbd0d0;
+    color: #a93226;
+    text-decoration: none;
+}
+
+/* Lightbox */
+.lightbox-overlay {
+    position: fixed;
+    z-index: 2000;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.lightbox-content {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.lightbox-image {
+    max-width: 90vw;
+    max-height: 80vh;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.5);
+}
+.lightbox-close {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 32px;
+    cursor: pointer;
+    opacity: 0.7;
+    padding: 0;
+    line-height: 1;
+}
+.lightbox-close:hover { opacity: 1; }
+.lightbox-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255,255,255,0.15);
+    border: none;
+    color: #fff;
+    font-size: 40px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+.lightbox-nav:hover { opacity: 1; }
+.lightbox-prev { left: -60px; }
+.lightbox-next { right: -60px; }
+.lightbox-footer {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 12px;
+    color: #ccc;
+    font-size: 14px;
+}
+.lightbox-caption {
+    flex: 1;
+    text-align: center;
+}
+.lightbox-download {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 16px;
+    background: #4a2c7a;
+    color: #fff;
+    border-radius: 6px;
+    font-size: 13px;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.lightbox-download:hover {
+    background: #3a1e6a;
+    color: #fff;
+    text-decoration: none;
+}
+</style>
+
+<script>
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('modal-overlay')) {
+        e.target.style.display = 'none';
+    }
+});
+</script>
+{% endblock %}
