@@ -119,7 +119,7 @@ def list_tasks():
     paginated_tasks = filtered_tasks[start:end]
 
     today_date = date.today()
-    announcements = Announcement.query.filter(Announcement.is_deleted == False, Announcement.deadline >= today_date).order_by(Announcement.created_at.desc()).limit(15).all()
+    announcements = Announcement.query.filter(Announcement.is_deleted == False, Announcement.deadline >= today_date).order_by(Announcement.created_at.desc()).limit(10).all()
     viewed_ids = {v.announcement_id for v in AnnouncementView.query.filter_by(user_id=user_id).all()}
 
     tasks_by_deadline = {}
