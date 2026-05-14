@@ -82,7 +82,7 @@ rating_bp = Blueprint('rating', __name__, url_prefix='/rating')
 
 
 def filter_by_role(model, user, coauthor_entity_type=None):
-    if user.role.name == 'Руководитель':
+    if user.role.name == 'Документовед':
         return True
     if coauthor_entity_type:
         coauthor_ids = [
@@ -104,7 +104,13 @@ def awards_list():
     search_form = SearchFilterForm()
     page = request.args.get('page', 1, type=int)
 
+    users_list = User.query.filter(User.is_active == True).order_by(User.name).all()
+
     query = Award.query.filter(filter_by_role(Award, user)).filter(Award.status == 'active')
+
+    author_ids = request.args.getlist('author_ids', type=int)
+    if author_ids:
+        query = query.filter(Award.user_id.in_(author_ids))
 
     search_query = request.args.get('search_query', '')
     if search_query:
@@ -131,7 +137,7 @@ def awards_list():
 
     awards = query.paginate(page=page, per_page=10)
 
-    return render_template('rating/awards.html', awards=awards, search_form=search_form)
+    return render_template('rating/awards.html', awards=awards, search_form=search_form, users_list=users_list, author_ids=author_ids)
 
 @rating_bp.route('/awards/add', methods=['GET', 'POST'])
 @jwt_required()
@@ -210,6 +216,9 @@ def publications_list():
     search_form = SearchFilterForm()
     page = request.args.get('page', 1, type=int)
 
+    users_list = User.query.filter(User.is_active == True).order_by(User.name).all()
+    author_ids = request.args.getlist('author_ids', type=int)
+
     all_publications = []
 
     pub_type = request.args.get('pub_type', '')
@@ -220,12 +229,13 @@ def publications_list():
 
     models_to_query = list(PUB_MODELS.values()) if not pub_type else [PUB_MODELS[pub_type]]
 
-    # map model class to entity_type string for coauthors
     pub_type_map = {v: k for k, v in PUB_MODELS.items()}
 
     for model in models_to_query:
         entity_type = pub_type_map[model]
         query = model.query.filter(filter_by_role(model, user, coauthor_entity_type=entity_type))
+        if author_ids:
+            query = query.filter(model.user_id.in_(author_ids))
 
         if search_query:
             author_fields = []
@@ -336,6 +346,8 @@ def publications_list():
         publications=publications,
         search_form=search_form,
         coauthors_map=coauthors_map,
+        users_list=users_list,
+        author_ids=author_ids,
     )
 
 @rating_bp.route('/publications/preview', methods=['POST'])
@@ -637,7 +649,7 @@ def view_publication(pub_id):
         return redirect(url_for('rating.publications_list'))
 
     is_owner = publication.user_id == user_id
-    if user.role.name != 'Руководитель' and not is_owner:
+    if user.role.name != 'Документовед' and not is_owner:
         coauthor_ids = [c.user_id for c in EntityCoauthor.query.filter_by(
             entity_type=pub_type, entity_id=publication.id
         ).all()]
@@ -684,7 +696,13 @@ def conferences_list():
     search_form = SearchFilterForm()
     page = request.args.get('page', 1, type=int)
 
+    users_list = User.query.filter(User.is_active == True).order_by(User.name).all()
+
     query = Conference.query.filter(filter_by_role(Conference, user)).filter(Conference.status == 'active')
+
+    author_ids = request.args.getlist('author_ids', type=int)
+    if author_ids:
+        query = query.filter(Conference.user_id.in_(author_ids))
 
     search_query = request.args.get('search_query', '')
     if search_query:
@@ -711,7 +729,7 @@ def conferences_list():
 
     conferences = query.paginate(page=page, per_page=10)
 
-    return render_template('rating/conferences.html', conferences=conferences, search_form=search_form)
+    return render_template('rating/conferences.html', conferences=conferences, search_form=search_form, users_list=users_list, author_ids=author_ids)
 
 @rating_bp.route('/conferences/add', methods=['GET', 'POST'])
 @jwt_required()
@@ -797,7 +815,13 @@ def trainings_list():
     search_form = SearchFilterForm()
     page = request.args.get('page', 1, type=int)
 
+    users_list = User.query.filter(User.is_active == True).order_by(User.name).all()
+
     query = Training.query.filter(filter_by_role(Training, user)).filter(Training.status == 'active')
+
+    author_ids = request.args.getlist('author_ids', type=int)
+    if author_ids:
+        query = query.filter(Training.user_id.in_(author_ids))
 
     search_query = request.args.get('search_query', '')
     if search_query:
@@ -824,7 +848,7 @@ def trainings_list():
 
     trainings = query.paginate(page=page, per_page=10)
 
-    return render_template('rating/trainings.html', trainings=trainings, search_form=search_form)
+    return render_template('rating/trainings.html', trainings=trainings, search_form=search_form, users_list=users_list, author_ids=author_ids)
 
 @rating_bp.route('/trainings/add', methods=['GET', 'POST'])
 @jwt_required()
@@ -1191,7 +1215,12 @@ def template_view(template_id):
 @jwt_required()
 def export_awards_excel():
     user_id = get_jwt_identity()
-    query = Award.query.filter_by(user_id=user_id, status='active')
+    user = User.query.get_or_404(user_id)
+    query = Award.query.filter(filter_by_role(Award, user)).filter(Award.status == 'active')
+
+    author_ids = request.args.getlist('author_ids', type=int)
+    if author_ids:
+        query = query.filter(Award.user_id.in_(author_ids))
 
     search_query = request.args.get('search_query', '')
     if search_query:
@@ -1254,16 +1283,22 @@ def export_awards_excel():
 @jwt_required()
 def export_publications_excel():
     user_id = get_jwt_identity()
+    user = User.query.get_or_404(user_id)
     pub_type = request.args.get('pub_type', '')
     search_query = request.args.get('search_query', '')
     date_range = request.args.get('date_range', 'all')
     date_from, date_to = parse_date_args(request.args.get('date_from'), request.args.get('date_to'))
+    author_ids = request.args.getlist('author_ids', type=int)
+    pub_type_map_rev = {v: k for k, v in PUB_MODELS.items()}
 
     models_to_query = list(PUB_MODELS.values()) if not pub_type else [PUB_MODELS[pub_type]]
     all_publications = []
 
     for model in models_to_query:
-        query = model.query.filter_by(user_id=user_id)
+        entity_type = pub_type_map_rev[model]
+        query = model.query.filter(filter_by_role(model, user, coauthor_entity_type=entity_type))
+        if author_ids:
+            query = query.filter(model.user_id.in_(author_ids))
 
         if search_query:
             author_fields = []
@@ -1371,7 +1406,12 @@ def export_publications_excel():
 @jwt_required()
 def export_conferences_excel():
     user_id = get_jwt_identity()
-    query = Conference.query.filter_by(user_id=user_id, status='active')
+    user = User.query.get_or_404(user_id)
+    query = Conference.query.filter(filter_by_role(Conference, user)).filter(Conference.status == 'active')
+
+    author_ids = request.args.getlist('author_ids', type=int)
+    if author_ids:
+        query = query.filter(Conference.user_id.in_(author_ids))
 
     search_query = request.args.get('search_query', '')
     if search_query:
@@ -1438,7 +1478,12 @@ def export_conferences_excel():
 @jwt_required()
 def export_awards_word():
     user_id = get_jwt_identity()
-    query = Award.query.filter_by(user_id=user_id, status='active')
+    user = User.query.get_or_404(user_id)
+    query = Award.query.filter(filter_by_role(Award, user)).filter(Award.status == 'active')
+
+    author_ids = request.args.getlist('author_ids', type=int)
+    if author_ids:
+        query = query.filter(Award.user_id.in_(author_ids))
 
     search_query = request.args.get('search_query', '')
     if search_query:
@@ -1506,16 +1551,22 @@ def export_awards_word():
 @jwt_required()
 def export_publications_word():
     user_id = get_jwt_identity()
+    user = User.query.get_or_404(user_id)
     pub_type = request.args.get('pub_type', '')
     search_query = request.args.get('search_query', '')
     date_range = request.args.get('date_range', 'all')
     date_from, date_to = parse_date_args(request.args.get('date_from'), request.args.get('date_to'))
+    author_ids = request.args.getlist('author_ids', type=int)
+    pub_type_map_rev = {v: k for k, v in PUB_MODELS.items()}
 
     models_to_query = list(PUB_MODELS.values()) if not pub_type else [PUB_MODELS[pub_type]]
     all_publications = []
 
     for model in models_to_query:
-        query = model.query.filter_by(user_id=user_id)
+        entity_type = pub_type_map_rev[model]
+        query = model.query.filter(filter_by_role(model, user, coauthor_entity_type=entity_type))
+        if author_ids:
+            query = query.filter(model.user_id.in_(author_ids))
 
         if search_query:
             author_fields = []
@@ -1638,7 +1689,12 @@ def export_publications_word():
 @jwt_required()
 def export_conferences_word():
     user_id = get_jwt_identity()
-    query = Conference.query.filter_by(user_id=user_id, status='active')
+    user = User.query.get_or_404(user_id)
+    query = Conference.query.filter(filter_by_role(Conference, user)).filter(Conference.status == 'active')
+
+    author_ids = request.args.getlist('author_ids', type=int)
+    if author_ids:
+        query = query.filter(Conference.user_id.in_(author_ids))
 
     search_query = request.args.get('search_query', '')
     if search_query:
@@ -1708,7 +1764,12 @@ def export_conferences_word():
 @jwt_required()
 def export_qualifications_excel():
     user_id = get_jwt_identity()
-    query = Training.query.filter_by(user_id=user_id, status='active')
+    user = User.query.get_or_404(user_id)
+    query = Training.query.filter(filter_by_role(Training, user)).filter(Training.status == 'active')
+
+    author_ids = request.args.getlist('author_ids', type=int)
+    if author_ids:
+        query = query.filter(Training.user_id.in_(author_ids))
 
     search_query = request.args.get('search_query', '')
     if search_query:
@@ -1773,7 +1834,12 @@ def export_qualifications_excel():
 @jwt_required()
 def export_qualifications_word():
     user_id = get_jwt_identity()
-    query = Training.query.filter_by(user_id=user_id, status='active')
+    user = User.query.get_or_404(user_id)
+    query = Training.query.filter(filter_by_role(Training, user)).filter(Training.status == 'active')
+
+    author_ids = request.args.getlist('author_ids', type=int)
+    if author_ids:
+        query = query.filter(Training.user_id.in_(author_ids))
 
     search_query = request.args.get('search_query', '')
     if search_query:

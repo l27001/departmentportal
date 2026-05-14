@@ -27,8 +27,8 @@
             <div class="rating-info-block conferences">
                 <span class="info-label">Скачать</span>
                 <div class="rating-export-buttons">
-                    <a href="{{ url_for('rating.export_conferences_excel', search_query=request.args.get('search_query',''), date_range=request.args.get('date_range',''), date_from=request.args.get('date_from',''), date_to=request.args.get('date_to','')) }}" class="btn btn-sm btn-success">📊 Excel</a>
-                    <a href="{{ url_for('rating.export_conferences_word', search_query=request.args.get('search_query',''), date_range=request.args.get('date_range',''), date_from=request.args.get('date_from',''), date_to=request.args.get('date_to','')) }}" class="btn btn-sm btn-info">📄 Word</a>
+                    <a href="{{ url_for('rating.export_conferences_excel', search_query=request.args.get('search_query',''), author_id=request.args.get('author_id',''), date_range=request.args.get('date_range',''), date_from=request.args.get('date_from',''), date_to=request.args.get('date_to','')) }}" class="btn btn-sm btn-success">📊 Excel</a>
+                    <a href="{{ url_for('rating.export_conferences_word', search_query=request.args.get('search_query',''), author_id=request.args.get('author_id',''), date_range=request.args.get('date_range',''), date_from=request.args.get('date_from',''), date_to=request.args.get('date_to','')) }}" class="btn btn-sm btn-info">📄 Word</a>
                 </div>
             </div>
 
@@ -36,12 +36,32 @@
                 <input type="hidden" name="sort_column" value="{{ request.args.get('sort_column', 'conference_date') }}">
                 <input type="hidden" name="sort_dir" value="{{ request.args.get('sort_dir', 'desc') }}">
                 <div class="row g-2">
-                    <div class="col-md-5">
+                    <div class="col-md-3">
                         <input type="text" name="search_query" class="form-control"
                                placeholder="Поиск по названию..."
                                value="{{ request.args.get('search_query', '') }}">
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
+                        <div class="author-filter">
+                            <button type="button" class="btn btn-outline-secondary btn-sm w-100" onclick="toggleAuthorFilter(this)">
+                                Фильтр по авторам ▾
+                            </button>
+                            <div class="author-filter-dropdown" style="display: none;">
+                                <div class="author-filter-actions">
+                                    <a href="#" onclick="selectAllAuthors(event)">Все</a>
+                                    <a href="#" onclick="clearAllAuthors(event)">Снять</a>
+                                </div>
+                                {% for u in users_list %}
+                                <label class="author-filter-item">
+                                    <input type="checkbox" name="author_ids" value="{{ u.id }}"
+                                        {% if not author_ids or u.id in author_ids %}checked{% endif %}>
+                                    {{ u.name }}
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
                         <select name="date_range" class="form-select" id="date-range">
                             <option value="all" {% if request.args.get('date_range', 'all') == 'all' %}selected{% endif %}>За всё время</option>
                             <option value="3" {% if request.args.get('date_range') == '3' %}selected{% endif %}>За 3 месяца</option>
@@ -104,6 +124,7 @@
                                 <span class="badge bg-info">📅 {{ conf.conference_date.strftime('%d.%m.%Y') }}</span>
                             </div>
                             <div class="item-card-meta">
+                                <span class="meta-item">👤 {{ conf.user.name }}</span>
                                 {% if conf.paper_title %}
                                 <span class="meta-item">📄 {{ conf.paper_title }}</span>
                                 {% endif %}
@@ -127,7 +148,7 @@
                     <ul class="pagination">
                         {% if conferences.has_prev %}
                         <li class="page-item">
-                            <a class="page-link" href="{{ url_for('rating.conferences_list', page=conferences.prev_num, search_query=request.args.get('search_query',''), sort_column=request.args.get('sort_column','conference_date'), sort_dir=request.args.get('sort_dir','desc'), date_range=request.args.get('date_range',''), date_from=request.args.get('date_from',''), date_to=request.args.get('date_to','')) }}">Назад</a>
+                            <a class="page-link" href="{{ url_for('rating.conferences_list', page=conferences.prev_num, search_query=request.args.get('search_query',''), author_id=request.args.get('author_id',''), sort_column=request.args.get('sort_column','conference_date'), sort_dir=request.args.get('sort_dir','desc'), date_range=request.args.get('date_range',''), date_from=request.args.get('date_from',''), date_to=request.args.get('date_to','')) }}">Назад</a>
                         </li>
                         {% endif %}
                         {% for page_num in conferences.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
@@ -135,7 +156,7 @@
                                 {% if page_num == conferences.page %}
                                 <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
                                 {% else %}
-                                <li class="page-item"><a class="page-link" href="{{ url_for('rating.conferences_list', page=page_num, search_query=request.args.get('search_query',''), sort_column=request.args.get('sort_column','conference_date'), sort_dir=request.args.get('sort_dir','desc'), date_range=request.args.get('date_range',''), date_from=request.args.get('date_from',''), date_to=request.args.get('date_to','')) }}">{{ page_num }}</a></li>
+                                <li class="page-item"><a class="page-link" href="{{ url_for('rating.conferences_list', page=page_num, search_query=request.args.get('search_query',''), author_id=request.args.get('author_id',''), sort_column=request.args.get('sort_column','conference_date'), sort_dir=request.args.get('sort_dir','desc'), date_range=request.args.get('date_range',''), date_from=request.args.get('date_from',''), date_to=request.args.get('date_to','')) }}">{{ page_num }}</a></li>
                                 {% endif %}
                             {% else %}
                                 <li class="page-item disabled"><span class="page-link">…</span></li>
@@ -143,7 +164,7 @@
                         {% endfor %}
                         {% if conferences.has_next %}
                         <li class="page-item">
-                            <a class="page-link" href="{{ url_for('rating.conferences_list', page=conferences.next_num, search_query=request.args.get('search_query',''), sort_column=request.args.get('sort_column','conference_date'), sort_dir=request.args.get('sort_dir','desc'), date_range=request.args.get('date_range',''), date_from=request.args.get('date_from',''), date_to=request.args.get('date_to','')) }}">Вперёд</a>
+                            <a class="page-link" href="{{ url_for('rating.conferences_list', page=conferences.next_num, search_query=request.args.get('search_query',''), author_id=request.args.get('author_id',''), sort_column=request.args.get('sort_column','conference_date'), sort_dir=request.args.get('sort_dir','desc'), date_range=request.args.get('date_range',''), date_from=request.args.get('date_from',''), date_to=request.args.get('date_to','')) }}">Вперёд</a>
                         </li>
                         {% endif %}
                     </ul>
@@ -281,6 +302,55 @@
     background: #f8f9fa;
     border-radius: 6px;
 }
+.author-filter {
+    position: relative;
+}
+.author-filter-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 8px;
+    max-height: 220px;
+    overflow-y: auto;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    margin-top: 2px;
+}
+.author-filter-actions {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #eee;
+    font-size: 13px;
+}
+.author-filter-actions a {
+    cursor: pointer;
+    color: #4a2c7a;
+    text-decoration: none;
+}
+.author-filter-actions a:hover {
+    text-decoration: underline;
+}
+.author-filter-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 4px;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+.author-filter-item:hover {
+    background: #f0ecf7;
+}
+.author-filter-item input {
+    margin: 0;
+}
 </style>
 
 <script>
@@ -297,6 +367,20 @@ function toggleDir() {
     params.set('page', '1');
     window.location.search = params.toString();
 }
+function toggleAuthorFilter(btn) {
+    var dd = btn.parentElement.querySelector('.author-filter-dropdown');
+    dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+}
+function selectAllAuthors(e) {
+    e.preventDefault();
+    var container = e.target.closest('.author-filter-dropdown');
+    container.querySelectorAll('input[type="checkbox"]').forEach(function(cb) { cb.checked = true; });
+}
+function clearAllAuthors(e) {
+    e.preventDefault();
+    var container = e.target.closest('.author-filter-dropdown');
+    container.querySelectorAll('input[type="checkbox"]').forEach(function(cb) { cb.checked = false; });
+}
 document.addEventListener('DOMContentLoaded', function() {
     var dateRange = document.getElementById('date-range');
     var customDates = document.getElementById('custom-dates');
@@ -309,6 +393,13 @@ document.addEventListener('DOMContentLoaded', function() {
         dateRange.addEventListener('change', toggleCustomDates);
         toggleCustomDates();
     }
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.author-filter')) {
+            document.querySelectorAll('.author-filter-dropdown').forEach(function(dd) {
+                dd.style.display = 'none';
+            });
+        }
+    });
 });
 </script>
 {% endblock %}
