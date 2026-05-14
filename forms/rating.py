@@ -78,6 +78,9 @@ class PublicationForm(FlaskForm):
     publication_date = DateField('Дата публикации', validators=[Optional()])
     isbn = StringField('ISBN', validators=[Optional(), Length(max=100)])
 
+    scopus = BooleanField('Scopus')
+    vak = BooleanField('ВАК')
+
     authors = StringField('Авторы (Фамилия И.О., через запятую)', validators=[Optional(), Length(max=500)])
     author_single = StringField('Автор (Фамилия И.О.)', validators=[Optional(), Length(max=255)])
 
@@ -187,8 +190,9 @@ class SearchFilterForm(FlaskForm):
         ('3', 'За 3 месяца'),
         ('6', 'За полгода'),
         ('12', 'За год'),
-        ('24', 'За 2 года'),
+        ('36', 'За 3 года'),
         ('60', 'За 5 лет'),
+        ('academic_year', 'За учебный год'),
         ('custom', 'Выбрать период'),
     ], default='all')
     date_from = DateField('Дата от', validators=[Optional()])

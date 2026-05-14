@@ -120,6 +120,16 @@
                             {{ form.pages(class="form-control", placeholder="25-30") }}
                         </div>
                     </div>
+                    <div class="mb-3 d-flex gap-3">
+                        <div class="form-check">
+                            {{ form.scopus(class="form-check-input") }}
+                            {{ form.scopus.label(class="form-check-label") }}
+                        </div>
+                        <div class="form-check">
+                            {{ form.vak(class="form-check-input") }}
+                            {{ form.vak.label(class="form-check-label") }}
+                        </div>
+                    </div>
                 </div>
 
                 <div id="collection-fields" style="display: none;">

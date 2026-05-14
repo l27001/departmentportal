@@ -27,12 +27,21 @@ def apply_date_filter(query, date_col, date_range, date_from, date_to):
     elif date_range == '12':
         cutoff = datetime.now() - timedelta(days=365)
         query = query.filter(date_col >= cutoff.date())
-    elif date_range == '24':
-        cutoff = datetime.now() - timedelta(days=730)
+    elif date_range == '36':
+        cutoff = datetime.now() - timedelta(days=1095)
         query = query.filter(date_col >= cutoff.date())
     elif date_range == '60':
         cutoff = datetime.now() - timedelta(days=1825)
         query = query.filter(date_col >= cutoff.date())
+    elif date_range == 'academic_year':
+        now = datetime.now()
+        if now.month >= 9:
+            start = date(now.year, 9, 1)
+            end = date(now.year + 1, 8, 31)
+        else:
+            start = date(now.year - 1, 9, 1)
+            end = date(now.year, 8, 31)
+        query = query.filter(date_col >= start, date_col <= end)
     elif date_range == 'custom':
         if date_from:
             query = query.filter(date_col >= date_from)
@@ -235,6 +244,7 @@ def publications_list():
     all_publications = []
 
     pub_type = request.args.get('pub_type', '')
+    index_type = request.args.get('index_type', '')
     search_query = request.args.get('search_query', '')
     sort_by = request.args.get('sort_by', 'date_desc')
     date_range = request.args.get('date_range', 'all')
@@ -249,6 +259,13 @@ def publications_list():
         query = model.query.filter(filter_by_role(model, user, coauthor_entity_type=entity_type))
         if author_ids:
             query = query.filter(model.user_id.in_(author_ids))
+
+        if index_type == 'scopus' and hasattr(model, 'scopus'):
+            query = query.filter(model.scopus == True)
+        elif index_type == 'vak' and hasattr(model, 'vak'):
+            query = query.filter(model.vak == True)
+        elif index_type == 'none' and hasattr(model, 'scopus') and hasattr(model, 'vak'):
+            query = query.filter(model.scopus == False, model.vak == False)
 
         if search_query:
             author_fields = []
@@ -271,9 +288,18 @@ def publications_list():
             elif date_range == '12':
                 cutoff = datetime.now() - timedelta(days=365)
                 query = query.filter(model.publication_date >= cutoff.date())
-            elif date_range == '24':
-                cutoff = datetime.now() - timedelta(days=730)
+            elif date_range == '36':
+                cutoff = datetime.now() - timedelta(days=1095)
                 query = query.filter(model.publication_date >= cutoff.date())
+            elif date_range == 'academic_year':
+                now = datetime.now()
+                if now.month >= 9:
+                    start = date(now.year, 9, 1)
+                    end = date(now.year + 1, 8, 31)
+                else:
+                    start = date(now.year - 1, 9, 1)
+                    end = date(now.year, 8, 31)
+                query = query.filter(model.publication_date >= start, model.publication_date <= end)
             elif date_range == 'custom':
                 if date_from:
                     query = query.filter(model.publication_date >= date_from)
@@ -290,8 +316,14 @@ def publications_list():
             cutoff_date = datetime.now() - timedelta(days=180)
         elif date_range == '12':
             cutoff_date = datetime.now() - timedelta(days=365)
-        elif date_range == '24':
-            cutoff_date = datetime.now() - timedelta(days=730)
+        elif date_range == '36':
+            cutoff_date = datetime.now() - timedelta(days=1095)
+        elif date_range == 'academic_year':
+            now = datetime.now()
+            if now.month >= 9:
+                cutoff_date = date(now.year, 9, 1)
+            else:
+                cutoff_date = date(now.year - 1, 9, 1)
 
         filtered = []
         for pub in all_publications:
@@ -299,6 +331,14 @@ def publications_list():
                 continue
             if cutoff_date and pub.publication_date < cutoff_date.date():
                 continue
+            if date_range == 'academic_year':
+                now = datetime.now()
+                if now.month >= 9:
+                    end = date(now.year + 1, 8, 31)
+                else:
+                    end = date(now.year, 8, 31)
+                if pub.publication_date > end:
+                    continue
             if date_range == 'custom' and date_from and pub.publication_date < date_from:
                 continue
             if date_range == 'custom' and date_to and pub.publication_date > date_to:
@@ -410,6 +450,8 @@ def preview_publication():
                 journal_name=data.get('journal_name', ''),
                 issue=data.get('issue', ''),
                 pages=data.get('pages', ''),
+                scopus=data.get('scopus', False),
+                vak=data.get('vak', False),
             )
         elif pub_type == 'collection_article':
             temp_pub = model(
@@ -492,7 +534,7 @@ def add_publication():
         if pub_type == 'book':
             pub = model(**common, authors=form.authors.data, edition=form.edition.data, city=form.city.data, publisher=form.publisher.data, pages=form.pages.data)
         elif pub_type == 'journal_article':
-            pub = model(**common, authors=form.authors.data, journal_name=form.journal_name.data, issue=form.issue.data, pages=form.pages.data)
+            pub = model(**common, authors=form.authors.data, journal_name=form.journal_name.data, issue=form.issue.data, pages=form.pages.data, scopus=form.scopus.data, vak=form.vak.data)
         elif pub_type == 'collection_article':
             pub = model(**common, authors=form.authors.data, collection_title=form.collection_title.data, city=form.city.data, publisher=form.publisher.data, pages=form.pages.data)
         elif pub_type == 'dissertation':
@@ -589,6 +631,10 @@ def edit_publication(pub_id):
             pub_record.journal_name = form.journal_name.data
         if hasattr(pub_record, 'issue'):
             pub_record.issue = form.issue.data
+        if hasattr(pub_record, 'scopus'):
+            pub_record.scopus = form.scopus.data
+        if hasattr(pub_record, 'vak'):
+            pub_record.vak = form.vak.data
         if hasattr(pub_record, 'collection_title'):
             pub_record.collection_title = form.collection_title.data
         if hasattr(pub_record, 'degree'):
@@ -660,6 +706,10 @@ def edit_publication(pub_id):
             form.journal_name.data = pub_record.journal_name
         if hasattr(pub_record, 'issue'):
             form.issue.data = pub_record.issue
+        if hasattr(pub_record, 'scopus'):
+            form.scopus.data = pub_record.scopus
+        if hasattr(pub_record, 'vak'):
+            form.vak.data = pub_record.vak
         if hasattr(pub_record, 'collection_title'):
             form.collection_title.data = pub_record.collection_title
         if hasattr(pub_record, 'degree'):
@@ -887,6 +937,12 @@ def trainings_list():
 
     query = Training.query.filter(filter_by_role(Training, user)).filter(Training.status == 'active')
 
+    state_filter = request.args.get('state_issued', '')
+    if state_filter == 'yes':
+        query = query.filter(Training.state_issued == True)
+    elif state_filter == 'no':
+        query = query.filter(Training.state_issued == False)
+
     author_ids = request.args.getlist('author_ids', type=int)
     if author_ids:
         query = query.filter(Training.user_id.in_(author_ids))
@@ -916,7 +972,7 @@ def trainings_list():
 
     trainings = query.paginate(page=page, per_page=10)
 
-    return render_template('rating/trainings.html', trainings=trainings, search_form=search_form, users_list=users_list, author_ids=author_ids)
+    return render_template('rating/trainings.html', trainings=trainings, search_form=search_form, users_list=users_list, author_ids=author_ids, state_filter=state_filter)
 
 @rating_bp.route('/trainings/add', methods=['GET', 'POST'])
 @jwt_required()
@@ -1366,6 +1422,7 @@ def export_publications_excel():
     user_id = get_jwt_identity()
     user = User.query.get_or_404(user_id)
     pub_type = request.args.get('pub_type', '')
+    index_type = request.args.get('index_type', '')
     search_query = request.args.get('search_query', '')
     date_range = request.args.get('date_range', 'all')
     date_from, date_to = parse_date_args(request.args.get('date_from'), request.args.get('date_to'))
@@ -1380,6 +1437,13 @@ def export_publications_excel():
         query = model.query.filter(filter_by_role(model, user, coauthor_entity_type=entity_type))
         if author_ids:
             query = query.filter(model.user_id.in_(author_ids))
+
+        if index_type == 'scopus' and hasattr(model, 'scopus'):
+            query = query.filter(model.scopus == True)
+        elif index_type == 'vak' and hasattr(model, 'vak'):
+            query = query.filter(model.vak == True)
+        elif index_type == 'none' and hasattr(model, 'scopus') and hasattr(model, 'vak'):
+            query = query.filter(model.scopus == False, model.vak == False)
 
         if search_query:
             author_fields = []
@@ -1402,12 +1466,21 @@ def export_publications_excel():
             elif date_range == '12':
                 cutoff = datetime.now() - timedelta(days=365)
                 query = query.filter(model.publication_date >= cutoff.date())
-            elif date_range == '24':
-                cutoff = datetime.now() - timedelta(days=730)
+            elif date_range == '36':
+                cutoff = datetime.now() - timedelta(days=1095)
                 query = query.filter(model.publication_date >= cutoff.date())
             elif date_range == '60':
                 cutoff = datetime.now() - timedelta(days=1825)
                 query = query.filter(model.publication_date >= cutoff.date())
+            elif date_range == 'academic_year':
+                now = datetime.now()
+                if now.month >= 9:
+                    start = date(now.year, 9, 1)
+                    end = date(now.year + 1, 8, 31)
+                else:
+                    start = date(now.year - 1, 9, 1)
+                    end = date(now.year, 8, 31)
+                query = query.filter(model.publication_date >= start, model.publication_date <= end)
             elif date_range == 'custom':
                 if date_from:
                     query = query.filter(model.publication_date >= date_from)
@@ -1415,32 +1488,6 @@ def export_publications_excel():
                     query = query.filter(model.publication_date <= date_to)
 
         all_publications.extend(query.all())
-
-    if date_range != 'all':
-        cutoff_date = None
-        if date_range == '3':
-            cutoff_date = datetime.now() - timedelta(days=90)
-        elif date_range == '6':
-            cutoff_date = datetime.now() - timedelta(days=180)
-        elif date_range == '12':
-            cutoff_date = datetime.now() - timedelta(days=365)
-        elif date_range == '24':
-            cutoff_date = datetime.now() - timedelta(days=730)
-        elif date_range == '60':
-            cutoff_date = datetime.now() - timedelta(days=1825)
-
-        filtered = []
-        for pub in all_publications:
-            if pub.publication_date is None:
-                continue
-            if cutoff_date and pub.publication_date < cutoff_date.date():
-                continue
-            if date_range == 'custom' and date_from and pub.publication_date < date_from:
-                continue
-            if date_range == 'custom' and date_to and pub.publication_date > date_to:
-                continue
-            filtered.append(pub)
-        all_publications = filtered
 
     wb = Workbook()
     ws = wb.active
@@ -1634,6 +1681,7 @@ def export_publications_word():
     user_id = get_jwt_identity()
     user = User.query.get_or_404(user_id)
     pub_type = request.args.get('pub_type', '')
+    index_type = request.args.get('index_type', '')
     search_query = request.args.get('search_query', '')
     date_range = request.args.get('date_range', 'all')
     date_from, date_to = parse_date_args(request.args.get('date_from'), request.args.get('date_to'))
@@ -1648,6 +1696,13 @@ def export_publications_word():
         query = model.query.filter(filter_by_role(model, user, coauthor_entity_type=entity_type))
         if author_ids:
             query = query.filter(model.user_id.in_(author_ids))
+
+        if index_type == 'scopus' and hasattr(model, 'scopus'):
+            query = query.filter(model.scopus == True)
+        elif index_type == 'vak' and hasattr(model, 'vak'):
+            query = query.filter(model.vak == True)
+        elif index_type == 'none' and hasattr(model, 'scopus') and hasattr(model, 'vak'):
+            query = query.filter(model.scopus == False, model.vak == False)
 
         if search_query:
             author_fields = []
@@ -1670,12 +1725,21 @@ def export_publications_word():
             elif date_range == '12':
                 cutoff = datetime.now() - timedelta(days=365)
                 query = query.filter(model.publication_date >= cutoff.date())
-            elif date_range == '24':
-                cutoff = datetime.now() - timedelta(days=730)
+            elif date_range == '36':
+                cutoff = datetime.now() - timedelta(days=1095)
                 query = query.filter(model.publication_date >= cutoff.date())
             elif date_range == '60':
                 cutoff = datetime.now() - timedelta(days=1825)
                 query = query.filter(model.publication_date >= cutoff.date())
+            elif date_range == 'academic_year':
+                now = datetime.now()
+                if now.month >= 9:
+                    start = date(now.year, 9, 1)
+                    end = date(now.year + 1, 8, 31)
+                else:
+                    start = date(now.year - 1, 9, 1)
+                    end = date(now.year, 8, 31)
+                query = query.filter(model.publication_date >= start, model.publication_date <= end)
             elif date_range == 'custom':
                 if date_from:
                     query = query.filter(model.publication_date >= date_from)
@@ -1692,10 +1756,16 @@ def export_publications_word():
             cutoff_date = datetime.now() - timedelta(days=180)
         elif date_range == '12':
             cutoff_date = datetime.now() - timedelta(days=365)
-        elif date_range == '24':
-            cutoff_date = datetime.now() - timedelta(days=730)
+        elif date_range == '36':
+            cutoff_date = datetime.now() - timedelta(days=1095)
         elif date_range == '60':
             cutoff_date = datetime.now() - timedelta(days=1825)
+        elif date_range == 'academic_year':
+            now = datetime.now()
+            if now.month >= 9:
+                cutoff_date = date(now.year, 9, 1)
+            else:
+                cutoff_date = date(now.year - 1, 9, 1)
 
         filtered = []
         for pub in all_publications:
@@ -1703,6 +1773,14 @@ def export_publications_word():
                 continue
             if cutoff_date and pub.publication_date < cutoff_date.date():
                 continue
+            if date_range == 'academic_year':
+                now = datetime.now()
+                if now.month >= 9:
+                    end = date(now.year + 1, 8, 31)
+                else:
+                    end = date(now.year, 8, 31)
+                if pub.publication_date > end:
+                    continue
             if date_range == 'custom' and date_from and pub.publication_date < date_from:
                 continue
             if date_range == 'custom' and date_to and pub.publication_date > date_to:
@@ -1848,11 +1926,18 @@ def export_qualifications_excel():
     user = User.query.get_or_404(user_id)
     query = Training.query.filter(filter_by_role(Training, user)).filter(Training.status == 'active')
 
+    state_filter = request.args.get('state_issued', '')
+    if state_filter == 'yes':
+        query = query.filter(Training.state_issued == True)
+    elif state_filter == 'no':
+        query = query.filter(Training.state_issued == False)
+
     author_ids = request.args.getlist('author_ids', type=int)
     if author_ids:
         query = query.filter(Training.user_id.in_(author_ids))
 
     search_query = request.args.get('search_query', '')
+
     if search_query:
         query = query.filter(or_(
             Training.title.ilike(f'%{search_query}%'),
@@ -1917,6 +2002,12 @@ def export_qualifications_word():
     user_id = get_jwt_identity()
     user = User.query.get_or_404(user_id)
     query = Training.query.filter(filter_by_role(Training, user)).filter(Training.status == 'active')
+
+    state_filter = request.args.get('state_issued', '')
+    if state_filter == 'yes':
+        query = query.filter(Training.state_issued == True)
+    elif state_filter == 'no':
+        query = query.filter(Training.state_issued == False)
 
     author_ids = request.args.getlist('author_ids', type=int)
     if author_ids:

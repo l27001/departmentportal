@@ -87,6 +87,8 @@ class JournalArticle(db.Model, PublicationBase):
     journal_name = db.Column(db.String(255))
     issue = db.Column(db.String(50))
     pages = db.Column(db.String(50))
+    scopus = db.Column(db.Boolean, default=False)
+    vak = db.Column(db.Boolean, default=False)
 
     def __repr__(self):
         return f'<JournalArticle {self.title}>'

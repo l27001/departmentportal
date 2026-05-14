@@ -73,14 +73,23 @@
                             <option value="newspaper_article" {% if request.args.get('pub_type') == 'newspaper_article' %}selected{% endif %}>Газета</option>
                         </select>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
+                        <select name="index_type" class="form-select">
+                            <option value="">Все индексы</option>
+                            <option value="scopus" {% if request.args.get('index_type') == 'scopus' %}selected{% endif %}>Scopus</option>
+                            <option value="vak" {% if request.args.get('index_type') == 'vak' %}selected{% endif %}>ВАК</option>
+                            <option value="none" {% if request.args.get('index_type') == 'none' %}selected{% endif %}>Без индекса</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
                         <select name="date_range" class="form-select" id="date-range">
                             <option value="all" {% if request.args.get('date_range', 'all') == 'all' %}selected{% endif %}>За всё время</option>
                             <option value="3" {% if request.args.get('date_range') == '3' %}selected{% endif %}>За 3 месяца</option>
                             <option value="6" {% if request.args.get('date_range') == '6' %}selected{% endif %}>За полгода</option>
                             <option value="12" {% if request.args.get('date_range') == '12' %}selected{% endif %}>За год</option>
-                            <option value="24" {% if request.args.get('date_range') == '24' %}selected{% endif %}>За 2 года</option>
+                            <option value="36" {% if request.args.get('date_range') == '36' %}selected{% endif %}>За 3 года</option>
                             <option value="60" {% if request.args.get('date_range') == '60' %}selected{% endif %}>За 5 лет</option>
+                            <option value="academic_year" {% if request.args.get('date_range') == 'academic_year' %}selected{% endif %}>За учебный год</option>
                             <option value="custom" {% if request.args.get('date_range') == 'custom' %}selected{% endif %}>Выбрать период</option>
                         </select>
                     </div>
@@ -161,6 +170,12 @@
                             <div class="item-card-badges">
                                 <span class="badge bg-primary">{{ type_names.get(pub.__tablename__, pub.__tablename__) }}</span>
                                 <span class="badge bg-secondary">{{ pub.year }}</span>
+                                {% if pub.__tablename__ == 'publication_journal_articles' and pub.scopus %}
+                                <span class="badge bg-warning text-dark">Scopus</span>
+                                {% endif %}
+                                {% if pub.__tablename__ == 'publication_journal_articles' and pub.vak %}
+                                <span class="badge bg-danger">ВАК</span>
+                                {% endif %}
                             </div>
                             <div class="item-card-meta">
                                 <span class="meta-item">👤 {{ pub.user.name }}</span>

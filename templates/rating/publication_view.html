@@ -126,6 +126,14 @@
                 <p>{{ publication.pages }}</p>
             </div>
             {% endif %}
+            <div class="mb-3 d-flex gap-3">
+                {% if publication.scopus %}
+                <span class="badge bg-warning text-dark" style="font-size: 14px;">Scopus</span>
+                {% endif %}
+                {% if publication.vak %}
+                <span class="badge bg-danger" style="font-size: 14px;">ВАК</span>
+                {% endif %}
+            </div>
 
             {% elif pub_type_key == 'collection_article' %}
             <hr>

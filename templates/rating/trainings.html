@@ -61,18 +61,26 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
+                        <select name="state_issued" class="form-select">
+                            <option value="">Все статусы</option>
+                            <option value="yes" {% if request.args.get('state_issued') == 'yes' %}selected{% endif %}>Гос. образца</option>
+                            <option value="no" {% if request.args.get('state_issued') == 'no' %}selected{% endif %}>Не гос. образца</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
                         <select name="date_range" class="form-select" id="date-range">
                             <option value="all" {% if request.args.get('date_range', 'all') == 'all' %}selected{% endif %}>За всё время</option>
                             <option value="3" {% if request.args.get('date_range') == '3' %}selected{% endif %}>За 3 месяца</option>
                             <option value="6" {% if request.args.get('date_range') == '6' %}selected{% endif %}>За полгода</option>
                             <option value="12" {% if request.args.get('date_range') == '12' %}selected{% endif %}>За год</option>
-                            <option value="24" {% if request.args.get('date_range') == '24' %}selected{% endif %}>За 2 года</option>
+                            <option value="36" {% if request.args.get('date_range') == '36' %}selected{% endif %}>За 3 года</option>
                             <option value="60" {% if request.args.get('date_range') == '60' %}selected{% endif %}>За 5 лет</option>
+                            <option value="academic_year" {% if request.args.get('date_range') == 'academic_year' %}selected{% endif %}>За учебный год</option>
                             <option value="custom" {% if request.args.get('date_range') == 'custom' %}selected{% endif %}>Выбрать период</option>
                         </select>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-1">
                         <button type="submit" class="btn btn-primary w-100">Найти</button>
                     </div>
                 </div>
