@@ -71,10 +71,12 @@
   {% block modals %}{% endblock %}
 
   <footer class="app-footer">
-    <p>&copy; 2026 Кафедра ИКСП</p>
+    <p>&copy; <span id="currentyear"></span> Кафедра ИКСП</p>
   </footer>
 
+  {% block extrajs %}
   <script src="/static/js/scripts.js"></script>
-  {% block extrajs %}{% endblock %}
+  <script>document.getElementById('currentyear').textContent = new Date().getFullYear();</script>
+  {% endblock %}
 </body>
 </html>
