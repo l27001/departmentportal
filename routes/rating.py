@@ -144,7 +144,7 @@ def awards_list():
 
     awards = query.paginate(page=page, per_page=10)
 
-    return render_template('rating/awards.html', awards=awards, search_form=search_form, users_list=users_list, author_ids=author_ids)
+    return render_template('rating/awards.html', awards=awards, search_form=search_form, users_list=users_list, author_ids=author_ids, user=user)
 
 @rating_bp.route('/awards/add', methods=['GET', 'POST'])
 @jwt_required()
@@ -415,6 +415,7 @@ def publications_list():
         author_ids=author_ids,
         student_report=student_report,
         book_type=book_type,
+        user=user,
     )
 
 @rating_bp.route('/publications/preview', methods=['POST'])
@@ -834,7 +835,7 @@ def conferences_list():
 
     conferences = query.paginate(page=page, per_page=10)
 
-    return render_template('rating/conferences.html', conferences=conferences, search_form=search_form, users_list=users_list, author_ids=author_ids)
+    return render_template('rating/conferences.html', conferences=conferences, search_form=search_form, users_list=users_list, author_ids=author_ids, user=user)
 
 @rating_bp.route('/conferences/add', methods=['GET', 'POST'])
 @jwt_required()
@@ -972,7 +973,7 @@ def trainings_list():
 
     trainings = query.paginate(page=page, per_page=10)
 
-    return render_template('rating/trainings.html', trainings=trainings, search_form=search_form, users_list=users_list, author_ids=author_ids, state_filter=state_filter)
+    return render_template('rating/trainings.html', trainings=trainings, search_form=search_form, users_list=users_list, author_ids=author_ids, state_filter=state_filter, user=user)
 
 @rating_bp.route('/trainings/add', methods=['GET', 'POST'])
 @jwt_required()

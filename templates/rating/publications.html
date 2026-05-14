@@ -24,6 +24,15 @@
                 <a href="{{ url_for('rating.add_publication') }}" class="btn btn-primary">Добавить публикацию</a>
             </div>
 
+            <div class="rating-info-block publications">
+                <span class="info-label">Скачать</span>
+                <div class="rating-export-buttons">
+                    <a href="{{ url_for('rating.export_publications_excel', search_query=request.args.get('search_query',''), author_id=request.args.get('author_id',''), pub_type=request.args.get('pub_type',''), date_range=request.args.get('date_range',''), date_from=request.args.get('date_from',''), date_to=request.args.get('date_to','')) }}" class="btn btn-sm btn-success">📊 Excel</a>
+                    <a href="{{ url_for('rating.export_publications_word', search_query=request.args.get('search_query',''), author_id=request.args.get('author_id',''), pub_type=request.args.get('pub_type',''), date_range=request.args.get('date_range',''), date_from=request.args.get('date_from',''), date_to=request.args.get('date_to','')) }}" class="btn btn-sm btn-info">📄 Word</a>
+                </div>
+            </div>
+
+            {% if user.role.name == 'Документовед' %}
             <form method="GET" class="rating-search-form" id="search-form">
                 <input type="hidden" name="sort_column" value="{{ request.args.get('sort_column', 'year') }}">
                 <input type="hidden" name="sort_dir" value="{{ request.args.get('sort_dir', 'desc') }}">
@@ -122,33 +131,29 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="filter-group">
-                            <label class="filter-label">Сортировка</label>
-                            <div class="filter-sort">
-                                <select class="form-select form-select-sm" onchange="sortBy(this.value)">
-                                    <option value="year" {% if sort_col == 'year' %}selected{% endif %}>По году</option>
-                                    <option value="title" {% if sort_col == 'title' %}selected{% endif %}>По названию</option>
-                                    <option value="type" {% if sort_col == 'type' %}selected{% endif %}>По типу</option>
-                                </select>
-                                <a href="#" onclick="toggleDir(); return false;" class="btn btn-sm btn-outline-secondary sort-dir-btn" title="Изменить направление">
-                                    {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
-                                </a>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </form>
+            {% endif %}
 
-            <div class="pub-toolbar">
-                <div class="pub-toolbar-left">
-                    <span class="pub-toolbar-title">Скачать:</span>
-                    <a href="{{ url_for('rating.export_publications_excel', search_query=request.args.get('search_query',''), author_id=request.args.get('author_id',''), pub_type=request.args.get('pub_type',''), date_range=request.args.get('date_range',''), date_from=request.args.get('date_from',''), date_to=request.args.get('date_to','')) }}" class="btn btn-sm btn-success">Excel</a>
-                    <a href="{{ url_for('rating.export_publications_word', search_query=request.args.get('search_query',''), author_id=request.args.get('author_id',''), pub_type=request.args.get('pub_type',''), date_range=request.args.get('date_range',''), date_from=request.args.get('date_from',''), date_to=request.args.get('date_to','')) }}" class="btn btn-sm btn-info">Word</a>
-                </div>
-                {% if publications.items %}
-                <span class="pub-toolbar-count">Всего: {{ publications.total }}</span>
-                {% endif %}
+            {% set sort_col = request.args.get('sort_column', 'year') %}
+            {% set sort_dir = request.args.get('sort_dir', 'desc') %}
+
+            <div class="rating-sort-bar">
+                <span class="sort-label">Сортировка:</span>
+                <select class="form-select form-select-sm sort-select" onchange="sortBy(this.value)">
+                    <option value="year" {% if sort_col == 'year' %}selected{% endif %}>По году</option>
+                    <option value="title" {% if sort_col == 'title' %}selected{% endif %}>По названию</option>
+                    <option value="type" {% if sort_col == 'type' %}selected{% endif %}>По типу</option>
+                </select>
+                <a href="#" onclick="toggleDir(); return false;" class="btn btn-sm btn-outline-secondary sort-dir-btn" title="Изменить направление">
+                    {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}
+                </a>
             </div>
+
+            {% if publications.items %}
+                <small class="text-muted d-block mb-2">Всего: {{ publications.total }}</small>
+            {% endif %}
 
             {% set type_names = {
                 'publication_books': 'Книга',
@@ -166,9 +171,6 @@
                 'publication_abstracts': 'abstract',
                 'publication_internets': 'internet',
             } %}
-
-            {% set sort_col = request.args.get('sort_column', 'year') %}
-            {% set sort_dir = request.args.get('sort_dir', 'desc') %}
 
             {% if publications.items %}
                 <div class="pub-list">
@@ -362,29 +364,30 @@
     margin: 0;
 }
 
-.pub-toolbar {
+.rating-sort-bar {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 8px 14px;
-    background: #fff;
-    border: 1px solid #e0e0e0;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding: 10px 14px;
+    background: #f8f9fa;
     border-radius: 8px;
-    margin-bottom: 12px;
+    border: 1px solid #e0e0e0;
 }
-.pub-toolbar-left {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.pub-toolbar-title {
+.sort-label {
     font-size: 13px;
     color: #666;
+    white-space: nowrap;
     font-weight: 500;
 }
-.pub-toolbar-count {
-    font-size: 13px;
-    color: #888;
+.sort-select {
+    width: auto;
+    min-width: 160px;
+}
+.sort-dir-btn {
+    font-size: 14px;
+    line-height: 1;
+    padding: 4px 10px;
 }
 .pub-list {
     border: 1px solid #e0e0e0;

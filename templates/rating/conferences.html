@@ -32,6 +32,7 @@
                 </div>
             </div>
 
+            {% if user.role.name == 'Документовед' %}
             <form method="GET" class="rating-search-form" id="search-form">
                 <input type="hidden" name="sort_column" value="{{ request.args.get('sort_column', 'conference_date') }}">
                 <input type="hidden" name="sort_dir" value="{{ request.args.get('sort_dir', 'desc') }}">
@@ -86,6 +87,7 @@
                     </div>
                 </div>
             </form>
+            {% endif %}
 
             {% set sort_col = request.args.get('sort_column', 'conference_date') %}
             {% set sort_dir = request.args.get('sort_dir', 'desc') %}
