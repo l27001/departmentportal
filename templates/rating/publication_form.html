@@ -262,6 +262,11 @@
                     {% endif %}
                 </div>
 
+                <div class="form-check mb-3">
+                    {{ form.student_report(class="form-check-input") }}
+                    {{ form.student_report.label(class="form-check-label") }}
+                </div>
+
                 <div class="mb-3" id="preview-card" style="display: none;">
                     <label class="form-label" style="font-weight: 600; color: #4a2c7a;">Предпросмотр ГОСТ-строки</label>
                     <div style="font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.8; background: #f0f4ff; padding: 15px; border-radius: 4px; border-left: 4px solid #4a2c7a; white-space: pre-wrap; word-break: break-word;" id="gost-preview"></div>

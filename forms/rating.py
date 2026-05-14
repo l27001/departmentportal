@@ -78,6 +78,7 @@ class PublicationForm(FlaskForm):
     publication_date = DateField('Дата публикации', validators=[Optional()])
     isbn = StringField('ISBN', validators=[Optional(), Length(max=100)])
 
+    student_report = BooleanField('Студенческий доклад')
     scopus = BooleanField('Scopus')
     vak = BooleanField('ВАК')
 

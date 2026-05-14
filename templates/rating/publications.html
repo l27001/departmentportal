@@ -82,6 +82,13 @@
                         </select>
                     </div>
                     <div class="col-md-2">
+                        <select name="student_report" class="form-select">
+                            <option value="">Все доклады</option>
+                            <option value="yes" {% if request.args.get('student_report') == 'yes' %}selected{% endif %}>Студенческие</option>
+                            <option value="no" {% if request.args.get('student_report') == 'no' %}selected{% endif %}>Не студенческие</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
                         <select name="date_range" class="form-select" id="date-range">
                             <option value="all" {% if request.args.get('date_range', 'all') == 'all' %}selected{% endif %}>За всё время</option>
                             <option value="3" {% if request.args.get('date_range') == '3' %}selected{% endif %}>За 3 месяца</option>
@@ -92,6 +99,9 @@
                             <option value="academic_year" {% if request.args.get('date_range') == 'academic_year' %}selected{% endif %}>За учебный год</option>
                             <option value="custom" {% if request.args.get('date_range') == 'custom' %}selected{% endif %}>Выбрать период</option>
                         </select>
+                    </div>
+                    <div class="col-md-1">
+                        <button type="submit" class="btn btn-primary w-100">Найти</button>
                     </div>
                     <div class="col-md-2">
                         <button type="submit" class="btn btn-primary w-100">Найти</button>
@@ -170,6 +180,9 @@
                             <div class="item-card-badges">
                                 <span class="badge bg-primary">{{ type_names.get(pub.__tablename__, pub.__tablename__) }}</span>
                                 <span class="badge bg-secondary">{{ pub.year }}</span>
+                                {% if pub.student_report %}
+                                <span class="badge bg-info text-dark">Студ.</span>
+                                {% endif %}
                                 {% if pub.__tablename__ == 'publication_journal_articles' and pub.scopus %}
                                 <span class="badge bg-warning text-dark">Scopus</span>
                                 {% endif %}

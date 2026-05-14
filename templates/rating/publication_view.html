@@ -304,6 +304,12 @@
                 <p><strong>ISBN:</strong> <code>{{ publication.isbn }}</code></p>
             </div>
             {% endif %}
+            {% if publication.student_report %}
+            <hr>
+            <div class="mb-3">
+                <span class="badge bg-info text-dark" style="font-size: 14px;">Студенческий доклад</span>
+            </div>
+            {% endif %}
 
             <hr>
             <div class="text-muted" style="font-size: 12px;">

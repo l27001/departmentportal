@@ -60,6 +60,7 @@ class PublicationBase:
     publication_date = db.Column(db.Date, nullable=True)
     gost_string = db.Column(db.Text, nullable=True)
     isbn = db.Column(db.String(100), nullable=True)
+    student_report = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

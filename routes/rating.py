@@ -245,6 +245,7 @@ def publications_list():
 
     pub_type = request.args.get('pub_type', '')
     index_type = request.args.get('index_type', '')
+    student_report = request.args.get('student_report', '')
     search_query = request.args.get('search_query', '')
     sort_by = request.args.get('sort_by', 'date_desc')
     date_range = request.args.get('date_range', 'all')
@@ -266,6 +267,11 @@ def publications_list():
             query = query.filter(model.vak == True)
         elif index_type == 'none' and hasattr(model, 'scopus') and hasattr(model, 'vak'):
             query = query.filter(model.scopus == False, model.vak == False)
+
+        if student_report == 'yes':
+            query = query.filter(model.student_report == True)
+        elif student_report == 'no':
+            query = query.filter(model.student_report == False)
 
         if search_query:
             author_fields = []
@@ -406,6 +412,7 @@ def publications_list():
         supervisors_map=supervisors_map,
         users_list=users_list,
         author_ids=author_ids,
+        student_report=student_report,
     )
 
 @rating_bp.route('/publications/preview', methods=['POST'])
@@ -423,6 +430,7 @@ def preview_publication():
             'title': data.get('title', ''),
             'year': year_val,
             'isbn': data.get('isbn', ''),
+            'student_report': data.get('student_report', False),
         }
 
         pub_date_str = data.get('publication_date', '')
@@ -529,6 +537,7 @@ def add_publication():
             'year': form.year.data,
             'publication_date': pub_date,
             'isbn': form.isbn.data,
+            'student_report': form.student_report.data,
         }
 
         if pub_type == 'book':
@@ -611,6 +620,7 @@ def edit_publication(pub_id):
         pub_record.year = form.year.data
         pub_record.publication_date = pub_date
         pub_record.isbn = form.isbn.data
+        pub_record.student_report = form.student_report.data
 
         if user.role.name == 'Документовед' and form.owner_id.data:
             pub_record.user_id = int(form.owner_id.data)
@@ -683,6 +693,7 @@ def edit_publication(pub_id):
         form.year.data = pub_record.year
         form.publication_date.data = pub_record.publication_date
         form.isbn.data = pub_record.isbn
+        form.student_report.data = pub_record.student_report
         if user.role.name == 'Документовед':
             form.owner_id.data = str(pub_record.user_id)
         existing_supervisors = EntitySupervisor.query.filter_by(entity_type=form_pub_type, entity_id=pub_record.id).all()
