@@ -77,6 +77,7 @@ class Book(db.Model, PublicationBase):
     city = db.Column(db.String(100))
     publisher = db.Column(db.String(255))
     pages = db.Column(db.String(50))
+    book_type = db.Column(db.String(50), nullable=True)
 
     def __repr__(self):
         return f'<Book {self.title}>'
@@ -142,17 +143,6 @@ class Internet(db.Model, PublicationBase):
 
     def __repr__(self):
         return f'<Internet {self.title}>'
-
-class NewspaperArticle(db.Model, PublicationBase):
-    __tablename__ = 'publication_newspaper_articles'
-    user = db.relationship('User', backref='newspaper_articles')
-    authors = db.Column(db.String(500))
-    newspaper_name = db.Column(db.String(255))
-    newspaper_date = db.Column(db.String(20))
-    issue = db.Column(db.String(50))
-
-    def __repr__(self):
-        return f'<NewspaperArticle {self.title}>'
 
 class Conference(db.Model):
     __tablename__ = 'conferences'

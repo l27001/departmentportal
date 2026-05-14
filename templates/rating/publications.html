@@ -66,11 +66,10 @@
                             <option value="">Все типы</option>
                             <option value="book" {% if request.args.get('pub_type') == 'book' %}selected{% endif %}>Книга</option>
                             <option value="journal_article" {% if request.args.get('pub_type') == 'journal_article' %}selected{% endif %}>Журнал</option>
-                            <option value="collection_article" {% if request.args.get('pub_type') == 'collection_article' %}selected{% endif %}>Сборник</option>
+                            <option value="collection_article" {% if request.args.get('pub_type') == 'collection_article' %}selected{% endif %}>Сборник научных статей</option>
                             <option value="dissertation" {% if request.args.get('pub_type') == 'dissertation' %}selected{% endif %}>Диссертация</option>
                             <option value="abstract" {% if request.args.get('pub_type') == 'abstract' %}selected{% endif %}>Автореферат</option>
                             <option value="internet" {% if request.args.get('pub_type') == 'internet' %}selected{% endif %}>Интернет</option>
-                            <option value="newspaper_article" {% if request.args.get('pub_type') == 'newspaper_article' %}selected{% endif %}>Газета</option>
                         </select>
                     </div>
                     <div class="col-md-2">
@@ -86,6 +85,13 @@
                             <option value="">Все доклады</option>
                             <option value="yes" {% if request.args.get('student_report') == 'yes' %}selected{% endif %}>Студенческие</option>
                             <option value="no" {% if request.args.get('student_report') == 'no' %}selected{% endif %}>Не студенческие</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select name="book_type" class="form-select">
+                            <option value="">Все книги</option>
+                            <option value="textbook" {% if request.args.get('book_type') == 'textbook' %}selected{% endif %}>Учебное пособие</option>
+                            <option value="monograph" {% if request.args.get('book_type') == 'monograph' %}selected{% endif %}>Монография</option>
                         </select>
                     </div>
                     <div class="col-md-2">
@@ -120,11 +126,10 @@
             {% set type_names = {
                 'publication_books': 'Книга',
                 'publication_journal_articles': 'Журнал',
-                'publication_collection_articles': 'Сборник',
+                'publication_collection_articles': 'Сборник научных статей',
                 'publication_dissertations': 'Диссертация',
                 'publication_abstracts': 'Автореферат',
                 'publication_internets': 'Интернет',
-                'publication_newspaper_articles': 'Газета'
             } %}
             {% set pub_type_map = {
                 'publication_books': 'book',
@@ -133,7 +138,6 @@
                 'publication_dissertations': 'dissertation',
                 'publication_abstracts': 'abstract',
                 'publication_internets': 'internet',
-                'publication_newspaper_articles': 'newspaper_article'
             } %}
 
             {% set sort_col = request.args.get('sort_column', 'year') %}

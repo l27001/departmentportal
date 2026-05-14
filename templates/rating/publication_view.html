@@ -26,11 +26,10 @@
                         <span class="badge bg-info">
                             {% if pub_type_key == 'book' %}Книга
                             {% elif pub_type_key == 'journal_article' %}Статья из журнала
-                            {% elif pub_type_key == 'collection_article' %}Статья из сборника
+                            {% elif pub_type_key == 'collection_article' %}Сборник научных статей
                             {% elif pub_type_key == 'dissertation' %}Диссертация
                             {% elif pub_type_key == 'abstract' %}Автореферат
                             {% elif pub_type_key == 'internet' %}Интернет-ресурс
-                            {% elif pub_type_key == 'newspaper_article' %}Статья из газеты
                             {% else %}{{ pub_type_key }}{% endif %}
                         </span>
                     </p>
@@ -75,26 +74,34 @@
             <hr>
             <h5 style="color: #4a2c7a; margin-bottom: 20px;">Информация о книге</h5>
             <div class="row">
+                {% if publication.book_type %}
+                <div class="col-md-6 mb-3">
+                    <p><strong>Тип книги:</strong></p>
+                    <p>{% if publication.book_type == 'textbook' %}Учебное пособие{% elif publication.book_type == 'monograph' %}Монография{% else %}{{ publication.book_type }}{% endif %}</p>
+                </div>
+                {% endif %}
                 {% if publication.edition %}
                 <div class="col-md-6 mb-3">
                     <p><strong>Номер издания:</strong></p>
                     <p>{{ publication.edition }}</p>
                 </div>
                 {% endif %}
+            </div>
+            <div class="row">
                 {% if publication.city %}
                 <div class="col-md-6 mb-3">
                     <p><strong>Город издания:</strong></p>
                     <p>{{ publication.city }}</p>
                 </div>
                 {% endif %}
-            </div>
-            <div class="row">
                 {% if publication.publisher %}
                 <div class="col-md-6 mb-3">
                     <p><strong>Издательство:</strong></p>
                     <p>{{ publication.publisher }}</p>
                 </div>
                 {% endif %}
+            </div>
+            <div class="row">
                 {% if publication.pages %}
                 <div class="col-md-6 mb-3">
                     <p><strong>Количество страниц:</strong></p>
@@ -137,7 +144,7 @@
 
             {% elif pub_type_key == 'collection_article' %}
             <hr>
-            <h5 style="color: #4a2c7a; margin-bottom: 20px;">Информация о сборнике</h5>
+            <h5 style="color: #4a2c7a; margin-bottom: 20px;">Информация о сборнике научных статей</h5>
             {% if publication.collection_title %}
             <div class="mb-3">
                 <p><strong>Название сборника:</strong></p>
@@ -263,27 +270,6 @@
             </div>
             {% endif %}
 
-            {% elif pub_type_key == 'newspaper_article' %}
-            <hr>
-            <h5 style="color: #4a2c7a; margin-bottom: 20px;">Информация о статье из газеты</h5>
-            {% if publication.newspaper_name %}
-            <div class="mb-3">
-                <p><strong>Название газеты:</strong></p>
-                <p>{{ publication.newspaper_name }}</p>
-            </div>
-            {% endif %}
-            {% if publication.newspaper_date %}
-            <div class="mb-3">
-                <p><strong>Дата выхода:</strong></p>
-                <p>{{ publication.newspaper_date }}</p>
-            </div>
-            {% endif %}
-            {% if publication.issue %}
-            <div class="mb-3">
-                <p><strong>Номер:</strong></p>
-                <p>{{ publication.issue }}</p>
-            </div>
-            {% endif %}
             {% endif %}
 
             {% if coauthors is defined and coauthors %}

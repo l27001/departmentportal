@@ -3,7 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from extensions import db
 from decorators.roles import roles_required
 from models.user import User
-from models.award import Award, Book, JournalArticle, CollectionArticle, Dissertation, Abstract, Internet, NewspaperArticle, Conference, Training, RatingTemplate, EntityCoauthor, EntitySupervisor
+from models.award import Award, Book, JournalArticle, CollectionArticle, Dissertation, Abstract, Internet, Conference, Training, RatingTemplate, EntityCoauthor, EntitySupervisor
 from forms.rating import AwardForm, PublicationForm, ConferenceForm, TrainingForm, SearchFilterForm, PUBLICATION_TYPES, AWARD_TYPES, CONFERENCE_ROLES, AWARD_LEVELS, DEGREES, FIELDS_OF_STUDY
 from sqlalchemy import or_
 from wtforms.validators import Optional
@@ -73,17 +73,15 @@ PUB_MODELS = {
     'dissertation': Dissertation,
     'abstract': Abstract,
     'internet': Internet,
-    'newspaper_article': NewspaperArticle,
 }
 
 PUB_TYPE_LABELS = {
     'book': 'Книга',
     'journal_article': 'Журнал',
-    'collection_article': 'Сборник',
+    'collection_article': 'Сборник научных статей',
     'dissertation': 'Диссертация',
     'abstract': 'Автореферат',
     'internet': 'Интернет',
-    'newspaper_article': 'Газета',
 }
 
 
@@ -246,6 +244,7 @@ def publications_list():
     pub_type = request.args.get('pub_type', '')
     index_type = request.args.get('index_type', '')
     student_report = request.args.get('student_report', '')
+    book_type = request.args.get('book_type', '')
     search_query = request.args.get('search_query', '')
     sort_by = request.args.get('sort_by', 'date_desc')
     date_range = request.args.get('date_range', 'all')
@@ -272,6 +271,9 @@ def publications_list():
             query = query.filter(model.student_report == True)
         elif student_report == 'no':
             query = query.filter(model.student_report == False)
+
+        if book_type and hasattr(model, 'book_type'):
+            query = query.filter(model.book_type == book_type)
 
         if search_query:
             author_fields = []
@@ -357,11 +359,10 @@ def publications_list():
     type_names = {
         'publication_books': 'Книга',
         'publication_journal_articles': 'Журнал',
-        'publication_collection_articles': 'Сборник',
+        'publication_collection_articles': 'Сборник научных статей',
         'publication_dissertations': 'Диссертация',
         'publication_abstracts': 'Автореферат',
         'publication_internets': 'Интернет',
-        'publication_newspaper_articles': 'Газета',
     }
 
     if sort_column == 'year':
@@ -413,6 +414,7 @@ def publications_list():
         users_list=users_list,
         author_ids=author_ids,
         student_report=student_report,
+        book_type=book_type,
     )
 
 @rating_bp.route('/publications/preview', methods=['POST'])
@@ -450,6 +452,7 @@ def preview_publication():
                 city=data.get('city', ''),
                 publisher=data.get('publisher', ''),
                 pages=data.get('pages', ''),
+                book_type=data.get('book_type', ''),
             )
         elif pub_type == 'journal_article':
             temp_pub = model(
@@ -487,14 +490,6 @@ def preview_publication():
                 site_name=data.get('site_name', ''),
                 url=data.get('url', ''),
                 access_date=data.get('access_date', ''),
-            )
-        elif pub_type == 'newspaper_article':
-            temp_pub = model(
-                **common,
-                authors=data.get('authors', ''),
-                newspaper_name=data.get('newspaper_name', ''),
-                newspaper_date=data.get('newspaper_date', ''),
-                issue=data.get('issue', ''),
             )
         else:
             return jsonify({'error': 'Unknown publication type'}), 400
@@ -541,7 +536,7 @@ def add_publication():
         }
 
         if pub_type == 'book':
-            pub = model(**common, authors=form.authors.data, edition=form.edition.data, city=form.city.data, publisher=form.publisher.data, pages=form.pages.data)
+            pub = model(**common, authors=form.authors.data, edition=form.edition.data, city=form.city.data, publisher=form.publisher.data, pages=form.pages.data, book_type=form.book_type.data)
         elif pub_type == 'journal_article':
             pub = model(**common, authors=form.authors.data, journal_name=form.journal_name.data, issue=form.issue.data, pages=form.pages.data, scopus=form.scopus.data, vak=form.vak.data)
         elif pub_type == 'collection_article':
@@ -552,8 +547,6 @@ def add_publication():
             pub = model(**common, author_single=form.author_single.data, degree=form.degree.data, field=form.field.data, specialty_code=form.specialty_code.data, city=form.city.data, pages=form.pages.data)
         elif pub_type == 'internet':
             pub = model(**common, authors=form.authors.data, site_name=form.site_name.data, url=form.url.data, access_date=form.access_date.data)
-        elif pub_type == 'newspaper_article':
-            pub = model(**common, authors=form.authors.data, newspaper_name=form.newspaper_name.data, newspaper_date=form.newspaper_date.data, issue=form.issue.data)
         else:
             flash('Неизвестный тип публикации', 'danger')
             return redirect(url_for('rating.publications_list'))
@@ -659,10 +652,8 @@ def edit_publication(pub_id):
             pub_record.url = form.url.data
         if hasattr(pub_record, 'access_date'):
             pub_record.access_date = form.access_date.data
-        if hasattr(pub_record, 'newspaper_name'):
-            pub_record.newspaper_name = form.newspaper_name.data
-        if hasattr(pub_record, 'newspaper_date'):
-            pub_record.newspaper_date = form.newspaper_date.data
+        if hasattr(pub_record, 'book_type'):
+            pub_record.book_type = form.book_type.data
 
         pub_record.gost_string = generate_gost_string(pub_record)
 
@@ -735,10 +726,8 @@ def edit_publication(pub_id):
             form.url.data = pub_record.url
         if hasattr(pub_record, 'access_date'):
             form.access_date.data = pub_record.access_date
-        if hasattr(pub_record, 'newspaper_name'):
-            form.newspaper_name.data = pub_record.newspaper_name
-        if hasattr(pub_record, 'newspaper_date'):
-            form.newspaper_date.data = pub_record.newspaper_date
+        if hasattr(pub_record, 'book_type'):
+            form.book_type.data = pub_record.book_type
 
     return render_template('rating/publication_form.html', form=form, title='Редактировать публикацию', publication=pub_record, pub_type_label=PUB_TYPE_LABELS.get(form_pub_type, form_pub_type), users=users_list, user=user)
 
@@ -1114,8 +1103,7 @@ FIELD_LABELS = {
         'site_name': 'Название сайта',
         'url': 'Гиперссылка',
         'access_date': 'Дата обращения',
-        'newspaper_name': 'Название газеты',
-        'newspaper_date': 'Дата выхода газеты',
+        'book_type': 'Тип книги',
     },
     'award': {
         'title': 'Название награды',

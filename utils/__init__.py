@@ -37,8 +37,6 @@ def generate_gost_string(pub):
         return generate_gost_abstract(pub)
     elif pub_type == 'publication_internets':
         return generate_gost_internet(pub)
-    elif pub_type == 'publication_newspaper_articles':
-        return generate_gost_newspaper(pub)
     else:
         return f"{pub.title}. \u2013 {pub.year}."
 
@@ -136,25 +134,4 @@ def generate_gost_internet(pub):
         result += "."
     return result
 
-def generate_gost_newspaper(pub):
-    authors = format_authors(pub.authors) if pub.authors else ""
-    title = pub.title or ""
-    newspaper = pub.newspaper_name or ""
-    year = str(pub.year) if pub.year else ""
-    np_date = pub.newspaper_date or ""
-    issue = f"\u0421\u0442. {pub.issue}" if pub.issue else ""
-    parts = []
-    if authors:
-        parts.append(f"{authors}. {title}")
-    else:
-        parts.append(title)
-    parts.append(f"// {newspaper}")
-    if year:
-        parts.append(f"\u2013 {year}")
-    if np_date:
-        parts.append(f"\u2013 {np_date}")
-    if issue:
-        parts.append(f"\u2013 {issue}")
-    result = ". ".join(parts) + "."
-    result = result.replace(". \u2013", " \u2013")
-    return result
+

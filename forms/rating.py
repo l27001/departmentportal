@@ -27,11 +27,10 @@ CONFERENCE_ROLES = [
 PUBLICATION_TYPES = [
     ('book', 'Книга'),
     ('journal_article', 'Статья из журнала'),
-    ('collection_article', 'Статья из сборника'),
+    ('collection_article', 'Сборник научных статей'),
     ('dissertation', 'Диссертация'),
     ('abstract', 'Автореферат'),
     ('internet', 'Интернет-ресурс'),
-    ('newspaper_article', 'Статья из газеты'),
 ]
 
 DEGREES = [
@@ -50,6 +49,12 @@ FIELDS_OF_STUDY = [
     ('психол.', 'Психологические (психол.)'),
     ('филол.', 'Филологические (филол.)'),
     ('ист.', 'Исторические (ист.)'),
+]
+
+BOOK_TYPES = [
+    ('', '---'),
+    ('textbook', 'Учебное пособие'),
+    ('monograph', 'Монография'),
 ]
 
 class AwardForm(FlaskForm):
@@ -88,7 +93,8 @@ class PublicationForm(FlaskForm):
     edition = StringField('Номер издания (например: 3-е)', validators=[Optional(), Length(max=50)])
     city = StringField('Город издания (М., СПб., или полностью)', validators=[Optional(), Length(max=100)])
     publisher = StringField('Издательство', validators=[Optional(), Length(max=255)])
-    pages = StringField('Страницы', validators=[Optional(), Length(max=50)])
+    pages = StringField('Количество страниц', validators=[Optional(), Length(max=50)])
+    book_type = SelectField('Тип книги', choices=BOOK_TYPES, validators=[Optional()])
 
     journal_name = StringField('Название журнала', validators=[Optional(), Length(max=255)])
     issue = StringField('Номер выпуска', validators=[Optional(), Length(max=50)])
@@ -102,9 +108,6 @@ class PublicationForm(FlaskForm):
     site_name = StringField('Название сайта', validators=[Optional(), Length(max=255)])
     url = URLField('Гиперссылка', validators=[Optional()])
     access_date = StringField('Дата обращения (ДД.ММ.ГГГГ)', validators=[Optional(), Length(max=20)])
-
-    newspaper_name = StringField('Название газеты', validators=[Optional(), Length(max=255)])
-    newspaper_date = StringField('Дата выхода газеты (ДД.ММ)', validators=[Optional(), Length(max=20)])
 
     coauthor_ids = SelectMultipleField(
         'Соавторы',

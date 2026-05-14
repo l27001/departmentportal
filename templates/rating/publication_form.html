@@ -85,6 +85,10 @@
                 <div id="book-fields" style="display: none;">
                     <h6 class="mb-3">Книга</h6>
                     <div class="mb-3">
+                        {{ form.book_type.label(class="form-label") }}
+                        {{ form.book_type(class="form-select") }}
+                    </div>
+                    <div class="mb-3">
                         {{ form.edition.label(class="form-label") }}
                         {{ form.edition(class="form-control", placeholder="3-е") }}
                     </div>
@@ -99,7 +103,7 @@
                         </div>
                     </div>
                     <div class="mb-3">
-                        {{ form.pages.label(class="form-label") }}
+                        <label class="form-label">Количество страниц</label>
                         {{ form.pages(class="form-control", placeholder="999") }}
                     </div>
                 </div>
@@ -133,7 +137,7 @@
                 </div>
 
                 <div id="collection-fields" style="display: none;">
-                    <h6 class="mb-3">Статья из сборника</h6>
+                    <h6 class="mb-3">Сборник научных статей</h6>
                     <div class="mb-3">
                         {{ form.collection_title.label(class="form-label") }}
                         {{ form.collection_title(class="form-control") }}
@@ -234,24 +238,6 @@
                     </div>
                 </div>
 
-                <div id="newspaper-fields" style="display: none;">
-                    <h6 class="mb-3">Статья из газеты</h6>
-                    <div class="mb-3">
-                        {{ form.newspaper_name.label(class="form-label") }}
-                        {{ form.newspaper_name(class="form-control", placeholder="Южный Урал") }}
-                    </div>
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            {{ form.newspaper_date.label(class="form-label") }}
-                            {{ form.newspaper_date(class="form-control", placeholder="ДД.ММ (01.10)") }}
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            {{ form.issue.label(class="form-label") }}
-                            {{ form.issue(class="form-control", placeholder="5") }}
-                        </div>
-                    </div>
-                </div>
-
                 <hr class="my-4">
 
                 <div class="mb-3">
@@ -330,7 +316,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('dissertation-fields').style.display = type === 'dissertation' ? 'block' : 'none';
         document.getElementById('abstract-fields').style.display = type === 'abstract' ? 'block' : 'none';
         document.getElementById('internet-fields').style.display = type === 'internet' ? 'block' : 'none';
-        document.getElementById('newspaper-fields').style.display = type === 'newspaper_article' ? 'block' : 'none';
 
         const authorsField = document.getElementById('general-authors-field');
         if (authorsField) {
@@ -350,8 +335,7 @@ document.addEventListener('DOMContentLoaded', function() {
             'collection_article': 'collection-fields',
             'dissertation': 'dissertation-fields',
             'abstract': 'abstract-fields',
-            'internet': 'internet-fields',
-            'newspaper_article': 'newspaper-fields'
+            'internet': 'internet-fields'
         };
 
         const activeSection = document.getElementById(sectionMap[type] || '');
@@ -424,8 +408,7 @@ document.addEventListener('DOMContentLoaded', function() {
             'collection_article': 'collection-fields',
             'dissertation': 'dissertation-fields',
             'abstract': 'abstract-fields',
-            'internet': 'internet-fields',
-            'newspaper_article': 'newspaper-fields'
+            'internet': 'internet-fields'
         };
         const activeId = typeToSection[type];
 
