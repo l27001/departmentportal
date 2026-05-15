@@ -39,9 +39,55 @@
       </div>
       {% endif %}
       <div class="task-tabs">
-        <a href="{{ url_for('tasks.list_tasks', archive=0) }}" class="task-tab {% if not show_archive %}active{% endif %}">Активные</a>
-        <a href="{{ url_for('tasks.list_tasks', archive=1) }}" class="task-tab {% if show_archive %}active{% endif %}">Архив</a>
+        <a href="{{ url_for('tasks.list_tasks', archive=0, status=status_filter, priority=priority_filter, date_from=date_from, date_to=date_to, assignee=assignee_filter) }}" class="task-tab {% if not show_archive %}active{% endif %}">Активные</a>
+        <a href="{{ url_for('tasks.list_tasks', archive=1, status=status_filter, priority=priority_filter, date_from=date_from, date_to=date_to, assignee=assignee_filter) }}" class="task-tab {% if show_archive %}active{% endif %}">Архив</a>
       </div>
+      <form method="GET" action="{{ url_for('tasks.list_tasks') }}" class="task-filters">
+        <input type="hidden" name="archive" value="{{ show_archive }}">
+        <div class="filter-row">
+          <div class="filter-group">
+            <label class="filter-label">Статус</label>
+            <select name="status" class="filter-select" onchange="this.form.submit()">
+              <option value="">Все статусы</option>
+              <option value="не начата" {% if status_filter == 'не начата' %}selected{% endif %}>Не начата</option>
+              <option value="на проверке" {% if status_filter == 'на проверке' %}selected{% endif %}>На проверке</option>
+              <option value="на доработке" {% if status_filter == 'на доработке' %}selected{% endif %}>На доработке</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Приоритет</label>
+            <select name="priority" class="filter-select" onchange="this.form.submit()">
+              <option value="">Все приоритеты</option>
+              <option value="low" {% if priority_filter == 'low' %}selected{% endif %}>Низкий</option>
+              <option value="medium" {% if priority_filter == 'medium' %}selected{% endif %}>Средний</option>
+              <option value="high" {% if priority_filter == 'high' %}selected{% endif %}>Высокий</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Срок от</label>
+            <input type="date" name="date_from" class="filter-input" value="{{ date_from or '' }}" onchange="this.form.submit()">
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Срок до</label>
+            <input type="date" name="date_to" class="filter-input" value="{{ date_to or '' }}" onchange="this.form.submit()">
+          </div>
+          {% if is_leader %}
+          <div class="filter-group">
+            <label class="filter-label">Исполнитель</label>
+            <select name="assignee" class="filter-select" onchange="this.form.submit()">
+              <option value="">Все исполнители</option>
+              {% for u in users %}
+              <option value="{{ u.id }}" {% if assignee_filter == u.id %}selected{% endif %}>{{ u.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          {% endif %}
+          <div class="filter-group filter-actions">
+            <label class="filter-label">&nbsp;</label>
+            <a href="{{ url_for('tasks.list_tasks', archive=show_archive) }}" class="filter-clear">Сбросить</a>
+          </div>
+        </div>
+      </form>
       <div id="taskListView" class="task-list">
         <div class="task-list-header">
           <span class="col-title">Название</span>
@@ -114,14 +160,17 @@
       <div class="pagination">
         {% set total_pages = (total + per_page - 1) // per_page %}
         {% if total_pages > 1 %}
+          {% macro filter_url(p) -%}
+            {{ url_for('tasks.list_tasks', page=p, archive=show_archive, status=status_filter, priority=priority_filter, date_from=date_from, date_to=date_to, assignee=assignee_filter) }}
+          {%- endmacro %}
           {% if page > 1 %}
-            <a href="{{ url_for('tasks.list_tasks', page=page - 1, archive=show_archive) }}" class="page-link">&laquo;</a>
+            <a href="{{ filter_url(page - 1) }}" class="page-link">&laquo;</a>
           {% endif %}
           {% for p in range(1, total_pages + 1) %}
             {% if p == page %}
               <span class="page-link page-item active">{{ p }}</span>
             {% elif p <= 3 or p > total_pages - 3 or (p >= page - 2 and p <= page + 2) %}
-              <a href="{{ url_for('tasks.list_tasks', page=p, archive=show_archive) }}" class="page-link">{{ p }}</a>
+              <a href="{{ filter_url(p) }}" class="page-link">{{ p }}</a>
             {% elif p == 4 and page > 4 %}
               <span class="page-link">...</span>
             {% elif p == total_pages - 3 and page < total_pages - 3 %}
@@ -129,7 +178,7 @@
             {% endif %}
           {% endfor %}
           {% if page < total_pages %}
-            <a href="{{ url_for('tasks.list_tasks', page=page + 1, archive=show_archive) }}" class="page-link">&raquo;</a>
+            <a href="{{ filter_url(page + 1) }}" class="page-link">&raquo;</a>
           {% endif %}
         {% endif %}
       </div>

@@ -33,6 +33,12 @@ def list_tasks():
     per_page = 10
     show_archive = request.args.get("archive", 0, type=int)
 
+    status_filter = request.args.get("status")
+    priority_filter = request.args.get("priority")
+    date_from = request.args.get("date_from")
+    date_to = request.args.get("date_to")
+    assignee_filter = request.args.get("assignee", type=int)
+
     user_assignments = {
         int(a.task_id): a
         for a in TaskUserAssignment.query.filter_by(user_id=user_id).all()
@@ -55,15 +61,31 @@ def list_tasks():
             )
             groups_members[group.id] = [{"id": m.id, "name": m.name} for m in members]
 
-    if is_leader:
-        tasks = Task.query.order_by(asc(Task.deadline_at)).all()
-    else:
-        tasks = (
-            Task.query
-            .filter(Task.id.in_(task_ids_by_assignment))
-            .order_by(asc(Task.deadline_at))
-            .all()
-        )
+    query = Task.query
+
+    if not is_leader:
+        query = query.filter(Task.id.in_(task_ids_by_assignment))
+
+    if priority_filter:
+        query = query.filter(Task.priority == priority_filter)
+
+    if date_from:
+        query = query.filter(Task.deadline_at >= datetime.strptime(date_from, '%Y-%m-%d').date())
+
+    if date_to:
+        query = query.filter(Task.deadline_at <= datetime.strptime(date_to, '%Y-%m-%d').date())
+
+    if status_filter:
+        filtered_ids = db.session.query(TaskUserAssignment.task_id).filter(TaskUserAssignment.status == status_filter)
+        if not is_leader:
+            filtered_ids = filtered_ids.filter(TaskUserAssignment.user_id == user_id)
+        query = query.filter(Task.id.in_(filtered_ids))
+
+    if assignee_filter and is_leader:
+        assigned_ids = db.session.query(TaskUserAssignment.task_id).filter(TaskUserAssignment.user_id == assignee_filter)
+        query = query.filter(Task.id.in_(assigned_ids))
+
+    tasks = query.order_by(asc(Task.deadline_at)).all()
 
     all_assignments = {
         int(a.task_id): a
@@ -137,7 +159,7 @@ def list_tasks():
             'is_overdue': is_overdue
         })
 
-    return render_template("tasks/list.html", tasks=paginated_tasks, role=role, users=users, groups=groups, groups_members=groups_members, user_assignments=user_assignments, assigned_task_ids=assigned_task_ids, user_id=user_id, today=today_date, page=page, total=total, per_page=per_page, announcements=announcements, viewed_ids=viewed_ids, review_task_ids=review_task_ids, is_leader=is_leader, tasks_by_deadline=tasks_by_deadline, task_stats=task_stats, show_archive=show_archive)
+    return render_template("tasks/list.html", tasks=paginated_tasks, role=role, users=users, groups=groups, groups_members=groups_members, user_assignments=user_assignments, assigned_task_ids=assigned_task_ids, user_id=user_id, today=today_date, page=page, total=total, per_page=per_page, announcements=announcements, viewed_ids=viewed_ids, review_task_ids=review_task_ids, is_leader=is_leader, tasks_by_deadline=tasks_by_deadline, task_stats=task_stats, show_archive=show_archive, status_filter=status_filter, priority_filter=priority_filter, date_from=date_from, date_to=date_to, assignee_filter=assignee_filter)
 
 @tasks_bp.route("/", methods=["POST"])
 @jwt_required()
