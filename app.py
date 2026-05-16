@@ -268,7 +268,8 @@ def create_app():
         "security": [{"BearerAuth": []}]
     }
 
-    Swagger(app, template=swagger_template)
+    if os.getenv("FLASK_ENV") == "development":
+        Swagger(app, template=swagger_template)
 
     db.init_app(app)
     migrate = Migrate(app, db)
@@ -322,11 +323,12 @@ def create_app():
     @app.route('/token-refresh', methods=['GET'])
     @jwt_required()
     def refresh():
-        # Create the new access token
         current_user = get_jwt_identity()
-        access_token = create_access_token(identity=current_user)
-
-        # Set the JWT access cookie in the response
+        user = User.query.get(current_user)
+        access_token = create_access_token(
+            identity=current_user,
+            additional_claims={"role": user.role.id}
+        )
         resp = jsonify({'refresh': True})
         set_access_cookies(resp, access_token)
         return resp, 200
