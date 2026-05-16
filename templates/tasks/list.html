@@ -16,6 +16,12 @@
     font-weight: 600;
     max-width: 1460px;
   }
+  .modal-calendar {
+    max-width: 900px;
+  }
+  .modal-calendar #calendar {
+    min-height: 500px;
+  }
   .task-count-badge {
     display: inline-flex;
     align-items: center;
@@ -198,18 +204,6 @@
     </section>
 
     <section class="task-sidebar">
-      <div class="calendar-sidebar-container" id="calendarContainer" style="display:none;">
-        <div id="calendar"></div>
-        <div id="dayTasksModal" class="modal">
-          <div class="modal-content">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-              <h2 id="dayTasksTitle" style="margin: 10px 0;"></h2>
-              <span id="dayTasksCloseBtn" style="font-size: 36px; font-weight: bold; cursor: pointer; color: #b70000;">&times;</span>
-            </div>
-            <div id="dayTasksList"></div>
-          </div>
-        </div>
-      </div>
       <div class="announcements-section">
       <div class="announcements-header">
         <h3 class="announcements-title">
@@ -255,20 +249,13 @@ var calendarInstance = null;
 var calendarInitialized = false;
 
 function toggleCalendar() {
-  var container = document.getElementById('calendarContainer');
-  var btn = document.getElementById('calendarToggleBtn');
-  if (container.style.display === 'none') {
-    container.style.display = 'block';
-    btn.classList.add('active');
-    if (!calendarInitialized) {
-      initCalendar();
-      calendarInitialized = true;
-    } else {
-      calendarInstance.updateSize();
-    }
+  openModal('calendarModal');
+  if (!calendarInitialized) {
+    initCalendar();
+    calendarInitialized = true;
+    setTimeout(function(){ calendarInstance.updateSize(); }, 100);
   } else {
-    container.style.display = 'none';
-    btn.classList.remove('active');
+    calendarInstance.updateSize();
   }
 }
 
@@ -356,24 +343,28 @@ function initCalendar() {
     list:     'Список'
   });
 
-  var closeBtn = document.getElementById('dayTasksCloseBtn');
-  if (closeBtn) {
-    closeBtn.onclick = function() {
-      document.getElementById('dayTasksModal').style.display = 'none';
-    };
-  }
 }
-
-window.onclick = function(event) {
-  var modal = document.getElementById('dayTasksModal');
-  if (event.target == modal) {
-    modal.style.display = 'none';
-  }
-};
 </script>
 {% endblock %}
 
 {% block modals %}
+<div id="calendarModal" class="modal">
+  <div class="modal-content modal-calendar">
+    <span class="close" onclick="closeModal('calendarModal')">&times;</span>
+    <div id="calendar"></div>
+  </div>
+</div>
+
+<div id="dayTasksModal" class="modal">
+  <div class="modal-content">
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <h2 id="dayTasksTitle" style="margin: 10px 0;"></h2>
+      <span id="dayTasksCloseBtn" class="close" style="font-size: 36px; font-weight: bold; cursor: pointer; color: #b70000;">&times;</span>
+    </div>
+    <div id="dayTasksList"></div>
+  </div>
+</div>
+
 <div id="addTask" class="modal">
   <div class="modal-content">
     <span class="close" onclick="closeModal('addTask')">&times;</span>
