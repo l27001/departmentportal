@@ -29,17 +29,8 @@ def upgrade() -> None:
 
     app = create_app()
     with app.app_context():
-        existing = set()
         conn = op.get_bind()
-        if conn.engine.dialect.name != 'sqlite':
-            existing = set(inspect(conn).get_table_names())
-
-        for table_name, table in db.metadata.tables.items():
-            if table_name.startswith('alembic'):
-                continue
-            if table_name in existing:
-                continue
-            table.create(conn)
+        db.metadata.create_all(conn)
 
 
 def downgrade() -> None:
