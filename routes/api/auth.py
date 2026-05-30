@@ -1,3 +1,5 @@
+from datetime import date
+
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -46,6 +48,9 @@ def login():
 
     if not user.is_active:
         return jsonify({"msg": "Аккаунт заблокирован"}), 403
+
+    if user.dismissal_date and user.dismissal_date <= date.today():
+        return jsonify({"msg": "Аккаунт деактивирован"}), 403
 
     access_token = create_access_token(
         identity=user.id,

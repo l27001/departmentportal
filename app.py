@@ -1,3 +1,5 @@
+from datetime import date
+
 import os
 from flask import Flask, redirect, render_template, url_for, jsonify, flash, request
 from extensions import db, jwt
@@ -352,6 +354,22 @@ def create_app():
         if request.path.startswith("/api/"):
             return jsonify({"msg": "Токен истёк"}), 401
         flash("Требуется авторизация", "warning")
+        return redirect(url_for("auth.login"))
+
+    @jwt.token_in_blocklist_loader
+    def check_if_token_revoked(jwt_header, jwt_payload):
+        user_id = jwt_payload.get("sub")
+        if user_id:
+            user = User.query.get(user_id)
+            if user and (not user.is_active or (user.dismissal_date and user.dismissal_date <= date.today())):
+                return True
+        return False
+
+    @jwt.revoked_token_loader
+    def revoked_token_callback(jwt_header, jwt_payload):
+        if request.path.startswith("/api/"):
+            return jsonify({"msg": "Аккаунт деактивирован"}), 401
+        flash("Ваш аккаунт деактивирован", "danger")
         return redirect(url_for("auth.login"))
 
     @app.errorhandler(404)

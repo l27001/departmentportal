@@ -1,3 +1,5 @@
+from datetime import date
+
 from flask import Blueprint, request, jsonify, render_template, url_for, redirect, flash
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, set_access_cookies, unset_jwt_cookies
 from werkzeug.security import check_password_hash
@@ -17,6 +19,10 @@ def login():
         # Проверяем, существует ли пользователь и правильность пароля
         if not user or not check_password_hash(user.password, data['password']):
             flash("Неверный логин или пароль", "danger")
+            return render_template("auth/login.html")
+
+        if not user.is_active or (user.dismissal_date and user.dismissal_date <= date.today()):
+            flash("Ваш аккаунт деактивирован", "danger")
             return render_template("auth/login.html")
 
         # Создаем JWT токен

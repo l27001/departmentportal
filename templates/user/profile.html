@@ -128,18 +128,7 @@
           <input type="text" id="academic_title" name="academic_title" value="{{ user.academic_title | default('', true) }}">
         </div>
       </div>
-      {% if user.role.name == 'Руководитель' %}
-      <div class="form-row">
-        <div class="input-group">
-          <label for="hire_date">Дата приёма</label>
-          <input type="date" id="hire_date" name="hire_date" value="{{ user.hire_date.isoformat() if user.hire_date else '' }}">
-        </div>
-        <div class="input-group">
-          <label for="dismissal_date">Дата увольнения</label>
-          <input type="date" id="dismissal_date" name="dismissal_date" value="{{ user.dismissal_date.isoformat() if user.dismissal_date else '' }}">
-        </div>
-      </div>
-      {% endif %}
+
       <div class="form-actions">
         <button type="submit" class="btn btn-primary">Сохранить изменения</button>
       </div>
