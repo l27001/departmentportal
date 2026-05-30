@@ -1,8 +1,10 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
 from werkzeug.security import check_password_hash, generate_password_hash
 from models.user import User
+from models.role import Role
 from extensions import db
+from datetime import datetime
 
 api_auth_bp = Blueprint("api_auth", __name__, url_prefix="/api/auth")
 
@@ -75,6 +77,107 @@ def me():
     user_id = get_jwt_identity()
     user = User.query.get_or_404(user_id)
     return jsonify(user.to_dict())
+
+
+@api_auth_bp.route("/me", methods=["PATCH"])
+@jwt_required()
+def update_profile():
+    """Редактировать профиль
+    ---
+    tags: [Auth]
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            name:
+              type: string
+            job_title:
+              type: string
+            phone:
+              type: string
+            degree:
+              type: string
+            academic_title:
+              type: string
+            hire_date:
+              type: string
+              format: date
+            dismissal_date:
+              type: string
+              format: date
+    responses:
+      200:
+        description: Профиль обновлён
+        schema:
+          $ref: '#/definitions/User'
+      401:
+        description: Не авторизован
+    """
+    user_id = get_jwt_identity()
+    user = User.query.get_or_404(user_id)
+    role = Role.query.filter_by(id=get_jwt()["role"]).first()
+
+    data = request.json
+    if not data:
+        return jsonify({"msg": "Нет данных для обновления"}), 400
+
+    user.name = data.get("name", user.name)
+    user.job_title = data.get("job_title", user.job_title)
+    user.phone = data.get("phone", user.phone)
+    user.degree = data.get("degree", user.degree)
+    user.academic_title = data.get("academic_title", user.academic_title)
+
+    if role.name == "Руководитель":
+        hire_date_str = data.get("hire_date")
+        dismissal_date_str = data.get("dismissal_date")
+        if hire_date_str:
+            try:
+                user.hire_date = datetime.strptime(hire_date_str, "%Y-%m-%d").date()
+            except ValueError:
+                return jsonify({"msg": "Неверный формат hire_date, ожидается YYYY-MM-DD"}), 400
+        if dismissal_date_str:
+            try:
+                user.dismissal_date = datetime.strptime(dismissal_date_str, "%Y-%m-%d").date()
+            except ValueError:
+                return jsonify({"msg": "Неверный формат dismissal_date, ожидается YYYY-MM-DD"}), 400
+        else:
+            user.dismissal_date = None
+
+    db.session.commit()
+    return jsonify(user.to_dict()), 200
+
+
+@api_auth_bp.route("/refresh", methods=["GET"])
+@jwt_required()
+def refresh():
+    """Обновить токен доступа
+    ---
+    tags: [Auth]
+    security:
+      - BearerAuth: []
+    responses:
+      200:
+        description: Токен обновлён
+        schema:
+          type: object
+          properties:
+            access_token:
+              type: string
+      401:
+        description: Не авторизован
+    """
+    current_user = get_jwt_identity()
+    user = User.query.get(current_user)
+    access_token = create_access_token(
+        identity=current_user,
+        additional_claims={"role": user.role.id}
+    )
+    return jsonify({"access_token": access_token}), 200
 
 
 @api_auth_bp.route("/changepass", methods=["PATCH"])
