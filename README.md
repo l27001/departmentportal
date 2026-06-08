@@ -37,7 +37,7 @@ services:
       - pgdata:/var/lib/postgresql/data
 
   app:
-    build: .
+    image: ghcr.io/l27001/departmentportal:latest
     ports:
       - "5000:5000"
     environment:
