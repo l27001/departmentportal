@@ -5,6 +5,7 @@ from flask import Blueprint, request, jsonify, render_template, flash, send_file
 from models.document import Document, DocumentLink
 from models.attachment import Attachment
 from models.role import Role
+from models.category import Category
 from flask_jwt_extended import (
     jwt_required,
     get_jwt_identity,
@@ -15,7 +16,11 @@ from decorators.roles import roles_required
 
 documents_bp = Blueprint('documents', __name__, url_prefix='/documents')
 
-CATEGORIES = ['нормативный', 'учебный', 'методический', 'прочее']
+
+def get_categories():
+    cats = Category.query.all()
+    cats.sort(key=lambda c: (c.name == 'прочее', c.name))
+    return [c.name for c in cats]
 
 
 def get_combined_items(category=None, page=1, per_page=10):
@@ -82,7 +87,7 @@ def upload_document():
             flash(f"Недопустимый формат файла: {file.filename}", "danger")
             return redirect(url_for("documents.documents"))
 
-    if doc_type not in CATEGORIES:
+    if doc_type not in get_categories():
         flash("Выберите категорию файла", "danger")
         return redirect(url_for("documents.documents"))
 
@@ -139,7 +144,7 @@ def add_link():
     if not url.startswith(("http://", "https://")):
         flash("Ссылка должна начинаться с http:// или https://", "danger")
         return redirect(url_for("documents.documents"))
-    if category not in CATEGORIES:
+    if category not in get_categories():
         flash("Выберите категорию", "danger")
         return redirect(url_for("documents.documents"))
 
@@ -165,6 +170,8 @@ def documents():
     category = request.args.get("category")
 
     items, total, total_pages = get_combined_items(category=category, page=page, per_page=per_page)
+    categories = Category.query.all()
+    categories.sort(key=lambda c: (c.name == 'прочее', c.name))
     return render_template(
         "documents/list.html",
         documents=items,
@@ -173,7 +180,8 @@ def documents():
         total=total,
         per_page=per_page,
         total_pages=total_pages,
-        current_category=category
+        current_category=category,
+        categories=categories
     )
 
 

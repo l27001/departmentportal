@@ -33,8 +33,6 @@
                 {% endif %}
                 {% if emp.birthday %}
                 <span>ДР: {{ emp.birthday.strftime('%d.%m.%Y') }}</span>
-                {% else %}
-                <span class="birthday-empty" style="cursor:pointer;color:#999;" onclick="openBirthdayModal({{ emp.id }}, '{{ emp.name }}')">+ Добавить ДР</span>
                 {% endif %}
             </div>
         </div>
@@ -45,38 +43,3 @@
         <p>Нет сотрудников</p>
     </div>
 {% endif %}
-
-<!-- Birthday Modal -->
-<div class="modal-overlay" id="birthday-modal" style="display:none;">
-    <div class="modal-content" style="max-width:400px;">
-        <div class="modal-header">
-            <h5 class="modal-title" id="birthday-modal-title">День рождения</h5>
-            <button type="button" class="modal-close" onclick="closeBirthdayModal()">&times;</button>
-        </div>
-        <form method="POST" id="birthday-form">
-            <div class="modal-body">
-                <p id="birthday-modal-name" style="margin-bottom:12px;color:#555;"></p>
-                <div class="form-group">
-                    <label>Дата рождения</label>
-                    <input type="date" name="birthday" class="form-control">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeBirthdayModal()">Отмена</button>
-                <button type="submit" class="btn btn-primary">Сохранить</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<script>
-function openBirthdayModal(userId, userName) {
-    document.getElementById('birthday-modal-title').textContent = 'День рождения — ' + userName;
-    document.getElementById('birthday-modal-name').textContent = userName;
-    document.getElementById('birthday-form').action = '{{ url_for("about.index") }}employees/' + userId + '/edit_birthday';
-    document.getElementById('birthday-modal').style.display = 'flex';
-}
-function closeBirthdayModal() {
-    document.getElementById('birthday-modal').style.display = 'none';
-}
-</script>

@@ -24,6 +24,7 @@ from routes.news import news_bp as web_news_bp
 from routes.chat import chat_bp as web_chat_bp
 from routes.admin import admin_bp
 from routes.api.admin_users import admin_users_bp
+from routes.api.categories import categories_bp
 from routes.about import about_bp
 from dotenv import load_dotenv
 from flask_cors import CORS
@@ -44,6 +45,7 @@ from models.document import Document, DocumentLink
 from models.award import Award
 from models.announcement import Announcement
 from models.news import News
+from models.category import Category
 from models.chat import GeneralChatMessage
 from models.group import Group, UserGroup
 from models.attachment import Attachment
@@ -302,6 +304,7 @@ def create_app():
     app.register_blueprint(web_chat_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(admin_users_bp)
+    app.register_blueprint(categories_bp)
 
     @app.context_processor
     def inject_user():

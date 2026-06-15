@@ -6,13 +6,16 @@
 <div class="row">
     <div class="col-lg-3">
         <div class="rating-sidebar">
-            <h5>Категории</h5>
+            <h5>Категории
+                {% if role.name in ['Руководитель', 'Документовед'] %}
+                <button class="btn-category-manage" onclick="openModal('categoryManageModal'); loadCategoryManage()" title="Управление категориями">⚙️</button>
+                {% endif %}
+            </h5>
             <ul>
                 <li><a href="{{ url_for('documents.documents') }}" class="{% if not current_category %}active{% endif %}">Все документы</a></li>
-                <li><a href="{{ url_for('documents.documents', category='нормативный') }}" class="{% if current_category == 'нормативный' %}active{% endif %}">Нормативные</a></li>
-                <li><a href="{{ url_for('documents.documents', category='учебный') }}" class="{% if current_category == 'учебный' %}active{% endif %}">Учебные</a></li>
-                <li><a href="{{ url_for('documents.documents', category='методический') }}" class="{% if current_category == 'методический' %}active{% endif %}">Методические</a></li>
-                <li><a href="{{ url_for('documents.documents', category='прочее') }}" class="{% if current_category == 'прочее' %}active{% endif %}">Прочее</a></li>
+                {% for cat in categories %}
+                <li><a href="{{ url_for('documents.documents', category=cat.name) }}" class="{% if current_category == cat.name %}active{% endif %}">{{ cat.name | capitalize }}</a></li>
+                {% endfor %}
             </ul>
         </div>
     </div>
@@ -129,10 +132,9 @@
                 <label for="doc_type">Тип документа</label>
                 <select id="doc_type" name="doc_type" required>
                     <option value="">Выберите тип</option>
-                    <option value="Нормативный">Нормативный</option>
-                    <option value="Учебный">Учебный</option>
-                    <option value="Методический">Методический</option>
-                    <option value="Прочее">Прочее</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.name | capitalize }}">{{ cat.name | capitalize }}</option>
+                    {% endfor %}
                 </select>
             </div>
             <div class="input-group">
@@ -164,10 +166,9 @@
                 <label for="link_category">Категория</label>
                 <select id="link_category" name="category" required>
                     <option value="">Выберите категорию</option>
-                    <option value="нормативный">Нормативный</option>
-                    <option value="учебный">Учебный</option>
-                    <option value="методический">Методический</option>
-                    <option value="прочее">Прочее</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.name }}">{{ cat.name | capitalize }}</option>
+                    {% endfor %}
                 </select>
             </div>
             <div class="modal-actions">
@@ -196,6 +197,21 @@
                 <button type="button" class="btn btn-cancel" onclick="closeModal('editDocumentModal')">Отмена</button>
             </div>
         </form>
+    </div>
+</div>
+
+<div id="categoryManageModal" class="modal">
+    <div class="modal-content modal-document">
+        <span class="close" onclick="closeModal('categoryManageModal')">&times;</span>
+        <h3>Управление категориями</h3>
+        <div id="categoryList" class="category-manage-list"></div>
+        <div class="category-add-row">
+            <input type="text" id="categoryNewInput" placeholder="Новая категория" onkeydown="if(event.key==='Enter') addCategory()">
+            <button class="btn btn-primary" onclick="addCategory()">Добавить</button>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-cancel" onclick="closeModal('categoryManageModal')">Закрыть</button>
+        </div>
     </div>
 </div>
 
@@ -257,6 +273,114 @@
 .btn-action-delete:hover {
     background: #fde8e8;
 }
+
+.btn-category-manage {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    vertical-align: middle;
+    transition: background 0.15s;
+}
+.btn-category-manage:hover {
+    background: #f0eaff;
+}
+.category-manage-list {
+    border: 1px solid #e8e0f0;
+    border-radius: 8px;
+    background: #faf8fc;
+    margin-bottom: 16px;
+}
+.category-manage-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    border-bottom: 1px solid #e8e0f0;
+    transition: background 0.15s;
+    min-height: 40px;
+}
+.category-manage-item:last-child {
+    border-bottom: none;
+}
+.category-manage-item:hover {
+    background: #f5f0fa;
+}
+.category-manage-item.editing {
+    background: #f0ebf7;
+    box-shadow: inset 0 0 0 1px #d0c0e8;
+    border-radius: 6px;
+    margin: 4px 6px;
+    padding: 8px;
+}
+.category-manage-item .cat-name {
+    flex: 1;
+    font-size: 14px;
+    color: #333;
+    min-width: 0;
+}
+.category-manage-item .cat-edit-input {
+    flex: 1;
+    height: 32px;
+    border: 1px solid #4a2c7a;
+    border-radius: 6px;
+    padding: 0 10px;
+    font-size: 14px;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(74,44,122,0.12);
+}
+.category-manage-item .cat-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0.4;
+    transition: opacity 0.15s;
+    flex-shrink: 0;
+}
+.category-manage-item:hover .cat-actions {
+    opacity: 1;
+}
+.category-manage-item.editing .cat-actions {
+    opacity: 1;
+}
+.btn-cat-edit, .btn-cat-delete, .btn-cat-save, .btn-cat-cancel {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px 8px;
+    border-radius: 6px;
+    font-size: 14px;
+    line-height: 1;
+    transition: background 0.15s;
+}
+.btn-cat-edit { color: #4a2c7a; }
+.btn-cat-edit:hover { background: #e6ddf5; }
+.btn-cat-delete { color: #e74c3c; }
+.btn-cat-delete:hover { background: #fde8e8; }
+.btn-cat-save { color: #2e7d32; }
+.btn-cat-save:hover { background: #e6f4e6; }
+.btn-cat-cancel { color: #888; }
+.btn-cat-cancel:hover { background: #eee; }
+
+.category-add-row {
+    display: flex;
+    gap: 8px;
+}
+.category-add-row input {
+    flex: 1;
+    height: 38px;
+    border: 1px solid #d0c5e0;
+    border-radius: 6px;
+    padding: 0 12px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s;
+}
+.category-add-row input:focus {
+    border-color: #4a2c7a;
+    box-shadow: 0 0 0 3px rgba(74,44,122,0.1);
+}
 </style>
 
 <script>
@@ -308,6 +432,130 @@ window.onclick = function(e) {
     if (e.target.classList.contains('modal')) {
         e.target.style.display = 'none';
     }
+}
+
+var categoryEditId = null;
+
+function loadCategoryManage() {
+    categoryEditId = null;
+    fetch('/api/categories/', { credentials: 'include' })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            data.sort(function(a, b) {
+                var aIsOther = a.name === 'прочее';
+                var bIsOther = b.name === 'прочее';
+                if (aIsOther && !bIsOther) return 1;
+                if (!aIsOther && bIsOther) return -1;
+                return a.name.localeCompare(b.name, 'ru');
+            });
+            var list = document.getElementById('categoryList');
+            list.innerHTML = data.map(function(c) {
+                return '<div class="category-manage-item" data-id="' + c.id + '">' +
+                    '<span class="cat-name">' + escapeHtml(c.name) + '</span>' +
+                    '<span class="cat-actions">' +
+                    '<button class="btn-cat-edit" onclick="startEditCategory(this,' + c.id + ')" title="Переименовать">✏️</button>' +
+                    '<button class="btn-cat-delete" onclick="deleteCategory(' + c.id + ')" title="Удалить">🗑️</button>' +
+                    '</span>' +
+                    '</div>';
+            }).join('');
+        });
+}
+
+function startEditCategory(btn, id) {
+    var item = btn.closest('.category-manage-item');
+    var nameSpan = item.querySelector('.cat-name');
+    var oldName = nameSpan.textContent;
+
+    nameSpan.innerHTML = '<input type="text" class="cat-edit-input" value="' + escapeHtml(oldName) + '">';
+    var input = nameSpan.querySelector('input');
+    item.classList.add('editing');
+
+    var actions = item.querySelector('.cat-actions');
+    actions.innerHTML =
+        '<button class="btn-cat-save" onclick="saveInlineEdit(this,' + id + ')" title="Сохранить">💾</button>' +
+        '<button class="btn-cat-cancel" onclick="cancelInlineEdit(this,' + id + ',\'' + escapeHtml(oldName) + '\')" title="Отмена">❌</button>';
+
+    input.focus();
+    input.select();
+    input.onkeydown = function(e) {
+        if (e.key === 'Enter') saveInlineEdit(actions.querySelector('.btn-cat-save'), id);
+        if (e.key === 'Escape') cancelInlineEdit(actions.querySelector('.btn-cat-cancel'), id, oldName);
+    };
+}
+
+function saveInlineEdit(btn, id) {
+    var item = btn.closest('.category-manage-item');
+    var input = item.querySelector('.cat-edit-input');
+    var newName = input.value.trim();
+    if (!newName) { alert('Введите название категории'); return; }
+
+    fetch('/api/categories/' + id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name: newName }),
+    })
+    .then(function(r) { return r.json().then(function(d) { return { status: r.status, data: d }; }); })
+    .then(function(res) {
+        if (res.status >= 400) {
+            alert(res.data.msg || 'Ошибка при сохранении');
+            return;
+        }
+        loadCategoryManage();
+    })
+    .catch(function() { alert('Ошибка сервера'); });
+}
+
+function cancelInlineEdit(btn, id, oldName) {
+    var item = btn.closest('.category-manage-item');
+    item.classList.remove('editing');
+    var nameSpan = item.querySelector('.cat-name');
+    nameSpan.textContent = oldName;
+    var actions = item.querySelector('.cat-actions');
+    actions.innerHTML =
+        '<button class="btn-cat-edit" onclick="startEditCategory(this,' + id + ')" title="Переименовать">✏️</button>' +
+        '<button class="btn-cat-delete" onclick="deleteCategory(' + id + ')" title="Удалить">🗑️</button>';
+}
+
+function addCategory() {
+    var input = document.getElementById('categoryNewInput');
+    var name = input.value.trim();
+    if (!name) { alert('Введите название категории'); return; }
+
+    fetch('/api/categories/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name: name }),
+    })
+    .then(function(r) { return r.json().then(function(d) { return { status: r.status, data: d }; }); })
+    .then(function(res) {
+        if (res.status >= 400) {
+            alert(res.data.msg || 'Ошибка при добавлении');
+            return;
+        }
+        input.value = '';
+        loadCategoryManage();
+    })
+    .catch(function() { alert('Ошибка сервера'); });
+}
+
+function deleteCategory(id) {
+    if (!confirm('Удалить категорию?')) return;
+    fetch('/api/categories/' + id, {
+        method: 'DELETE',
+        credentials: 'include',
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.msg) { loadCategoryManage(); }
+    })
+    .catch(function() { alert('Ошибка при удалении'); });
+}
+
+function escapeHtml(s) {
+    if (!s) return '';
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 </script>
 {% endblock %}
