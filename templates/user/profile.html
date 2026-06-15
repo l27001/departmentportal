@@ -82,6 +82,10 @@
             {% endif %}
           </span>
         </div>
+        <div class="detail-row">
+          <span class="detail-label">Роль</span>
+          <span class="detail-value">{{ user.role.name }}</span>
+        </div>
         {% if user.groups %}
         <div class="detail-row">
           <span class="detail-label">Группы</span>

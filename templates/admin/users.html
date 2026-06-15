@@ -130,8 +130,9 @@ var currentPage = 1;
 
 async function loadRoles() {
   try {
-    var res = await fetch('/api/groups/roles');
+    var res = await fetch('/api/groups/roles', { credentials: 'include' });
     roles = await res.json();
+    if (!Array.isArray(roles)) throw new Error('Invalid response');
   } catch(e) {
     roles = [{id:1,name:'Руководитель'},{id:2,name:'Документовед'},{id:3,name:'Сотрудник'}];
   }

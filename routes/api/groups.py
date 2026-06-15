@@ -3,6 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt
 from extensions import db
 from models.group import Group, UserGroup
 from models.user import User
+from models.role import Role
 
 groups_bp = Blueprint("api_groups", __name__, url_prefix="/api/groups")
 
@@ -25,6 +26,13 @@ def list_groups():
     """
     groups = Group.query.all()
     return jsonify([g.to_dict() for g in groups])
+
+
+@groups_bp.route("/roles", methods=["GET"])
+@jwt_required()
+def list_roles():
+    roles = Role.query.all()
+    return jsonify([{"id": r.id, "name": r.name} for r in roles])
 
 
 @groups_bp.route("/", methods=["POST"])
