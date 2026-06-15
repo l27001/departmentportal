@@ -11,11 +11,7 @@
     <h1>Вход в систему</h1>
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
-        <div class="login-flash">
-          {% for category, message in messages %}
-            <div class="flash-message {{ category }}">{{ message }}</div>
-          {% endfor %}
-        </div>
+      <div id="login-flash" style="display:none;" data-messages='[{% for cat, msg in messages %}{"cat":"{{ cat }}","msg":{{ msg | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}]'></div>
       {% endif %}
     {% endwith %}
     <form action="/auth/login" method="POST" class="login-form">
@@ -34,5 +30,35 @@
     </form>
   </div>
   <script src="/static/js/scripts.js"></script>
+  <style>
+    #toast-container { position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px;pointer-events:none; }
+    .toast { pointer-events:auto;display:flex;align-items:center;gap:12px;min-width:320px;max-width:440px;padding:14px 16px;border-radius:10px;background:#fff;box-shadow:0 8px 24px rgba(0,0,0,0.12);font-family:'Inter',sans-serif;font-size:14px;line-height:1.4;color:#333;transform:translateX(120%);animation:toastSlideIn .35s ease forwards; }
+    .toast.removing { animation:toastSlideOut .25s ease forwards; }
+    @keyframes toastSlideIn { from{transform:translateX(120%);opacity:0} to{transform:translateX(0);opacity:1} }
+    @keyframes toastSlideOut { from{transform:translateX(0);opacity:1} to{transform:translateX(120%);opacity:0} }
+    .toast-icon { flex-shrink:0;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff; }
+    .toast.success .toast-icon { background:#10b981; }
+    .toast.warning .toast-icon { background:#f59e0b; }
+    .toast.danger .toast-icon { background:#ef4444; }
+    .toast-body { flex:1;min-width:0; }
+    .toast-close { flex-shrink:0;background:none;border:none;cursor:pointer;font-size:18px;line-height:1;color:#999;padding:0 4px; }
+    .toast-close:hover { color:#333; }
+  </style>
+  <script>
+    function showToast(cat, msg) {
+      var icons = { success:'&#10003;', warning:'&#9888;', danger:'&#10005;' };
+      var container = document.getElementById('toast-container');
+      if (!container) { container = document.createElement('div'); container.id = 'toast-container'; document.body.appendChild(container); }
+      var el = document.createElement('div');
+      el.className = 'toast ' + cat;
+      el.innerHTML = '<div class="toast-icon">'+(icons[cat]||'&#10003;')+'</div><div class="toast-body">'+msg+'</div><button class="toast-close" onclick="this.closest(\'.toast\').classList.add(\'removing\');setTimeout(function(){this.closest(\'.toast\').remove()}.bind(this),250)">&times;</button>';
+      container.appendChild(el);
+      setTimeout(function(){if(el.parentNode){el.classList.add('removing');setTimeout(function(){if(el.parentNode)el.remove()},250)}},4000);
+    }
+    (function(){
+      var el=document.getElementById('login-flash');
+      if(el){try{JSON.parse(el.getAttribute('data-messages')).forEach(function(m){showToast(m.cat,m.msg)})}catch(e){}el.remove()}
+    })();
+  </script>
 </body>
 </html>

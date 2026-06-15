@@ -1154,36 +1154,87 @@ span.status.expired {
 }
 
 /* ==============================
-   FLASH СООБЩЕНИЯ
+   TOAST УВЕДОМЛЕНИЯ
 ============================== */
 
-.flash-messages {
-  margin: 20px auto;
-  max-width: 500px;
-  text-align: center;
+#toast-container {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
 }
 
-.flash-message {
-  padding: 12px 18px;
-  border-radius: 8px;
-  margin-bottom: 10px;
-  color: white;
-  font-size: 14px;
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 320px;
+  max-width: 440px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
   font-family: 'Inter', sans-serif;
-  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #333;
+  transform: translateX(120%);
+  animation: toastSlideIn 0.35s ease forwards;
 }
 
-.flash-message.success {
-  background-color: #10b981;
+.toast.removing {
+  animation: toastSlideOut 0.25s ease forwards;
 }
 
-.flash-message.warning {
-  background-color: #f59e0b;
+@keyframes toastSlideIn {
+  from { transform: translateX(120%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
 }
 
-.flash-message.danger {
-  background-color: #ef4444;
+@keyframes toastSlideOut {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(120%); opacity: 0; }
 }
+
+.toast-icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.toast.success .toast-icon { background: #10b981; }
+.toast.warning .toast-icon { background: #f59e0b; }
+.toast.danger .toast-icon { background: #ef4444; }
+
+.toast-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.toast-close {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  color: #999;
+  padding: 0 4px;
+  transition: color 0.15s;
+}
+.toast-close:hover { color: #333; }
 
 /* ==============================
    МОДАЛЬНЫЕ ОКНА
@@ -5375,33 +5426,4 @@ a.status.meeting-linked:hover {
   opacity: 0.9;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-}
-
-.login-flash {
-  margin-bottom: 16px;
-}
-
-.login-flash .flash-message {
-  padding: 10px 14px;
-  border-radius: 8px;
-  font-size: 14px;
-  margin-bottom: 8px;
-}
-
-.login-flash .flash-message.success {
-  background: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
-}
-
-.login-flash .flash-message.danger {
-  background: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
-}
-
-.login-flash .flash-message.warning {
-  background: #fff3cd;
-  color: #856404;
-  border: 1px solid #ffeeba;
 }
