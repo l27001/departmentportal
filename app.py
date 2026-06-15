@@ -306,7 +306,8 @@ def create_app():
     @app.context_processor
     def inject_user():
         try:
-            from flask_jwt_extended import get_jwt_identity
+            from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
+            verify_jwt_in_request(optional=True)
             user_id = get_jwt_identity()
             if user_id:
                 user = User.query.get(user_id)

@@ -27,6 +27,15 @@ def update_profile():
     user.degree = data.get('degree', user.degree)
     user.academic_title = data.get('academic_title', user.academic_title)
 
+    birthday_str = data.get('birthday')
+    if birthday_str:
+        try:
+            user.birthday = datetime.strptime(birthday_str, '%Y-%m-%d').date()
+        except ValueError:
+            pass
+    else:
+        user.birthday = None
+
     db.session.commit()
     flash("Данные успешно сохранены", "success")
 

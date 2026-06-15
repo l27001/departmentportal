@@ -43,6 +43,15 @@ class User(db.Model):
         lazy="dynamic"
     )
 
+    @property
+    def short_name(self):
+        parts = (self.name or "").split()
+        if len(parts) >= 3:
+            return f"{parts[0]} {parts[1][0]}.{parts[2][0]}."
+        elif len(parts) == 2:
+            return f"{parts[0]} {parts[1][0]}."
+        return self.name or "Профиль"
+
     def set_password(self, raw_password):
         self.password = generate_password_hash(raw_password)
 

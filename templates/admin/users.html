@@ -15,7 +15,7 @@
     <thead>
       <tr>
         <th>ID</th>
-        <th>Имя</th>
+        <th>ФИО</th>
         <th>Email</th>
         <th>Роль</th>
         <th>Должность</th>
@@ -48,7 +48,7 @@
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label>Имя *</label>
+          <label>ФИО *</label>
           <input type="text" id="fieldName" required>
         </div>
         <div class="form-group">
@@ -98,6 +98,12 @@
         <div class="form-group">
           <label>Дата увольнения</label>
           <input type="date" id="fieldDismissalDate">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>День рождения</label>
+          <input type="date" id="fieldBirthday">
         </div>
       </div>
       <div class="form-row">
@@ -230,6 +236,7 @@ async function openEditUser(userId) {
     document.getElementById('fieldRateCount').value = u.rate_count || 1;
     document.getElementById('fieldHireDate').value = u.hire_date || '';
     document.getElementById('fieldDismissalDate').value = u.dismissal_date || '';
+    document.getElementById('fieldBirthday').value = u.birthday || '';
     document.getElementById('fieldIsActive').checked = u.is_active !== false;
     document.getElementById('fieldPassword').value = '';
     openModal('userModal');
@@ -253,6 +260,7 @@ async function saveUser(e) {
     degree: document.getElementById('fieldDegree').value,
     rate_type: document.getElementById('fieldRateType').value,
     rate_count: parseFloat(document.getElementById('fieldRateCount').value),
+    birthday: document.getElementById('fieldBirthday').value || null,
     hire_date: document.getElementById('fieldHireDate').value || null,
     dismissal_date: document.getElementById('fieldDismissalDate').value || null,
     is_active: document.getElementById('fieldIsActive').checked,

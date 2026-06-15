@@ -179,7 +179,7 @@ def create_user():
     if not password or len(password) < 6:
         errors.append("Пароль должен быть не менее 6 символов")
     if not name:
-        errors.append("Имя обязательно")
+        errors.append("ФИО обязательно")
     if not role_id or not Role.query.get(role_id):
         errors.append("Укажите корректную роль")
 
@@ -198,6 +198,13 @@ def create_user():
         rate_count=data.get("rate_count", 1.0),
     )
     user.set_password(password)
+
+    birthday_str = data.get("birthday")
+    if birthday_str:
+        try:
+            user.birthday = datetime.strptime(birthday_str, "%Y-%m-%d").date()
+        except ValueError:
+            pass
 
     hire_date_str = data.get("hire_date")
     if hire_date_str:
@@ -308,6 +315,11 @@ def update_user(user_id):
         user.rate_count = data["rate_count"]
     if "is_active" in data:
         user.is_active = data["is_active"]
+    if "birthday" in data:
+        try:
+            user.birthday = datetime.strptime(data["birthday"], "%Y-%m-%d").date() if data["birthday"] else None
+        except ValueError:
+            pass
     if "hire_date" in data:
         try:
             user.hire_date = datetime.strptime(data["hire_date"], "%Y-%m-%d").date() if data["hire_date"] else None

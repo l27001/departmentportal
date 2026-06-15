@@ -14,10 +14,7 @@
     </div>
     <div class="profile-header-info">
       <h1>{{ user.name | default('Пользователь', true) }}</h1>
-      <span class="profile-role-badge role-{{ user.role.name | lower }}">{{ user.role.name }}</span>
-      {% if user.job_title %}
-        <p class="profile-job-title">{{ user.job_title }}</p>
-      {% endif %}
+      <span class="profile-role-badge">{{ user.job_title }}</span>
     </div>
   </div>
 
@@ -104,7 +101,7 @@
     <form method="POST" action="{{ url_for('users.update_profile') }}" class="profile-edit-form">
       <div class="form-row">
         <div class="input-group">
-          <label for="name">Имя</label>
+          <label for="name">ФИО</label>
           <input type="text" id="name" name="name" value="{{ user.name | default('', true) }}">
         </div>
         <div class="input-group">
@@ -116,6 +113,10 @@
         <div class="input-group">
           <label for="phone">Телефон</label>
           <input type="text" id="phone" name="phone" value="{{ user.phone | default('', true) }}">
+        </div>
+        <div class="input-group">
+          <label for="birthday">День рождения</label>
+          <input type="date" id="birthday" name="birthday" value="{{ user.birthday.strftime('%Y-%m-%d') if user.birthday else '' }}">
         </div>
       </div>
       <div class="form-row">
