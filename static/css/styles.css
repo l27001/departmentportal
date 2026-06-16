@@ -3056,7 +3056,7 @@ input {
 }
 
 .modal-announcement {
-  max-width: 640px;
+  max-width: 1000px;
   padding: 0;
   overflow: hidden;
   border: none;
