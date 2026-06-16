@@ -59,7 +59,7 @@
       {% endif %}
       <div class="task-tabs">
         <a href="{{ url_for('tasks.list_tasks', archive=0, status=status_filter, priority=priority_filter, date_from=date_from, date_to=date_to, assignee=assignee_filter) }}" class="task-tab {% if not show_archive %}active{% endif %}">Активные</a>
-        <a href="{{ url_for('tasks.list_tasks', archive=1, status=status_filter, priority=priority_filter, date_from=date_from, date_to=date_to, assignee=assignee_filter) }}" class="task-tab {% if show_archive %}active{% endif %}">Архив</a>
+        <a href="{{ url_for('tasks.list_tasks', archive=1, status=status_filter, priority=priority_filter, date_from=date_from, date_to=date_to, assignee=assignee_filter) }}" class="task-tab {% if show_archive %}active{% endif %}">Выполненные</a>
       </div>
       <form method="GET" action="{{ url_for('tasks.list_tasks') }}" class="task-filters">
         <input type="hidden" name="archive" value="{{ show_archive }}">
