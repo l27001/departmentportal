@@ -1,5 +1,9 @@
 # Информационная система «Кафедра ВУЗа»
 
+[![](https://badgen.net/static/quality/Z/E43)](https://github.com/sebmestrallet/absurd-badges)
+[![](https://badgen.net/static/dev.%20involving%20human%20life%20forms/yes/3C1)](https://github.com/sebmestrallet/absurd-badges)
+[![](https://badgen.net/static/test/passing%20if%20you%20try%20a%20second%20time/3C1)](https://github.com/sebmestrallet/absurd-badges)
+
 Внутренний портал для управления деятельностью кафедры университета.
 
 ## Возможности
